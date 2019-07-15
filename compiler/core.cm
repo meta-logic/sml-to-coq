@@ -127,6 +127,11 @@ Group
 	structure DebIndex
 
 	structure PPLty
+
+        (* export of structures required to process the AST *)
+        structure SmlFile
+        structure Source
+        structure ErrorMsg
 is
 
 TopLevel/environ/environ.sig
