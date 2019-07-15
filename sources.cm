@@ -1,0 +1,6 @@
+group is
+  $/basis.cm
+  $/smlnj-lib.cm
+
+  compiler/core.cm
+  main.sml
