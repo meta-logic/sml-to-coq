@@ -132,6 +132,7 @@ Group
         structure SmlFile
         structure Source
         structure ErrorMsg
+	structure Symbol
 is
 
 TopLevel/environ/environ.sig
