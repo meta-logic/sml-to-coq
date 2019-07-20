@@ -129,6 +129,7 @@ Group
 	structure PPLty
 
         (* export of structures required to process the AST *)
+        structure Ast
         structure SmlFile
         structure Source
         structure ErrorMsg
