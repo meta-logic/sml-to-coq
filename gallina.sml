@@ -9,30 +9,33 @@ Some if the datatype and constructor names were inspired from:
 https://github.com/antalsz/hs-to-coq/blob/fd1f53979746a862692ca1d60da303e1cf946363/src/lib/HsToCoq/Coq/Gallina.hs
 *)
 
-structure GallinaAST =
+structure Gallina : GALLINA =
 struct
   type ident = string
 
   datatype term =
-    ForallTerm of binder list * term
-  | FunTerm of binder list * term
-  | FixTerm of fixbody list
-  | CofixTerm of fixbody list
+    ForallTerm of binder list * term (* forall *)
+  | FunTerm of binder list * term (* fun *)
+  | FixTerm of fixbody list (* fix *)
+  | CofixTerm of fixbody list (* cofix *)
   (* let fun f x = 9 + x -> id = f , binders = [x]
      let val x : int = 9 -> id = x, binders = [] *)
   | LetTerm of {id : ident, binders : binder list, typ: term option, 
-        body : term, inBody : term}
+        body : term, inBody : term} (* let *)
 
-  | LetFixTerm of fixbody * term
-  | LetCofixTerm of fixbody * term
+  | LetFixTerm of fixbody * term (* let fix or let x := fix*)
+  | LetCofixTerm of fixbody * term (* let cofix or let x := cofix*)
   | LetTupleTerm of { names : name list, retType : depRetType option, 
-        body : term, inBody: term}
-  | LetPatternTerm of { pat : pattern, body : term, inBody : term}
+        body : term, inBody: term} (* let (a, b) :=  *)
+  | LetPatternTerm of { pat : pattern, body : term, inBody : term} 
+    (* let '' *)
   | IfTerm of {retType : depRetType, thenB : term, elseB : term}
   | HasTypeTerm of term * term
   | (* omitting check type <: *) 
     (* omitting tu support type :> *)
     ArrowTerm of term * term
+    (* extra : denotes tuple types e.g. int * int *)
+  | TupleTerm of term list 
   | ApplyTerm of arg list
   | ExplicitTerm of ident
   | InScopeTerm of term * ident
@@ -115,8 +118,8 @@ and orPattern = OrPattern of pattern list
   and assums = Assumptions of (ident list * term) list
 
   (* localbool = true if [local] Definition *)
-  and definition = Definition of {localbool : bool, id : ident, 
-              parameters : binder list, type : term option, body : term}
+  and definition = DefinitionDef of {localbool : bool, id : ident, 
+              parameters : binder list, typ : term option, body : term}
 
 
   and inductive = Inductive of indBody list | CoInductive of indBody list
@@ -131,6 +134,11 @@ and orPattern = OrPattern of pattern list
     IndBody of {id : ident, bind : binder list, 
                             typ : term, clauses : clause list}
 
+  (* Since we're translating from sml datatype declaration,
+      binder list will always be empty, and term option will have
+      the type since a binder list needs a name for the identities
+      e.g. datatype intList = Nil | Cons of int * intList
+      the term option would be nat * intlist -> intlist *)
   and clause = Clause of ident * binder list * term option
 
   and fixpoint = Fixpoint of fixbody list | CoFixpoint of fixbody list
