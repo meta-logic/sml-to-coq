@@ -2,9 +2,9 @@
 
 signature CONVERTOR =
 sig
-    val convertDec' : Ast.dec -> Gallina.sentences
-    val convertDec : Ast.dec -> Gallina.sentence
-    val convertDb : Ast.db -> Gallina.indBody
+	val decToSentence : Ast.dec -> Gallina.sentence
+    val convertDecs : Ast.dec -> Gallina.sentences
+    val dbToIndbody : Ast.db -> Gallina.indBody
   (*    val convertTb : Ast.tb -> ? *)
 end    				  
 				  
