@@ -92,9 +92,6 @@ and orPattern = OrPattern of pattern list
 
 
 (* The vernacular - the language of commands of Gallina *)		 
-  datatype sentences = SeqSentences of sentence list(*?*)
-
-
   and sentence = AssumptionSentence of assumption
                | DefinitionSentence of definition
                | InductiveSentence of inductive
@@ -102,6 +99,9 @@ and orPattern = OrPattern of pattern list
                | AssertionSentence of assertion * proof
                (* Gallina syntax extension *)
                | RecordSentence of recBody list
+                (* extra seq of sentences *)
+               | SeqSentences of sentence list
+
   (* Gallina syntax extension *)             
   and recBody = RecordBody of 
       {id : ident, parameters : binder list, typ : sort option, 
