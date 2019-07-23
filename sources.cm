@@ -2,7 +2,9 @@ Group
  structure Ast
  structure Symbol
  structure Gallina
+ structure ConvertorUtil
  structure Convertor
+ structure Main
 
  is
   $/basis.cm
@@ -12,5 +14,7 @@ Group
   main.sml
   gallina.sig
   gallina.sml
+  convertorutil.sig
+  convertorutil.sml
   convertor.sig
   convertor.sml
