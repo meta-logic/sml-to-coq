@@ -3,9 +3,18 @@
 (* This is the only line that was in the file when passed 
     to the parse function *)
 (*type ingr = real * string*)
+(*type color = int * int * int
+datatype skinColor = Dark of color | Light of color
+datatype age = Newborn | Years of int
 
+datatype person = Silly of skinColor * age 
+				| Greedy of skinColor * age
+				| Mysterious of skinColor * age
+				| Creepy of skinColor * age
+				| Nerd of skinColor * age
+				| Happy of skinColor * age*)
 
-datatype age = Newborn | Years of int * real * age
+datatype person = Person of int -> string				
 (* These are the sequence of commands that produced the AST *)
 (*
 
