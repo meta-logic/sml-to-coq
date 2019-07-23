@@ -32,6 +32,7 @@ struct
                             associate to the left instead of right! *)
                             G.ArrowTerm (getConsType hd, getConsType tl) end
               | _ => G.IdentTerm (C.symbolToId sym))
+                    (* ignoring all potential tyvars at this point *)
         | _ => raise Fail "More than one symbol!")
 
 
@@ -68,6 +69,7 @@ struct
 
 	(* Sml declaration to Gallina sentence *)
     fun decToSentence (Ast.MarkDec (d, _) : Ast.dec): G.sentence = decToSentence d
+      | decToSentence (Ast.SeqDec l) = G.SeqSentences (List.map decToSentence l)
       | decToSentence (Ast.DatatypeDec {datatycs, withtycs}) = let
         	val dbGallina = G.Inductive (List.map dbToIndbody datatycs)
         	(*val tbGallina = List.map convertTb withtycs ???*)
@@ -76,9 +78,6 @@ struct
       	end
       | decToSentence _ = raise Fail "Unimplemented case"		
 
-	(* Sml sequence of declarations to Gallina sentences
-	 * Note : This returns a sequence of sentences and not one sentence *)
-	fun convertDecs (Ast.SeqDec l: Ast.dec): G.sentences =
-   G.SeqSentences (List.map decToSentence l)
+
 		  
 end
