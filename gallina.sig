@@ -24,7 +24,7 @@ sig
 	ArrowTerm of term * term
 	(* extra : denotes tuple types e.g. int * int *)
 	| TupleTerm of term list 
-	| ApplyTerm of arg list
+	| ApplyTerm of term * arg list
 	| ExplicitTerm of ident
 	| InScopeTerm of term * ident
 	| MatchTerm of {variables : matchItem list, retType : retType option, 
