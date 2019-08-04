@@ -133,7 +133,15 @@ Group
         structure SmlFile
         structure Source
         structure ErrorMsg
-	structure Symbol
+		structure Symbol
+		structure SigMatch
+		structure CompInfo
+		structure Stamps
+		structure Absyn
+		structure ElabUtil
+		structure StaticEnv 
+		functor ElabModFn
+		functor ElabTopFn
 is
 
 TopLevel/environ/environ.sig
