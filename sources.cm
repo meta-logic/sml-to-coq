@@ -14,7 +14,7 @@ Group
   main.sml
   gallina.sig
   gallina.sml
-  convertorutil.sig
-  convertorutil.sml
+  convertorUtil.sig
+  convertorUtil.sml
   convertor.sig
   convertor.sml
