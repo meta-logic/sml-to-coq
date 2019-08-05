@@ -5,7 +5,8 @@ structure Main =
 struct
 	structure F = ElabModFn (structure SM = SigMatch);
 	structure T = ElabTopFn(structure ElabMod = F);
-	structure S = StaticEnv;
+(*	structure S = StaticEnv;
+*)  
 
 
   fun getAST (filename: string) = 
@@ -24,7 +25,9 @@ struct
   		val cc : ElabUtil.compInfo = 
   			CompInfo.mkCompInfo {mkMkStamp = fn () => Stamps.newGenerator (), 
   			source = source, transform = fn (x : Absyn.dec) => x}
-  		val (absyn, _) = T.elabTop (ast, S.empty, cc)
+      (* PrimEnv is in compiler/Semant/statenv and it has all the basic types 
+        Also, check compiler/MAP lines 212 to 221 for full explanation *)
+  		val (absyn, _) = T.elabTop (ast, PrimEnv.primEnv, cc)
 
   	in
   		absyn
