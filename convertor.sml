@@ -20,21 +20,7 @@ struct
       G.VarBinder {names = [nameVal], typ = typVal, inferred = inferredVal}
     end
 
-  fun patToBinders (Ast.MarkPat(p, _) : Ast.pat) : G.binder list = patToBinders p
-    | patToBinders (Ast.WildPat) = 
-        G.VarBinder {names = [G.WildcardName], typ = NONE, inferred = false}
-    | patToBinders (Ast.VarPat l) = let
-        val namesVal = [C.symbolToName(List.hd l)]
-        val typVal = NONE
-        val inferredVal = false
-      in
-        G.VarBinder {names = namesVal, typ = typVal, inferred = inferredVal}
-      end
-    | (*patToBinders (Ast.IntPat i)*)  
-    | (*patToBinders (Ast.WordPat i)*)
-    | (*patToBinders (Ast.CharPat i)*)
-    | (*patToBinders (Ast.RecordPat {def, flexibility})*)
-    | 
+
 
   (* 'a list : 'a is a tyvar (type variable) 
      This returns just _a as a term *)
