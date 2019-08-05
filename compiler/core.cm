@@ -140,6 +140,7 @@ Group
 		structure Absyn
 		structure ElabUtil
 		structure StaticEnv 
+		structure Environment
 		functor ElabModFn
 		functor ElabTopFn
 is
