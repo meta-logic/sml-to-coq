@@ -1,2 +1,1 @@
-
-val x : int = 7;
+val y = [9]
