@@ -1,36 +1,25 @@
-Control.Print.printLength := 1000;
-Control.Print.printDepth := 100;
-
-structure Main = 
+structure Toplevel = 
 struct
-	structure F = ElabModFn (structure SM = SigMatch);
-	structure T = ElabTopFn(structure ElabMod = F);
-(*	structure S = StaticEnv;
-*)  
+    structure G = Gallina;
+    open Annotation;
+    infix @@;
 
-
-  fun getAST (filename: string) = 
+  fun convert(source : string) : G.sentence list = 
     let
-      val f = TextIO.openIn (filename)
-      val source = Source.newSource (filename, f, true, ErrorMsg.defaultConsumer())
+      val arg = Sml.parseArg (Sml.lib());
+      val x = Sml.parse1 arg (NONE, source);
+      val (_, x) = x;
+      val x @@ _ = x;
+      val SyntaxProgram.Program(x) = x;
+      val (x, _) = x;
+      val x @@ _ = x;
+      val SyntaxModule.STRDECTopDec x = x;
+      val (x, _) = x;
+      val x @@ _ = x;
+      val SyntaxModule.DECStrDec x = x;
     in
-      SmlFile.parse source
+      Convertor.dec2sents x
     end
 
-  fun getAbsyn (filename : string) = 
-  	let
-  		val f = TextIO.openIn (filename)
-  		val source = Source.newSource (filename, f, false, ErrorMsg.defaultConsumer())
-  		val ast = getAST filename
-  		val cc : ElabUtil.compInfo = 
-  			CompInfo.mkCompInfo {mkMkStamp = fn () => Stamps.newGenerator (), 
-  			source = source, transform = fn (x : Absyn.dec) => x}
-      (* PrimEnv is in compiler/Semant/statenv and it has all the basic types 
-        Also, check compiler/MAP lines 212 to 221 for full explanation *)
-  		val (absyn, _) = T.elabTop (ast, PrimEnv.primEnv, cc)
-
-  	in
-  		absyn
-  	end
 
 end
