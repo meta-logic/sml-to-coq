@@ -1,20 +1,20 @@
 Group
- structure Ast
- structure Symbol
  structure Gallina
  structure ConvertorUtil
  structure Convertor
- structure Main
+ structure Toplevel
+ structure Sml
+ structure Annotation
+ structure SyntaxProgram
+ structure SyntaxModule
 
  is
   $/basis.cm
   $/smlnj-lib.cm
 
-  compiler/core.cm
-  main.sml
-  gallina.sig
+  hamlet/sources.cm
+  (*gallina.sig*)
   gallina.sml
-  convertorUtil.sig
   convertorUtil.sml
-  convertor.sig
-  convertor.sml
+  convertor1.sml
+  main.sml
