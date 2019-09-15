@@ -9,7 +9,7 @@ Some if the datatype and constructor names were inspired from:
 https://github.com/antalsz/hs-to-coq/blob/fd1f53979746a862692ca1d60da303e1cf946363/src/lib/HsToCoq/Coq/Gallina.hs
 *)
 
-structure Gallina : GALLINA =
+structure Gallina =
 struct
   type ident = string
 
@@ -46,6 +46,11 @@ struct
   | NumTerm of int 
   | WildcardTerm
   | ParensTerm of term
+  (* Additional terms to match sml built-in types *)
+  | WordTerm of int
+  | RealTerm of string
+  | StringTerm of string
+  | CharTerm of string
 
 and arg = Arg of term | TypedArg of ident * term
 and binder = 
