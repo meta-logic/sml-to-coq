@@ -2,7 +2,9 @@ Group
  structure Gallina
  structure ConvertorUtil
  structure Convertor
- structure Toplevel
+ structure ConvertorCore
+ structure ConvertorModule
+ structure ConvertorProgram
  structure Sml
  structure Annotation
  structure SyntaxProgram
@@ -15,6 +17,8 @@ Group
   hamlet/sources.cm
   (*gallina.sig*)
   gallina.sml
+  convertor.sml
   convertorUtil.sml
-  convertor1.sml
-  main.sml
+  convertorCore.sml
+  convertorModule.sml
+  convertorProgram.sml
