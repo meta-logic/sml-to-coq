@@ -34,6 +34,10 @@ sig
 	| NumTerm of int 
 	| WildcardTerm
 	| ParensTerm of term
+	| WordTerm of int
+	| RealTerm of string
+	| StringTerm of string
+	| CharTerm of string
 
 	and arg = Arg of term | TypedArg of ident * term
 	and binder = 
