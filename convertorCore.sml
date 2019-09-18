@@ -61,25 +61,61 @@ struct
 			in
 				List.map tyvar2binder tyvars
 			end
+
+		(* ignoring Op for now, check SyntaxCore for more info *)
+		fun cons2clauses(cons @@ _ : ConBind) : G.clause list = 
+			let
+				val ConBind(_, tycon, ty, conbind2) = cons
+				val idVal = vidcon2id (~tycon)
+				val binderVal = []
+				val typVal = case ty of
+					SOME ty' => SOME (ty2term (~ty'))
+					| _ => NONE
+				val clauses = ?cons2clauses conbind2
+				val clause = G.Clause (idVal, binderVal, typVal)
+			in
+				clause :: ?cons2clauses conbind2
+			end
 			
+		fun typbind2sent(typbind @@ _ : TypBind) : G.sentence list = 
+			let
+				val TypBind(tyvars, tycon, ty, typbind2) = typbind
+				val localboolVal = false
+				val idVal = tycon2id (~tycon)
+				val parametersVal = tyvars2binder (List.map ~ ($(~tyvars)))
+				val typVal = NONE
+				val bodyVal = ty2term (~ty)
+	        	val definition = G.DefinitionDef 
+	        	{localbool = localboolVal, id = idVal, parameters = parametersVal, 
+	        	typ = typVal, body = bodyVal}
+	        	val  res = G.DefinitionSentence definition				
+			in
+	        	res :: ?typbind2sent typbind2
+			end
+			
+		fun datbind2sent(datbind : DatBind) : G.sentence list =
+			let fun datbind2indbodies (datbind @@ _: DatBind) : G.indBody list =
+				let
+					val DatBind(tyvars, tycon, cons, datbind2) = datbind
+					val idVal = tycon2id (~tycon)
+					val parametersVal = tyvars2binder (List.map ~ ($(~tyvars)))				
+					val typVal = mkSortTerm 1
+					val clauses = cons2clauses(cons)
+					val clauses = List.map (updateTerm idVal) clauses
+					val indBody = G.IndBody {id = idVal, bind = parametersVal,
+								typ = typVal, clauses = clauses}
+				in 
+					indBody :: (? datbind2indbodies (datbind2))
+				end
+			in
+				[G.InductiveSentence(G.Inductive(datbind2indbodies datbind))]
+			end		
 
 		(* Sml declaration to Gallina sentence *)
 	  	fun dec2sents ((TYPEDec(typbind)@@ _) : Dec): G.sentence list = 
-	  		let fun type2sent (typbind) = 
-				(let val TypBind(tyvars, tycon, ty, typbind2) = ~typbind
-					val localboolVal = false
-					val idVal = tycon2id (~tycon)
-					val parametersVal = tyvars2binder (List.map ~ ($(~tyvars)))
-					val typVal = NONE
-					val bodyVal = ty2term (~ty)
-		        	val definition = G.DefinitionDef 
-		        	{localbool = localboolVal, id = idVal, parameters = parametersVal, 
-		        	typ = typVal, body = bodyVal}
-		        	val  res = G.DefinitionSentence definition
-		      	in
-		        	res :: ?type2sent typbind2
-		      	end)
-		    in type2sent typbind end
+		    	typbind2sent typbind
+		  | dec2sents (DATATYPEDec(datbind)@@_) = 
+		  		datbind2sent datbind
 	      | dec2sents _ = raise Fail "Unimplemented declaration! \n"
 	end
 end      

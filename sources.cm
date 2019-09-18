@@ -9,6 +9,7 @@ Group
  structure Annotation
  structure SyntaxProgram
  structure SyntaxModule
+ structure SyntaxCore
 
  is
   $/basis.cm
