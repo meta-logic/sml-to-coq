@@ -1,31 +1,33 @@
 structure ConvertorUtil =
 struct
     structure G = Gallina
-    open SyntaxCore
-    open SyntaxModule
-    open SyntaxProgram    
     open Annotation;
 
-    infix @@;
-	(* Sml symbol to Gallina ident. If ident starts with ' it converts it to _
-   	Doesn't take care of Gallina reserved words *)
-    fun tycon2id (tycon : TyCon.Id) : G.ident = TyCon.toString tycon
-    fun ltycon2id (tycon : LongTyCon.longId) : G.ident = LongTyCon.toString tycon
+    local
+        open SyntaxCore
+    in
 
-    fun ?exec NONE         = []
-      | ?exec (SOME phrase) = exec phrase
+        infix @@;
+    	(* Sml symbol to Gallina ident. If ident starts with ' it converts it to _
+       	Doesn't take care of Gallina reserved words *)
+        fun tycon2id (tycon : TyCon.Id) : G.ident = TyCon.toString tycon
+        fun ltycon2id (tycon : LongTyCon.longId) : G.ident = LongTyCon.toString tycon
 
-    fun $ (Seq l)      = l
+        fun ?exec NONE         = []
+          | ?exec (SOME phrase) = exec phrase
 
-    fun ~ (x @@ y) = x
-    (*fun symbolToName (s : Ast.symbol) : G.name = G.Name (symbolToId s)*)
+        fun $ (Seq l)      = l
 
-    fun mkSortTerm (i : int) : G.term = 
-    	let val typ = case i of  0 => G.Prop
-    							| 1 => G.Type
-    							| 2 => G.Set
-    	in (G.SortTerm typ) end
+        fun ~ (x @@ y) = x
+        (*fun symbolToName (s : Ast.symbol) : G.name = G.Name (symbolToId s)*)
 
-    fun mkName (s : string) : G.name = G.Name s
+        fun mkSortTerm (i : int) : G.term = 
+        	let val typ = case i of  0 => G.Prop
+        							| 1 => G.Type
+        							| 2 => G.Set
+        	in (G.SortTerm typ) end
 
-end    	
+        fun mkName (s : string) : G.name = G.Name s
+
+    end    	
+end
