@@ -1,0 +1,48 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage{hyperref}
+\usepackage{proof}
+\usepackage{amsmath}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{listings}
+
+\usepackage{Coq}
+\usepackage{SML}
+
+\usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
+\newcommand{\giselle}[1]{\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum]{G: #1}}
+
+\title{Translation of SML programs into Coq programs}
+\date{}
+
+\begin{document}
+\maketitle
+
+The goal of this document is to define formally the translation of SML programs,
+represented by their abstract syntax tree (AST) into Coq programs, represented
+by Gallina's AST. Before defining the translation, we specify the two ASTs in
+question.
+\giselle{TODO: better introduction, mention the tools we used and motivation.}
+
+% Testing environments:
+% 
+% \begin{sml}
+% datatype 'a tree = Empty
+%                  | Node of 'a tree * 'a * 'a tree
+% \end{sml}
+% 
+% \begin{coq}
+% Definition g y := 
+%   match (cons 1 nil) with
+%     | (x :: l) => x + y
+%     | _ => patternFailure
+%   end.
+% \end{coq}
+
+\section{SML's abstract syntax tree}
+
+
+\section{Gallina's abstract syntax tree}
+
+
+\end{document}
