@@ -16,7 +16,8 @@ struct
         (* Converting SML's ids to Gallina id *)
         fun tycon2id (tycon : TyCon.Id) : G.ident = checkLegal(TyCon.toString tycon)
         fun ltycon2id (tycon : LongTyCon.longId) : G.ident = checkLegal(LongTyCon.toString tycon)
-        fun vidcon2id (tycon : VId.Id) : G.ident = checkLegal(VId.toString tycon)
+        fun vid2id (tycon : VId.Id) : G.ident = checkLegal(VId.toString tycon)
+        fun lvid2id (tycon : LongVId.longId) : G.ident = checkLegal(LongVId.toString tycon)
 
         (* ? : ('a -> 'b list) * 'a option -> 'b list
            ? f o returns [] if o = NONE and f val if o = SOME val *)
