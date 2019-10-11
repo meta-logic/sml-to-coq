@@ -12,6 +12,8 @@ struct
       val elabArgs = (J, B_BIND, B_STAT)
       val (J', program) = Sml.parse1 parseArgs (NONE, source)
       val B_STAT' = Program.elabProgram true (B_STAT, program)
+      val s'      = ref s      
+      val B_DYN'  = Program.evalProgram true ((s', B_DYN), program)      
       (*val x @@ _ = x;*)
       (*val SyntaxProgram.Program(x) = x;*)
 (*    val (x, _) = x;
