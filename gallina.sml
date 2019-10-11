@@ -2,62 +2,60 @@
 
 An Ast for the Gallina language
 
-The Gallina Specificationn Language can be found at:
-https://coq.inria.fr/distrib/current/refman/language/gallina-specification-language.html
-
-Some if the datatype and constructor names were inspired from:
+Some of the datatype and constructor names were inspired from:
 https://github.com/antalsz/hs-to-coq/blob/fd1f53979746a862692ca1d60da303e1cf946363/src/lib/HsToCoq/Coq/Gallina.hs
+
+
 *)
 
 structure Gallina =
 struct
+  (* Lexical Conventions (Section 3.1.2):
+   * We don't model lexical conventions, but we will add checks that 
+   * ensure that all the constraints (i.e. keywords are not used, 
+   * and identifiers are legal) are met *)
   type ident = string
 
   datatype term =
     ForallTerm of binder list * term (* forall *)
   | FunTerm of binder list * term (* fun *)
   | FixTerm of fixbody list (* fix *)
-  | CofixTerm of fixbody list (* cofix *)
+  | CofixTerm of cofixbody list (* cofix *)
   (* let fun f x = 9 + x -> id = f , binders = [x]
      let val x : int = 9 -> id = x, binders = [] *)
   | LetTerm of {id : ident, binders : binder list, typ: term option, 
-        body : term, inBody : term} (* let *)
-
+        body : term, inBody : term} 
   | LetFixTerm of fixbody * term (* let fix or let x := fix*)
-  | LetCofixTerm of fixbody * term (* let cofix or let x := cofix*)
-  | LetTupleTerm of { names : name list, retType : depRetType option, 
-        body : term, inBody: term} (* let (a, b) :=  *)
-  | LetPatternTerm of { pat : pattern, body : term, inBody : term} 
-    (* let '' *)
-  | IfTerm of {retType : depRetType, thenB : term, elseB : term}
+  | LetCofixTerm of cofixbody * term (* let cofix or let x := cofix*)
+  | LetTupleTerm of { names : name list, body : term, inBody: term} (* let (a, b) :=  *)
+  | LetPatternTerm of { pat : pattern, inTerm: term, body : term,
+        inBody :  term} (* let '' *)
+  | IfTerm of {test: term, thenTerm : term,  elseTerm : term}
   | HasTypeTerm of term * term
   | (* omitting check type <: *) 
     (* omitting tu support type :> *)
     ArrowTerm of term * term
-    (* extra : denotes tuple types e.g. int * int *)
-  | TupleTerm of term list 
-  | ApplyTerm of term * arg list
-  | ExplicitTerm of ident
+  | ApplyTerm of term * arg list (* CANNOT be empty *)
+  | ExplicitTerm of ident* term list
   | InScopeTerm of term * ident
-  | MatchTerm of {variables : matchItem list, retType : retType option, 
-                body : equation list}
+  | MatchTerm of {variables : matchItem list, body : equation list}
   | IdentTerm of ident
   | SortTerm of sort 
-  | NumTerm of int 
+  | NumTerm of string 
   | WildcardTerm
   | ParensTerm of term
   (* Additional terms to match sml built-in types *)
-  | WordTerm of int
+  | WordTerm of string
   | RealTerm of string
   | StringTerm of string
   | CharTerm of string
+  | HexTerm of string
+    (* extra : denotes tuple types e.g. int * int *)
+  | TupleTerm of term list 
 
-and arg = Arg of term | TypedArg of ident * term
+and arg = Arg of term | NamedArg of ident * term
 and binder = 
-  (* name ... name or { name ... name}
-    or name ... name : type or {name ... name : type} *) 
-    VarBinder of {names : name list, typ : term option, inferred : bool}  
-  (* name ... name : type *)
+  SingleBinder of {name : name, typ : term option, inferred : bool}   
   | LetBinder of {names : name list, typ : term option, body : term}
   | PatternBinder of pattern
   
@@ -68,40 +66,47 @@ and sort = Prop | Set | Type
 
 and fixbody =   Fixbody of 
   {id : ident, parameters : binder list,
-      decArg : annotation option, retType : term option, body : term}
+      decArg : annotation option, typ : term option, body : term}
+
+and cofixbody =   Cofixbody of 
+  {id : ident, parameters : binder list, typ : term option, body : term}     
+
 
 and annotation = Annotation of ident
 
-and matchItem = MatchItem of {matchItem : ident, asItem : name, inItem : ident
-                                option, patterns : pattern option}
+and matchItem = MatchItem of term
 
 and depRetType = DepRet of name option * retType
 
 and retType = Ret of term
 
-and equation = Equation of multPattern list * term
+and equation = Equation of pattern * term
 
-and multPattern = MultPat of pattern list
-
-and pattern =   ArgsPat of ident * pattern list * bool (* true for explicit*)
-              | AsPat of ident
-              | ScopePat of ident
+and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
+              | AtArgsPat of ident * pattern list
+              | AsPat of pattern * ident
+              | ScopePat of pattern * ident
               | QualidPat of ident
               | WildcardPat
-              | NumPat of int
-              | StringPat of string
+              | NumPat of string
               | OrPat of orPattern list
+              (* Additional Patternss *)
+              | WordPat of string
+              | RealPat of string
+              | StringPat of string
+              | CharPat of string
+              | HexPat of string
+                (* extra : denotes tuple types e.g. int * int *)
+              | TuplePat of term list 
 
 and orPattern = OrPattern of pattern list
 
 
 
 (* The vernacular - the language of commands of Gallina *)		 
-  and sentence = AssumptionSentence of assumption
-               | DefinitionSentence of definition
+  and sentence = DefinitionSentence of definition
                | InductiveSentence of inductive
                | FixpointSentence of fixpoint
-               | AssertionSentence of assertion * proof
                (* Gallina syntax extension *)
                | RecordSentence of recBody list
                 (* extra seq of sentences *)
@@ -115,17 +120,12 @@ and orPattern = OrPattern of pattern list
  (* Gallina syntax extension *)
   and field = Field of (ident * term) list                
 
-  and assumption = Assumption of assumptionKeyword * assums
-
-  and assumptionKeyword = Axiom | Conjecture | Parameter | Parameters
-                        | Variable | Variables | Hypothesis | Hypotheses       
-
-  and assums = Assumptions of (ident list * term) list
 
   (* localbool = true if [local] Definition *)
   and definition = DefinitionDef of {localbool : bool, id : ident, 
               parameters : binder list, typ : term option, body : term}
-
+              | LetDefinitionDef of {localbool : bool, id : ident, 
+              parameters : binder list, typ : term option, body : term}
 
   and inductive = Inductive of indBody list | CoInductive of indBody list
 
@@ -147,13 +147,5 @@ and orPattern = OrPattern of pattern list
   and clause = Clause of ident * binder list * term option
 
   and fixpoint = Fixpoint of fixbody list | CoFixpoint of fixbody list
-
-  and assertion = Assertion of assertionKeyword * ident * binder list * term
-
-  and assertionKeyword = Theorem | Lemma | Remark | Fact
-                        | Corollary | Proposition | Definition | Example   
-
-  and proof = QedProof of string | DefProof of string | AdmitProof of string
-
 
 end   
