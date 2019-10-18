@@ -39,12 +39,7 @@ struct
 		 * KEYWORD: arg
 		 * NOTES:
 		*)	
-		fun tyseq2args (Seq tyL : Ty seq') : G.arg list = 
-			let
-				val tyL = List.map ~ tyL
-			in
-				List.map ty2arg tyL
-			end
+		fun tyseq2args (Seq tys : Ty seq') : G.arg list = % ty2arg tys
 
 		(* EXAMPLE: check tyseq2args
 		 * FROM: SyntaxCoreFn.sml: 159 -> 164
@@ -69,7 +64,7 @@ struct
 		 * KEYWORD: term
 		 * NOTES: assuming they're always tuples for now
 		*)
-		and tyrow2term(tyrow : TyRow) : G.term = 
+(*		and tyrow2term(tyrow : TyRow) : G.term = 
 			let fun tyrow2terms (tyrow') = 
 				let
 					val tyrow @@ annot = tyrow'
@@ -83,7 +78,7 @@ struct
 				end
 			in
 				G.TupleTerm (tyrow2terms tyrow)
-			end
+			end*)
 
 		(* EXAMPLE: type age = int (ty encodes int)
 		 * FROM: SyntaxCoreFn.sml: 159 -> 164
@@ -92,15 +87,14 @@ struct
 		 * KEYWORD: ty
 		 * TO SECTION: 3.1.3 page 25
 		 * KEYWORD: term
-		 * NOTES:
+		 * NOTES: skipped RECORDTy
 		*)	
 			(* VARty is type variable, e.g. 'a list  *)
 		and ty2term ((VARTy tyvar) : Ty') : G.term = 
 				G.IdentTerm (checkLegal(TyVar.toString (~tyvar)))
-			(* RECORDTy is record types (tuples for now), e.g. int * string  *)
-			(* ignoring the unit type for now *)
-			| ty2term (RECORDTy (SOME tyrow)) = G.InScopeTerm (tyrow2term (tyrow),
-				"type") (* in scope term because the operator "*" is overloaded *)
+			(* in scope term because the operator "*" is overloaded *)
+			| ty2term (TUPLETyX (tys)) = 
+				G.InScopeTerm (G.TupleTerm (% ty2term tys), "type") 
 			(* CONTy is constructor type, e.g. int  *)			
 			| ty2term (CONTy (tyseq, tycon)) = let
 					val args = tyseq2args (~tyseq)
