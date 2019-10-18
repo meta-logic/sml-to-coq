@@ -10,6 +10,7 @@ Group
  structure SyntaxProgram
  structure SyntaxModule
  structure SyntaxCore
+ structure SyntacticRestrictionsCore
 
  is
   $/basis.cm

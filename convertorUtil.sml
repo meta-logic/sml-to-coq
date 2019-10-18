@@ -27,9 +27,11 @@ struct
         (* $ : 'a SyntaxCore.Seq' -> 'a list *)
         fun $ (Seq l)      = l
 
+
         (* ~ : returns the syntax and drops the annotation *)
         fun ~ (x @@ y) = x
 
+        fun % f l = List.map (fn a => f(~a)) l
         (* mkSortTerm returns a Prop, Set or Type Gallina terms *)
         fun mkSortTerm (i : int) : G.term = 
         	let val typ = case i of  0 => G.Prop
