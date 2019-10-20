@@ -39,10 +39,47 @@ question.
 %   end.
 % \end{coq}
 
+\section{HaMLet}
+
+HaMLet~\cite{hamlet} is an SML implementation whose goal is to be an accurate
+implementation of the language definition~\cite{smldef}, and a platform for
+experimentation. There are two main reasons why we chose it for this work. First
+of all, it is faithful to SML's definition, and all bugs and ``grey areas'' and
+well documented. Secondly, it is easy to access various steps of the compilation
+process. Particularly, the abstract syntax tree from the elaboration phase was
+readily available.
+
+In order to have a translation as precise as possible, we needed a few
+modifications in HaMLet. All changes were related to derived
+forms.\giselle{check if this is still the case at the end.}
+Derived forms are SML expressions that can be replaced by equivalent forms
+during parsing, resulting in SML parse trees that are formed by only a subset of
+the constructs in syntax trees. For example, boolean operators can be replaced by
+the equivalent \smle{if ... then ... else}:
+
+\begin{center}
+\begin{tabular}{rcl}
+{\smle|$e_1$ orelse $e_2$|}  & $\Rightarrow$ & {\smle|if $e_1$ then true else $e_2$|} \\
+{\smle|$e_1$ andalso $e_2$|} & $\Rightarrow$ & {\smle|if $e_1$ then $e_2$ else false|}
+\end{tabular}
+\end{center}
+
+HaMLet translates the derived forms as specified in SML's definition.
+Translating this subset of SML's syntax to Coq is correct -- semantically
+speaking -- however, the resulting Coq code will look very different: an
+\smle{orelse} expression will be translated to an \coqe{if...then...else}
+expression. Therefore, we decided to keep the original grammatical form and
+translate that to Gallina.\giselle{explain the changes in more detail (see
+googledoc)}
+
+% all modifications are sound.
+
 \section{SML's abstract syntax tree}
 
 
 \section{Gallina's abstract syntax tree}
 
+\bibliography{references}{}
+\bibliographystyle{abbrv}
 
 \end{document}
