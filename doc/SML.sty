@@ -40,13 +40,18 @@
   %
   stringstyle=\color{black},
   %
-  identifierstyle=\color{eclipseBlue},
+  identifierstyle=\ttfamily\color{eclipseBlue},
   %
-  keywordstyle=\color{red},
+  keywordstyle=\ttfamily\color{red},
   %
-  commentstyle=\color{eclipseGreen},
+  commentstyle=\ttfamily\color{eclipseGreen},
+  % Spaces are not displayed as a special character
+  showstringspaces=false,
   %
   mathescape=true
 }
 
 \lstnewenvironment{sml}{\lstset{language=SML}}{}
+
+% For inline code
+\def\smle{\lstinline[language=SML, basicstyle=\small]}
