@@ -1,0 +1,3 @@
+[submodule "HaMlet"]
+	path = hamlet
+	url = https://github.com/LailaElbeheiry/hamlet.git
