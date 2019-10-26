@@ -72,6 +72,16 @@ expression. Therefore, we decided to keep the original grammatical form and
 translate that to Gallina.\giselle{explain the changes in more detail (see
 googledoc)}
 
+Even though the translation is done on the abstract syntax tree with the derived
+forms, we still need to make sure that the code type checks and runs.
+Additionally, the elaboration phase provides crucial information for the
+translation, such as non-exhaustive match warnings. These two phases do not
+consider the derived forms. This problem is solved by one of two approaches,
+depending on the construct: (1) the derived form is replaced by the equivalent
+form, and we interpret any needed information in the context of the derived
+form; or (2) we implement an extra case for the derived form when it is
+straighforward.
+
 % all modifications are sound.
 
 \section{SML's abstract syntax tree}
