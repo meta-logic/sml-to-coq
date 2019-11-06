@@ -52,6 +52,7 @@ struct
             | updateTerm name (clause as G.Clause(id, bL, SOME typ)) = 
                 G.Clause (id, bL, SOME(mkArrowTerm (typ, G.IdentTerm name) ) )
 
+        (*fun idFromFixbody (Fixbody (fixbody) : G.fixbody) : G.ident = #id fixbody*)
 
     end    	
 end

@@ -17,6 +17,9 @@ structure ConvertorCore =
 struct
 	open ConvertorUtil
     open SyntaxCore	
+    open AnnotationCore
+    structure S = StaticObjectsCore
+    structure D = DynamicObjectsCore
     local 
 		structure G = Gallina
 		infix @@
@@ -29,6 +32,13 @@ struct
 			| scon2term (SCon.INT (b, s)) = if b = SCon.DEC then G.NumTerm s else G.HexTerm s
 			(* Need to check what's a word constant *)
 			| scon2term (SCon.WORD (b, s)) = G.WordTerm s 
+
+		fun scon2pattern (SCon.STRING s : SCon.SCon) : G.pattern = G.StringPat s
+			| scon2pattern (SCon.CHAR s) = G.CharPat s
+			| scon2pattern (SCon.REAL s) = G.RealPat s
+			| scon2pattern (SCon.INT (b, s)) = if b = SCon.DEC then G.NumPat s else G.HexPat s
+			(* Need to check what's a word constant *)
+			| scon2pattern (SCon.WORD (b, s)) = G.WordPat s 
 
 		(* EXAMPLE: type class = (id, name) hashtable :(id, name) forms a tyseq
 		 * FROM: SyntaxCoreFn.sml: 159 -> 164
@@ -53,32 +63,6 @@ struct
 		 *)
 		and ty2arg (ty : Ty') : G.arg = G.Arg (ty2term ty)
 
-		(* EXAMPLE: type student = int * string would evaluate to:
-		 * 			type student = {1: int, 2: string} and each element in the 
-		 *			record is a tyrow
-		 * FROM: SyntaxCoreFn.sml: 167
-		 * TO:   Gallina.sml :  16 -> 53
-		 * FROM SECTION: Appendix C.1 page 103
-		 * KEYWORD: tyrow	
-		 * TO SECTION: 3.1.3 page 25
-		 * KEYWORD: term
-		 * NOTES: assuming they're always tuples for now
-		*)
-(*		and tyrow2term(tyrow : TyRow) : G.term = 
-			let fun tyrow2terms (tyrow') = 
-				let
-					val tyrow @@ annot = tyrow'
-					val TyRow(lab, ty, tyrow) = tyrow
-					val ty = ~ty
-					val isTuple = has(hd (tl (tl annot)))
-				in
-					if isTuple
-					then (ty2term ty) :: ?tyrow2terms tyrow
-					else raise Fail "RECORDTy is not yet implemented! \n"
-				end
-			in
-				G.TupleTerm (tyrow2terms tyrow)
-			end*)
 
 		(* EXAMPLE: type age = int (ty encodes int)
 		 * FROM: SyntaxCoreFn.sml: 159 -> 164
@@ -100,98 +84,187 @@ struct
 					val args = tyseq2args (~tyseq)
 					val tycon = G.IdentTerm(ltycon2id (~tycon))
 				in
-					case args of [] => tycon | _ => G.ApplyTerm(tycon, args)
+					(case args of [] => tycon | _ => G.ApplyTerm(tycon, args))
 				end
 			(* PARTy is parenthesis type, e.g. (int)  *)							
 			| ty2term (PARTy ty) = G.ParensTerm (ty2term (~ty))
 			(* ARROWTy is arrow type, e.g. int -> int  *)							
-			| ty2term (ARROWTy(ty1, ty2)) = G.ArrowTerm(ty2term (~ty1), ty2term (~ty2))
+			| ty2term (ARROWTy(ty1, ty2)) = G.ArrowTerm(ty2term (~ty1), ty2term (~ty2)) 
 
-(*		fun atexp2args (atexp : AtExp') : G.arg list = [G.Arg (atexp2term atexp)]
-
-		and exprow2term (exprow : ExpRow) : G.term = 
-			let fun exprow2terms (exprow') = 
-				let
-					val exprow @@ annot = exprow'
-					val ExpRow(lab, exp, exprow2) = exprow
-					val isTuple = has(hd (tl (tl annot)))
-				in
-					if isTuple
-					then (exp2term (~exp)) :: ?exprow2terms exprow
-					else raise Fail "RECORDExp is not yet implemented! \n"
-				end
+		and mrule2equation (Mrule(pat, exp) : Mrule') : G.equation = 
+			let
+				val pattern = pat2pattern (~ pat)
+				val term = exp2term (~ exp)
 			in
-				G.TupleTerm (exprow2terms exprow)
+				G.Equation(pattern, term)
 			end
-*)
 
-(*		and atexp2term (SCONAtExp scon : AtExp') : G.term = scon2term (~scon)
-*)			(* ignoring Op for now *)
-(*			| atexp2term (IDAtExp (_, longvid)) = G.IdentTerm (lvid2id longvid)
-*)			(* in scope term because the operator "*" is overloaded *)
-			(* ignoring records and units *)
-(*			| atexp2term (RECORDAtExp (exprowOpt)) = 
-				case exprowOpt of
-					NONE => raise Fail "unit expressions not allowed in Coq\n"
-					| SOME exprow => G.InScopeTerm (exprow2term (exprow), "type") 
-			| atexp2term (PARAtExp exp) = G.ParensTerm (exp2term (~exp))*)
-			(*| atexp2term (LETAtExp ) = *)
-(*
-		and exp2term (AtExp atexp : Exp') : G.term = atexp2term (~atexp)
+		and exp2matchitem (exp : Exp') : G.matchItem = G.MatchItem (exp2term(exp))
+
+
+		and match2equations (Match(mrule, match2) @@ A : Match) : G.equation list = 
+			let
+				fun match2equations' (Match(mrule, match2)@@_ : Match) =
+					(mrule2equation (~mrule)) :: (?match2equations' match2)
+				val equation2 = case (try (exhaustive A)) of 
+									SOME S.Exhaustive => []
+									| _ => [G.Equation(G.WildcardPat, G.Axiom G.PatternFailure)]
+				val equations = (mrule2equation (~mrule)) :: (?match2equations' match2) @ equation2
+			in
+				equations
+			end
+
+
+		and atexp2args (atexp : AtExp') : G.arg list = [G.Arg (atexp2term atexp)]
+
+
+		and atexp2term (SCONAtExp scon : AtExp') : G.term = scon2term (~scon)
+			(* ignoring Op for now *)
+			| atexp2term (IDAtExp (_, longvid)) = G.IdentTerm (lvid2id (~longvid))
+			| atexp2term (RECORDAtExp _) = raise Fail "Record expressions not yet impemented!\n"
+			| atexp2term (LETAtExp (dec, exp)) = raise Fail "Let expressions not yet implemented!\n"
+			| atexp2term (PARAtExp exp) = G.ParensTerm (exp2term (~exp))
+			| atexp2term (UNITAtExpX) = raise Fail "unit expressions are invalid in Coq! \n"
+			(* in scope term because the operator "*" is overloaded *)
+			| atexp2term (TUPLEAtExpX(exps)) = G.TupleTerm(% exp2term exps)
+			| atexp2term (LISTAtExpX(exps)) = G.ListTerm(% exp2term exps)
+
+
+		and exp2term (ATExp atexp : Exp') : G.term = atexp2term (~atexp)
 			| exp2term (APPExp (exp, atexp)) = 
 				G.ApplyTerm(exp2term (~exp), atexp2args (~atexp))
 			| exp2term (COLONExp (exp, ty)) = 
-				G.HasTypeTerm(exp2term (~exp), ty2term(~ty))*)
-			(*| exp2term (FNExp match)*)
-
-(*		and patrowterms2sent (terms : G.term list) (patrow : PatRow)
-			: G.sentence list = 
-
-			let val patrow @@ annot = patrow'
-				val isTuple = has(hd (tl (tl annot)))
+				G.HasTypeTerm(exp2term (~exp), ty2term(~ty))
+			| exp2term (FNExp match) = raise Fail "Function expressions not yet implemented!\n"
+			| exp2term (CASEExpX (exp, match)) = 
+			let
+				val matchItems = [exp2matchitem (~exp)]
+				val equations = match2equations match
 			in
-				if not (isTuple)
-				then raise Fail "RECORDAtPat is not yet implemented! \n"
-				else case patrow of
-					DOTSPatRow => 
-						raise Fail "Record patterns are not yet implemented \n"
-					| FIELDPatRow(_, pat, patrow2) => 
-						patterm2sent(~pat, List.nth(terms, 0))
-						@ ?(patrowterms2sent (List.tl terms)) patrow2					
+				G.MatchTerm {matchItems = matchItems, body = equations}
+			end
+			| exp2term (IFExpX (exp1, exp2, exp3)) = let
+				val exp1' = exp2term (~exp1)
+				val exp2' = exp2term (~exp2)
+				val exp3' = exp2term (~exp3)
+			in
+				G.IfTerm {test = exp1', thenTerm = exp2', elseTerm = exp3'}
+			end
+			| exp2term (ANDALSOExpX (exp1, exp2)) = let
+				val exp1' = exp2term (~exp1)
+				val exp2' = exp2term (~exp2)
+			in
+				G.AndTerm (exp1', exp2')
+			end
+			| exp2term (ORELSEExpX (exp1, exp2)) = let
+				val exp1' = exp2term (~exp1)
+				val exp2' = exp2term (~exp2)
+			in
+				G.OrTerm (exp1', exp2')
 			end
 
+		and atpat2pattern (WILDCARDAtPat : AtPat') : G.pattern = G.WildcardPat
+			| atpat2pattern (SCONAtPat scon) = scon2pattern (~scon)
+			(* ignoring Op for now *)
+			| atpat2pattern (IDAtPat (_, longvid)) = G.QualidPat (lvid2id (~longvid))
+			| atpat2pattern (RECORDAtPat _) = raise Fail "Record patterns not yet implemented!\n"
+			| atpat2pattern (PARAtPat pat) = G.TuplePat [pat2pattern (~pat)]
+			| atpat2pattern UNITAtPatX = raise Fail "Unit patterns are invalid in Coq!\n"
+			| atpat2pattern (TUPLEAtPatX pats) = G.TuplePat (% pat2pattern pats)
+			| atpat2pattern (LISTAtPatX pats) = G.ListPat (% pat2pattern pats)
 
-		and atpatterm2sent(WILDCARDAtPat : AtPat', _ : G.term) : G.sentence list =
+		and pat2pattern (ATPat atpat  : Pat') : G.pattern = atpat2pattern (~ atpat)
+			(* ignoring Op for now *)
+			| pat2pattern (CONPat (_, longvid, atpat)) = G.ArgsPat (lvid2id (~longvid), [atpat2pattern (~ atpat)])
+			| pat2pattern (COLONPat (pat, ty)) = let 
+				val _ = print "Coq doesn't support type casting in patterns!\n" 
+				in pat2pattern(~pat) end
+			(* ignoring Op for now *)
+			| pat2pattern (ASPat(_, vid, ty, pat)) = 
+				let 
+					val _ = if Option.isSome ty then print "Coq doesn't support type casting in patterns!\n" 
+							else () 
+				in G.AsPat(pat2pattern(~ pat), vid2id (~vid)) end
+
+
+		and atpatexp2sent (_ : ValBind_attr annotation) (WILDCARDAtPat : AtPat', _ : Exp') : G.sentence =
 				raise Fail "Wildcard cannot be an id in Coq \n"
-			| atpatterm2sent(SCONAtExp scon, _) = 
+			| atpatexp2sent _ (SCONAtPat scon, _) = 
 				raise Fail "Scon cannot be an id in Coq \n"
 			(* Ignoring Op *)
-			| atpatterm2sent(IDAtPat(_, longvid), term) = 
+			| atpatexp2sent _ (IDAtPat(_, longvid), exp) = 
 				let
 					val localboolVal = false
-					val idVal = lvid2id longvid
+					val idVal = lvid2id (~longvid)
 					val parametersVal = []
 					val typVal = NONE
-					val bodyVal = term
+					val bodyVal = exp2term exp
 				in
 					G.DefinitionSentence(
 					G.DefinitionDef{localbool = localboolVal, id = idVal, 
-					parameters = parametersVal, typ = typVal, body = bodyVal})
+					binders = parametersVal, typ = typVal, body = bodyVal})
 				end
 			(* ignoring records and units *)
-			| atpatterm2sent(RECORDAtPat patrow, term) = 
-				(case patrow of	NONE => raise Fail "unit patterns are illegal in Coq\n"
-					| SOME patrow => let
-						val G.TupleTerm terms = term
-					in
-						patrowterms2sent(patrow, terms)
-					end*)
+			| atpatexp2sent A (PARAtPat pat, exp) = patexp2sent A (~pat, exp)
+			| atpatexp2sent A (atpat, exp) = 
+				let
+					val SOME (valEnvStat) = try (elab A)
+					val values = VIdMap.listItemsi valEnvStat
+					val ids = List.map (fn (v, _) => vid2id v) values
+					val (SOME exhaustiveness) = try (exhaustive  A)
+					val matchItems = [exp2matchitem exp]
+					val pattern = atpat2pattern atpat
+					val equation2 = (case exhaustiveness of 
+										S.Exhaustive => []
+										| _ => [G.Equation(G.WildcardPat, G.Axiom G.PatternFailure)])
+					fun mkDec v = 	G.DefinitionSentence(
+									G.DefinitionDef{
+										localbool = false,
+										id = v,
+										binders = [],
+										typ = NONE,
+										body = G.MatchTerm {matchItems = matchItems, 
+															body = G.Equation(pattern, G.IdentTerm v)::equation2}
+										})
+					val decs = List.map mkDec ids
+				in
+					G.SeqSentences decs
+				end			
 
 
 
 
-(*		and patterm2sent(ATPat atpat : Pat',term : G.term) : G.sentence list = 
-			atpatterm2sent(~atpat, term)*)
+
+		and patexp2sent  (A : ValBind_attr annotation) ((ATPat atpat) : Pat' , exp : Exp'): G.sentence = 
+			atpatexp2sent A (~atpat, exp)
+			(* Ignoring Op for now *)
+			(* treating conpat, colonpat and aspat as the same... not really *)
+			| patexp2sent A (pat , exp)  = 
+			let
+				val SOME (valEnvStat) = try (elab A)
+				val values = VIdMap.listItemsi valEnvStat
+				val ids = List.map (fn (v, _) => vid2id (v)) values
+				val SOME exhaustiveness = try (exhaustive A)
+				val matchItems = [exp2matchitem exp]
+				val pattern = pat2pattern pat
+				val equation2 = (case exhaustiveness of 
+									S.Exhaustive => []
+									| _ => [G.Equation(G.WildcardPat, G.Axiom G.PatternFailure)])
+				fun mkDec v = 	G.DefinitionSentence(
+									G.DefinitionDef{
+									localbool = false,
+									id = v,
+									binders = [],
+									typ = NONE,
+									body = G.MatchTerm {matchItems = matchItems, body = G.Equation(pattern, G.IdentTerm v)::equation2}
+									})
+				val decs = List.map mkDec ids
+			in
+				G.SeqSentences decs
+			end
+			
+
+
 
 		(* EXAMPLE: type ('a, 'b) age = 'a * 'b  (the lhs ('a, 'b))
 		 * FROM: TyVar.sml: 25 -> 29
@@ -203,13 +276,13 @@ struct
 		 * NOTES:
 		 * inferredVal is always false because the variable is always explicit
 		*)
-		fun tyvarseq2binder (tyvars: TyVar.TyVar list) : G.binder list = 
+		and tyvarseq2binder (tyvars: TyVar.TyVar list) : G.binder list = 
 			let
 				fun tyvar2binder tyvars = 
 					let
 					 	val nameVal = mkName (TyVar.toString tyvars)
 					 	val typVal = SOME (mkSortTerm 1)
-					 	val inferredVal = false
+					 	val inferredVal = true
 					 in
 					 	G.SingleBinder {name = nameVal, typ = typVal, inferred = inferredVal}
 					 end 
@@ -227,14 +300,14 @@ struct
 		 * NOTES:
 		 * ignoring Op for now, check SyntaxCore for more info
 		*)
-		fun conbind2clauses(cons @@ _ : ConBind) : G.clause list = 
+		and conbind2clauses(cons @@ _ : ConBind) : G.clause list = 
 			let
 				val ConBind(_, tycon, ty, conbind2) = cons
 				val idVal = vid2id (~tycon)
 				val binderVal = []
-				val typVal = case ty of
+				val typVal = (case ty of
 					SOME ty' => SOME (ty2term (~ty'))
-					| _ => NONE
+					| _ => NONE)
 				val clauses = ?conbind2clauses conbind2
 				val clause = G.Clause (idVal, binderVal, typVal)
 			in
@@ -253,22 +326,24 @@ struct
 		 * returns sentence list because one typbind can encode multiple 
 		 * gallina definitions e.g. type age = int and name = string
 		*)			
-		fun typbind2sent(typbind @@ _ : TypBind) : G.sentence list = 
-			let
-				val TypBind(tyvars, tycon, ty, typbind2) = typbind
-				val localboolVal = false
-				val idVal = tycon2id (~tycon)
-				val parametersVal = tyvarseq2binder (List.map ~ ($(~tyvars)))
-				val typVal = NONE
-				val bodyVal = ty2term (~ty)
-	        	val definition = G.DefinitionDef 
-	        	{localbool = localboolVal, id = idVal, parameters = parametersVal, 
-	        	typ = typVal, body = bodyVal}
-	        	val  res = G.DefinitionSentence definition				
+		and typbind2sent(typbind: TypBind) : G.sentence = 
+			let fun typbind2sents (typbind @@ _) = 
+				let
+					val TypBind(tyvars, tycon, ty, typbind2) = typbind
+					val localboolVal = false
+					val idVal = tycon2id (~tycon)
+					val parametersVal = tyvarseq2binder (List.map ~ ($(~tyvars)))
+					val typVal = NONE
+					val bodyVal = ty2term (~ty)
+		        	val definition = G.DefinitionDef 
+		        	{localbool = localboolVal, id = idVal, binders = parametersVal, typ = typVal, body = bodyVal}
+		        	val  res = G.DefinitionSentence (definition)				
+				in
+		        	res :: ?typbind2sents typbind2
+				end
 			in
-	        	res :: ?typbind2sent typbind2
+				G.SeqSentences (typbind2sents typbind)
 			end
-
 		(* EXAMPLE: datatype cards = Hearts | Spades | Clubs | Diamonds
 		 * FROM: SyntaxCoreFn.sml: 126 -> 127
 		 * TO:   Gallina.sml : 100 -> 108
@@ -279,7 +354,7 @@ struct
 		 * NOTES:
 		 * returns G.sentence list to be consistent with typbind2sent 
 		*)
-		fun datbind2sent(datbind : DatBind) : G.sentence list =
+		and datbind2sent(datbind : DatBind) : G.sentence =
 			let fun datbind2indbodies (datbind @@ _: DatBind) : G.indBody list =
 				let
 					val DatBind(tyvars, tycon, cons, datbind2) = datbind
@@ -288,19 +363,18 @@ struct
 					val typVal = mkSortTerm 1
 					val clauses = conbind2clauses(cons)
 					val clauses = List.map (updateTerm idVal) clauses
-					val indBody = G.IndBody {id = idVal, bind = parametersVal,
-								typ = typVal, clauses = clauses}
+					val indBody = G.IndBody {id = idVal, bind = parametersVal, typ = typVal, clauses = clauses}
 				in 
-					indBody :: (? datbind2indbodies (datbind2))
-				end
+					indBody :: (?datbind2indbodies (datbind2))
+				end 
 			in
-				[G.InductiveSentence(G.Inductive(datbind2indbodies datbind))]
-			end		
+				G.InductiveSentence(G.Inductive(datbind2indbodies datbind))
+			end	
 
-
-(*		fun valbind2sent(PLAINValBind(pat, exp, valbind2) @@ _: ValBind) : G.sentence list = 
-				patterm2sent(~pat, exp2term (~exp)) @ ?valbind2sent valbind2
-			| valbind2sent _ => raise Fail "Recursive value bindings are not yet implemented \n"*)
+		and valbind2sent(valbind: ValBind) : G.sentence = 
+			let fun valbind2sents (PLAINValBind(pat, exp, valbind2) @@ A) = (patexp2sent A (~pat, ~exp)) :: (?(valbind2sents) valbind2)
+				| valbind2sents _ = raise Fail "Recursive value bindings are not yet implemented \n"	
+			in G.SeqSentences(valbind2sents valbind) end 
 
 		(* FROM: SyntaxCoreFn.sml: 104 -> 114
 		 * TO:   Gallina.sml : 100 -> 108
@@ -310,12 +384,13 @@ struct
 		 * KEYWORD: sentence
 		 * NOTES:
 		 *)
-	  	fun dec2sents ((TYPEDec(typbind)@@ _) : Dec): G.sentence list = 
+	  	and dec2sent ((TYPEDec(typbind)@@ _) : Dec): G.sentence = 
 		    	typbind2sent typbind
-		  | dec2sents (DATATYPEDec(datbind)@@_) = 
+		 | dec2sent (DATATYPEDec(datbind)@@_) = 
 		  		datbind2sent datbind
 		  (* ignoring tyvarseq for now (function declarations) *)
-(*	      | dec2sents (VALDec(tyvarseq, valbind)@@_) = valbind2sent valbind
-*)	      | dec2sents _ = raise Fail "Unimplemented declaration! \n"
-	end
-end      
+	     | dec2sent (VALDec(tyvarseq, valbind)@@_) = 
+	     		valbind2sent valbind 
+	     | dec2sent _ = raise Fail "Unimplemented declaration! \n"
+	end 
+end

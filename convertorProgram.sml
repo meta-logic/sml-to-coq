@@ -8,6 +8,6 @@ struct
 	in
 	    fun program2sents (Program(prog, prog2) @@ _ : Program) : G.sentence list
 		=
-			(topDec2sents prog) @ (?program2sents prog2)
+			(topDec2sents  prog) @ (? (program2sents) prog2)
 	end
 end

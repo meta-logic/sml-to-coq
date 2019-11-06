@@ -7,11 +7,16 @@ Group
  structure ConvertorProgram
  structure Sml
  structure Annotation
+ structure AnnotationCore
  structure SyntaxProgram
  structure SyntaxModule
  structure SyntaxCore
  structure SyntacticRestrictionsCore
-
+ structure Program
+ structure StaticObjectsCore
+ structure DynamicObjectsCore 
+ structure VIdMap
+ structure IdStatus
  is
   $/basis.cm
   $/smlnj-lib.cm
