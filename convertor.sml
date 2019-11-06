@@ -14,16 +14,18 @@ struct
       val B_STAT' = Program.elabProgram true (B_STAT, program)
       val s'      = ref s      
       val B_DYN'  = Program.evalProgram true ((s', B_DYN), program)      
-      (*val x @@ _ = x;*)
-      (*val SyntaxProgram.Program(x) = x;*)
-(*    val (x, _) = x;
-      val x @@ _ = x;
-      val SyntaxModule.STRDECTopDec x = x;
-      val (x, _) = x;
-      val x @@ _ = x;
-      val SyntaxModule.DECStrDec x = x;*)
+(*      val p @@ _ = program;
+      val Program p = p;
+      val (p, _) = p;
+      val p @@ _ = p;
+      val STRDECTopDec p = p;      
+      val (p, _) = p;
+      val p @@ _ = p;
+      val DECStrDec p = p;
+      val p @@ a = p;
+      *)
     in
-      program2sents program
+      program2sents program 
     end
 
 

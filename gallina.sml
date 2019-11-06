@@ -16,11 +16,13 @@ struct
    * and identifiers are legal) are met *)
   type ident = string
 
+  datatype axiom = PatternFailure
+
   datatype term =
     ForallTerm of binder list * term (* forall *)
   | FunTerm of binder list * term (* fun *)
-  | FixTerm of fixbody list (* fix *)
-  | CofixTerm of cofixbody list (* cofix *)
+  | FixTerm of fixbodies (* fix *)
+  | CofixTerm of cofixbodies (* cofix *)
   (* let fun f x = 9 + x -> id = f , binders = [x]
      let val x : int = 9 -> id = x, binders = [] *)
   | LetTerm of {id : ident, binders : binder list, typ: term option, 
@@ -28,7 +30,7 @@ struct
   | LetFixTerm of fixbody * term (* let fix or let x := fix*)
   | LetCofixTerm of cofixbody * term (* let cofix or let x := cofix*)
   | LetTupleTerm of { names : name list, body : term, inBody: term} (* let (a, b) :=  *)
-  | LetPatternTerm of { pat : pattern, inTerm: term, body : term,
+  | LetPatternTerm of { pat : pattern, inTerm: term option, body : term,
         inBody :  term} (* let '' *)
   | IfTerm of {test: term, thenTerm : term,  elseTerm : term}
   | HasTypeTerm of term * term
@@ -38,7 +40,7 @@ struct
   | ApplyTerm of term * arg list (* CANNOT be empty *)
   | ExplicitTerm of ident* term list
   | InScopeTerm of term * ident
-  | MatchTerm of {variables : matchItem list, body : equation list}
+  | MatchTerm of {matchItems : matchItem list, body : equation list}
   | IdentTerm of ident
   | SortTerm of sort 
   | NumTerm of string 
@@ -52,6 +54,10 @@ struct
   | HexTerm of string
     (* extra : denotes tuple types e.g. int * int *)
   | TupleTerm of term list 
+  | ListTerm of term list
+  | OrTerm of term * term
+  | AndTerm of term * term
+  | Axiom of axiom
 
 and arg = Arg of term | NamedArg of ident * term
 and binder = 
@@ -63,13 +69,16 @@ and name = Name of ident | WildcardName
 
 and sort = Prop | Set | Type
  
+and fixbodies = Fixbodies of fixbody list * ident
+
+and cofixbodies = CoFixbodies of cofixbody list * ident
 
 and fixbody =   Fixbody of 
-  {id : ident, parameters : binder list,
+  {id : ident, binders : binder list,
       decArg : annotation option, typ : term option, body : term}
 
 and cofixbody =   Cofixbody of 
-  {id : ident, parameters : binder list, typ : term option, body : term}     
+  {id : ident, binders : binder list, typ : term option, body : term}     
 
 
 and annotation = Annotation of ident
@@ -89,15 +98,17 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
               | QualidPat of ident
               | WildcardPat
               | NumPat of string
-              | OrPat of orPattern list
+              (* Eliminating orpat *)
+              (*| OrPat of orPattern list*)
               (* Additional Patternss *)
               | WordPat of string
               | RealPat of string
               | StringPat of string
               | CharPat of string
               | HexPat of string
-                (* extra : denotes tuple types e.g. int * int *)
-              | TuplePat of term list 
+                (* extra *)
+              | TuplePat of pattern list
+              | ListPat of pattern list 
 
 and orPattern = OrPattern of pattern list
 
@@ -114,7 +125,7 @@ and orPattern = OrPattern of pattern list
 
   (* Gallina syntax extension *)             
   and recBody = RecordBody of 
-      {id : ident, parameters : binder list, typ : sort option, 
+      {id : ident, binders : binder list, typ : sort option, 
        consName : ident option, body : field list}
 
  (* Gallina syntax extension *)
@@ -122,16 +133,17 @@ and orPattern = OrPattern of pattern list
 
 
   (* localbool = true if [local] Definition *)
+  (* def2 is NONE when category is 1 *)
   and definition = DefinitionDef of {localbool : bool, id : ident, 
-              parameters : binder list, typ : term option, body : term}
+              binders : binder list, typ : term option, body : term}
               | LetDefinitionDef of {localbool : bool, id : ident, 
-              parameters : binder list, typ : term option, body : term}
+              binders : binder list, typ : term option, body : term} 
 
   and inductive = Inductive of indBody list | CoInductive of indBody list
 
   (**
     ident : name of inductive type
-    binder list : type parameters for the type (e.g. list (T: Set))
+    binder list : type binders for the type (e.g. list (T: Set))
     term : type's type
     clauses : each constructor of the type
     *)
@@ -147,5 +159,14 @@ and orPattern = OrPattern of pattern list
   and clause = Clause of ident * binder list * term option
 
   and fixpoint = Fixpoint of fixbody list | CoFixpoint of fixbody list
+
+  (* category is the category of the definition, where: 
+  One : Simple declarations with one definition and no pattern-matching
+  Two : Declarations with more than one definition that donot require the 
+        patternFailure axiom because the datatype being matched on has only 
+        one constructor
+  Three : Declarations with more than one definition that require the patternFailure axiom
+  *)
+  and category = One | Two of pattern | Three of pattern
 
 end   
