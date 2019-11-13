@@ -109,6 +109,7 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
                 (* extra *)
               | TuplePat of pattern list
               | ListPat of pattern list 
+              | ParPat of pattern
 
 and orPattern = OrPattern of pattern list
 

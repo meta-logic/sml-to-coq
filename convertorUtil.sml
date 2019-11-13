@@ -44,13 +44,36 @@ struct
             G.ArrowTerm (input, output)
 
         (* mkName makes a Gallina name *)
-        fun mkName (s : string) : G.name = G.Name s
+        fun mkName (s : string) : G.name = G.Name (checkLegal s)
 
 
-        fun updateTerm (_ : G.ident) (clause as G.Clause(_, _, NONE) : G.clause) : G.clause
+        fun mkApplyTem (i : int) ("tuple" : G.ident) (term :G.term) : G.term = 
+            G.ApplyTerm (G.IdentTerm "tuple" , [G.Arg (G.NumTerm (Int.toString i)), G.Arg term])
+            | mkApplyTem _ id term = G.ApplyTerm (G.IdentTerm ("_"^id) , [G.Arg term])
+
+
+        fun mkExplicitTerm ((G.IdentTerm term1): G.term) (terms : G.term list) : G.term =
+            G.ExplicitTerm (term1, terms)
+
+        fun updateTerm (_ : G.ident) (_: G.binder list) (clause as G.Clause(_, _, NONE) : G.clause) : G.clause
             = clause
-            | updateTerm name (clause as G.Clause(id, bL, SOME typ)) = 
-                G.Clause (id, bL, SOME(mkArrowTerm (typ, G.IdentTerm name) ) )
+            | updateTerm name parametersVal (clause as G.Clause(id, bL, SOME typ)) = 
+            let
+                val terms = List.map (fn (G.SingleBinder{name = G.Name name, ...} )=> G.IdentTerm name) parametersVal
+                val output = mkExplicitTerm (G.IdentTerm name) terms
+            in
+                G.Clause (id, bL, SOME(mkArrowTerm (typ, output) ) )
+            end
+
+        fun mkBinders (terms : G.term list) : G.binder list = 
+            let
+                fun term2binder (G.IdentTerm id) = 
+                    G.SingleBinder {name = G.Name id, typ = SOME (G.IdentTerm "Type"), inferred = true}
+            in
+                List.map term2binder terms
+            end
+
+
 
         (*fun idFromFixbody (Fixbody (fixbody) : G.fixbody) : G.ident = #id fixbody*)
 
