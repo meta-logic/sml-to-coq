@@ -78,18 +78,58 @@ struct
 				G.IdentTerm (checkLegal(TyVar.toString (~tyvar)))
 			(* in scope term because the operator "*" is overloaded *)
 			| ty2term (TUPLETyX (tys)) = 
+				if List.length(tys) > 1 then
 				G.InScopeTerm (G.TupleTerm (% ty2term tys), "type") 
+				else
+				G.ParensTerm (List.nth ((% ty2term tys), 0))
 			(* CONTy is constructor type, e.g. int  *)			
 			| ty2term (CONTy (tyseq, tycon)) = let
-					val args = tyseq2args (~tyseq)
-					val tycon = G.IdentTerm(ltycon2id (~tycon))
+					val terms = % ty2term ($(~tyseq))
+					val tycon = ltycon2id (~tycon)
 				in
-					(case args of [] => tycon | _ => G.ApplyTerm(tycon, args))
+					(case terms of [] => G.IdentTerm tycon | _ => G.ExplicitTerm(tycon, terms))
 				end
 			(* PARTy is parenthesis type, e.g. (int)  *)							
 			| ty2term (PARTy ty) = G.ParensTerm (ty2term (~ty))
 			(* ARROWTy is arrow type, e.g. int -> int  *)							
-			| ty2term (ARROWTy(ty1, ty2)) = G.ArrowTerm(ty2term (~ty1), ty2term (~ty2)) 
+			| ty2term (ARROWTy(ty1, ty2)) = G.ArrowTerm(ty2term (~ty1), ty2term (~ty2))
+
+		and  clause2defsent (_ : bool) (G.Clause(_, _, NONE) : G.clause) : G.sentence list = []
+            | clause2defsent exhaustive (G.Clause(ident, _, SOME typ)) = 
+                let
+                	val G.ArrowTerm (input, output) = typ
+                	val G.ExplicitTerm (_, terms) = output
+                	val implicitBinders = mkBinders terms
+                    val equation2 = if exhaustive then [] else [G.Equation(G.WildcardPat, G.Axiom G.PatternFailure)]
+                    val matchItems = [G.MatchItem (G.IdentTerm "x")]
+                    val body = G.Equation(G.ArgsPat(ident, [G.QualidPat "y"]), G.IdentTerm "y") :: equation2
+                in
+                    G.DefinitionSentence
+                    (
+                        G.DefinitionDef
+                            {localbool = false, 
+                            id = "_"^ident, 
+                            binders = implicitBinders @ 
+                            	[G.SingleBinder{name = G.Name "x", typ = SOME output, inferred = false}],
+                            body = G.MatchTerm {matchItems = matchItems, body = body},
+                            typ = NONE}
+                    ) :: []
+                end
+
+		and indBodies2sent (indBodies : G.indBody list) : G.sentence = 
+			let
+				fun indBody2match (indBody as G.IndBody{clauses, ...}) = 
+					let
+						val exhaustive = List.length clauses = 1
+						val matches = List.concat (List.map (clause2defsent exhaustive) clauses)
+					in
+						matches
+					end
+				val matches = List.concat (List.map indBody2match indBodies)
+			in
+				G.SeqSentences (G.InductiveSentence(G.Inductive indBodies)::matches)
+			end
+
 
 		and mrule2equation (Mrule(pat, exp) : Mrule') : G.equation = 
 			let
@@ -168,7 +208,7 @@ struct
 			(* ignoring Op for now *)
 			| atpat2pattern (IDAtPat (_, longvid)) = G.QualidPat (lvid2id (~longvid))
 			| atpat2pattern (RECORDAtPat _) = raise Fail "Record patterns not yet implemented!\n"
-			| atpat2pattern (PARAtPat pat) = G.TuplePat [pat2pattern (~pat)]
+			| atpat2pattern (PARAtPat pat) = G.ParPat (pat2pattern (~pat))
 			| atpat2pattern UNITAtPatX = raise Fail "Unit patterns are invalid in Coq!\n"
 			| atpat2pattern (TUPLEAtPatX pats) = G.TuplePat (% pat2pattern pats)
 			| atpat2pattern (LISTAtPatX pats) = G.ListPat (% pat2pattern pats)
@@ -186,86 +226,29 @@ struct
 							else () 
 				in G.AsPat(pat2pattern(~ pat), vid2id (~vid)) end
 
-
-		and atpatexp2sent (_ : ValBind_attr annotation) (WILDCARDAtPat : AtPat', _ : Exp') : G.sentence =
-				raise Fail "Wildcard cannot be an id in Coq \n"
-			| atpatexp2sent _ (SCONAtPat scon, _) = 
-				raise Fail "Scon cannot be an id in Coq \n"
-			(* Ignoring Op *)
-			| atpatexp2sent _ (IDAtPat(_, longvid), exp) = 
+		and patternterm2sents (bodyVal : G.term) (G.QualidPat idVal: G.pattern) : G.sentence list = 
+				[G.DefinitionSentence(G.DefinitionDef
+					{localbool = false, id = idVal, binders = [], typ = NONE, body = bodyVal})]
+			| patternterm2sents bodyVal (G.ArgsPat (ident, pats)) =
 				let
-					val localboolVal = false
-					val idVal = lvid2id (~longvid)
-					val parametersVal = []
-					val typVal = NONE
-					val bodyVal = exp2term exp
+					val bodyVals = List.tabulate ((List.length pats), (fn i => mkApplyTem i ident bodyVal) )
+					val defs = ListPair.zip (bodyVals, pats)
 				in
-					G.DefinitionSentence(
-					G.DefinitionDef{localbool = localboolVal, id = idVal, 
-					binders = parametersVal, typ = typVal, body = bodyVal})
+					List.concat (List.map (fn (body, pat) => patternterm2sents body pat) defs)
 				end
-			(* ignoring records and units *)
-			| atpatexp2sent A (PARAtPat pat, exp) = patexp2sent A (~pat, exp)
-			| atpatexp2sent A (atpat, exp) = 
+			| patternterm2sents bodyVal (G.ParPat pat) =
+				patternterm2sents bodyVal pat
+			| patternterm2sents bodyVal (G.TuplePat pats) = 
 				let
-					val SOME (valEnvStat) = try (elab A)
-					val values = VIdMap.listItemsi valEnvStat
-					val ids = List.map (fn (v, _) => vid2id v) values
-					val (SOME exhaustiveness) = try (exhaustive  A)
-					val matchItems = [exp2matchitem exp]
-					val pattern = atpat2pattern atpat
-					val equation2 = (case exhaustiveness of 
-										S.Exhaustive => []
-										| _ => [G.Equation(G.WildcardPat, G.Axiom G.PatternFailure)])
-					fun mkDec v = 	G.DefinitionSentence(
-									G.DefinitionDef{
-										localbool = false,
-										id = v,
-										binders = [],
-										typ = NONE,
-										body = G.MatchTerm {matchItems = matchItems, 
-															body = G.Equation(pattern, G.IdentTerm v)::equation2}
-										})
-					val decs = List.map mkDec ids
+					val bodyVals = List.tabulate ((List.length pats), (fn i => mkApplyTem i "tuple" bodyVal) )
+					val defs = ListPair.zip (bodyVals, pats)
 				in
-					G.SeqSentences decs
-				end			
+					List.concat (List.map (fn (body, pat) => patternterm2sents body pat) defs)
+				end	
+			| patternterm2sents _ (G.WildcardPat) = []
+			| patternterm2sents _ _ = raise Fail "Invalid pattern \n"
 
-
-
-
-
-		and patexp2sent  (A : ValBind_attr annotation) ((ATPat atpat) : Pat' , exp : Exp'): G.sentence = 
-			atpatexp2sent A (~atpat, exp)
-			(* Ignoring Op for now *)
-			(* treating conpat, colonpat and aspat as the same... not really *)
-			| patexp2sent A (pat , exp)  = 
-			let
-				val SOME (valEnvStat) = try (elab A)
-				val values = VIdMap.listItemsi valEnvStat
-				val ids = List.map (fn (v, _) => vid2id (v)) values
-				val SOME exhaustiveness = try (exhaustive A)
-				val matchItems = [exp2matchitem exp]
-				val pattern = pat2pattern pat
-				val equation2 = (case exhaustiveness of 
-									S.Exhaustive => []
-									| _ => [G.Equation(G.WildcardPat, G.Axiom G.PatternFailure)])
-				fun mkDec v = 	G.DefinitionSentence(
-									G.DefinitionDef{
-									localbool = false,
-									id = v,
-									binders = [],
-									typ = NONE,
-									body = G.MatchTerm {matchItems = matchItems, body = G.Equation(pattern, G.IdentTerm v)::equation2}
-									})
-				val decs = List.map mkDec ids
-			in
-				G.SeqSentences decs
-			end
 			
-
-
-
 		(* EXAMPLE: type ('a, 'b) age = 'a * 'b  (the lhs ('a, 'b))
 		 * FROM: TyVar.sml: 25 -> 29
 		 * TO:   Gallina.sml : 59
@@ -344,6 +327,8 @@ struct
 			in
 				G.SeqSentences (typbind2sents typbind)
 			end
+
+
 		(* EXAMPLE: datatype cards = Hearts | Spades | Clubs | Diamonds
 		 * FROM: SyntaxCoreFn.sml: 126 -> 127
 		 * TO:   Gallina.sml : 100 -> 108
@@ -362,17 +347,29 @@ struct
 					val parametersVal = tyvarseq2binder (List.map ~ ($(~tyvars)))				
 					val typVal = mkSortTerm 1
 					val clauses = conbind2clauses(cons)
-					val clauses = List.map (updateTerm idVal) clauses
+					val clauses = List.map (updateTerm idVal parametersVal) clauses
 					val indBody = G.IndBody {id = idVal, bind = parametersVal, typ = typVal, clauses = clauses}
 				in 
 					indBody :: (?datbind2indbodies (datbind2))
 				end 
 			in
-				G.InductiveSentence(G.Inductive(datbind2indbodies datbind))
+				indBodies2sent (datbind2indbodies datbind)
 			end	
 
+		(* EXAMPLE: 1.  val x = 5
+		 *          2.  val (x, y) = (1, 2)
+		 * 			3.  val x :: l = [1, 2, 3]
+		 * FROM: SyntaxCoreFn.sml: 124 -> 126
+		 * TO:   Gallina.sml : 137 -> 138
+		*)
 		and valbind2sent(valbind: ValBind) : G.sentence = 
-			let fun valbind2sents (PLAINValBind(pat, exp, valbind2) @@ A) = (patexp2sent A (~pat, ~exp)) :: (?(valbind2sents) valbind2)
+			let fun valbind2sents (PLAINValBind(pat, exp, valbind2) @@ A) = 
+				(let
+					val term = exp2term (~exp)
+					val pattern = pat2pattern (~pat)
+				in
+					(patternterm2sents term pattern) @ (?(valbind2sents) valbind2)
+				end)
 				| valbind2sents _ = raise Fail "Recursive value bindings are not yet implemented \n"	
 			in G.SeqSentences(valbind2sents valbind) end 
 
