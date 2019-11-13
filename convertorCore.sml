@@ -157,12 +157,29 @@ struct
 
 		and atexp2args (atexp : AtExp') : G.arg list = [G.Arg (atexp2term atexp)]
 
+		and sentterm2letTerm ((G.DefinitionSentence (G.DefinitionDef sent)) : G.sentence, term : G.term) = 
+				G.LetTerm {id = #id sent, binders = #binders sent, typ = #typ sent,
+				body = #body sent, inBody = term}
+			| sentterm2letTerm (G.SeqSentences sents, term) = 
+				let
+					fun nested([] : G.sentence list) = term
+						| nested (s :: sL) = 
+							sentterm2letTerm (s, (nested sL))
+				in
+					nested sents
+				end	
+			| sentterm2letTerm _ =raise Fail "Translating this sentence to let is invalid/Unimplemented \n"		
 
 		and atexp2term (SCONAtExp scon : AtExp') : G.term = scon2term (~scon)
 			(* ignoring Op for now *)
 			| atexp2term (IDAtExp (_, longvid)) = G.IdentTerm (lvid2id (~longvid))
 			| atexp2term (RECORDAtExp _) = raise Fail "Record expressions not yet impemented!\n"
-			| atexp2term (LETAtExp (dec, exp)) = raise Fail "Let expressions not yet implemented!\n"
+			| atexp2term (LETAtExp (dec, exp)) = let
+				val sent = dec2sent dec
+				val term = exp2term (~exp)
+			in
+				sentterm2letTerm (sent, term)
+			end
 			| atexp2term (PARAtExp exp) = G.ParensTerm (exp2term (~exp))
 			| atexp2term (UNITAtExpX) = raise Fail "unit expressions are invalid in Coq! \n"
 			(* in scope term because the operator "*" is overloaded *)
