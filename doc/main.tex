@@ -8,6 +8,53 @@
 
 \usepackage{Coq}
 \usepackage{SML}
+% For grammars
+\lstdefinelanguage{grammar}{
+  basicstyle=\footnotesize\ttfamily,
+  %
+  captionpos=b,
+  % 
+  tabsize=2,
+  %
+  columns=fixed,
+  %
+  breaklines=true,
+  %
+  frame=l,
+  %
+  morecomment=[s]{/*}{*/},
+  %
+  stringstyle=\color{black},
+  %
+  identifierstyle=\ttfamily,
+  %
+  morekeywords= {
+    EQUAL, GREATER, LESS, NONE, SOME, 
+    abstraction, abstype, and, andalso, 
+    array, as, before, bool, case, char, 
+    datatype, do, else, end, eqtype, 
+    exception, exn, false, fn, fun, 
+    functor, handle, if, in, include, 
+    infix, infixr, int, let, list, local, 
+    nil, nonfix, not, o, of, op, open, 
+    option, orelse, overload, print, 
+    raise, real, rec, ref, sharing, sig, 
+    signature, string, struct, structure, 
+    substring, then, true, type, unit, val, 
+    vector, where, while, with, withtype, word
+  },
+  %
+  keywordstyle=\ttfamily\color{red},
+  %
+  commentstyle=\ttfamily\color{gray},
+  % Spaces are not displayed as a special character
+  showstringspaces=false,
+  %
+  mathescape=true,
+  %
+  escapeinside={!}{!}
+}
+\lstnewenvironment{grm}{\lstset{language=grammar}}{}
 
 \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
 \newcommand{\giselle}[1]{\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum]{G: #1}}
@@ -69,8 +116,7 @@ Translating this subset of SML's syntax to Coq is correct -- semantically
 speaking -- however, the resulting Coq code will look very different: an
 \smle{orelse} expression will be translated to an \coqe{if...then...else}
 expression. Therefore, we decided to keep the original grammatical form and
-translate that to Gallina.\giselle{explain the changes in more detail (see
-googledoc)}
+translate that to Gallina.
 
 Even though the translation is done on the abstract syntax tree with the derived
 forms, we still need to make sure that the code type checks and runs.
@@ -86,6 +132,109 @@ straighforward.
 
 \section{SML's abstract syntax tree}
 
+% Constructors ending in X are Laila's additions
+\giselle{Unit is the empty tuple. Why do we need it as a separate entity?}
+\begin{grm}
+SpecialConst ::= /* integer, real, word, strings, 
+                    and character constants */
+
+Id ::= /* allowed identifiers */
+
+/* Atomic Expressions */
+AtExp ::= SpecialConst | op Id | Id | {Lab: Exp, Lab: Exp, ...} 
+        | let Dec in Exp end | (Exp) 
+        /* Added expressions (translated to records originally) */
+        | () |  (Exp, Exp, ...) | [Exp, Exp, ...]
+
+/* Expressions */
+Exp ::= AtExp | Exp AtExp | Exp : Ty | Exp handle Match
+      | raise Exp | fn Match
+      /* Added expressions (derived forms) */
+      | case Exp of Match | if Exp then Exp else Exp
+      | Exp andalso Exp | Exp orelse Exp
+
+/* Pattern matching */
+Match ::= Pat => Exp +
+
+/* Declarations */
+Dec ::= 
+
+
+
+
+
+  (* Declarations [Figures 2 and 4] *)
+
+  and Dec' =
+      VALDec       of TyVar seq * ValBind
+    | TYPEDec      of TypBind
+    | DATATYPEDec  of DatBind
+    | DATATYPE2Dec of TyCon * longTyCon
+    | ABSTYPEDec   of DatBind * Dec
+    | EXCEPTIONDec of ExBind
+    | LOCALDec     of Dec * Dec
+    | OPENDec      of longStrId list
+    | EMPTYDec
+    | SEQDec       of Dec * Dec
+
+
+  (* Bindings [Figures 2 and 4] *)
+
+  and ValBind' =
+      PLAINValBind of Pat * Exp * ValBind option
+    | RECValBind   of ValBind
+
+  and TypBind' =
+      TypBind of TyVar seq * TyCon * Ty * TypBind option
+
+  and DatBind' =
+      DatBind of TyVar seq * TyCon * ConBind * DatBind option
+
+  and ConBind' =
+      ConBind of Op option * VId * Ty option * ConBind option
+
+  and ExBind' =
+      NEWExBind   of Op option * VId * Ty option * ExBind option
+    | EQUALExBind of Op option * VId * Op option * longVId * ExBind option
+
+
+  (* Patterns [Figures 2 and 3] *)
+
+  and AtPat' =
+      WILDCARDAtPat
+    | SCONAtPat   of SCon
+    | IDAtPat     of Op option * longVId
+    | RECORDAtPat of PatRow option
+    | PARAtPat    of Pat
+    | UNITAtPatX
+    | TUPLEAtPatX of Pat list
+    | LISTAtPatX of Pat list
+
+
+  and PatRow' =
+      DOTSPatRow
+    | FIELDPatRow of Lab * Pat * PatRow option
+
+  and Pat' =
+      ATPat       of AtPat
+    | CONPat      of Op option * longVId * AtPat
+    | COLONPat    of Pat * Ty
+    | ASPat       of Op option * VId * Ty option * Pat
+
+
+  (* Type expressions [Figures 2 and 3] *)
+
+  and Ty' =
+      VARTy    of TyVar
+    | RECORDTy of TyRow option
+    | CONTy    of Ty seq * longTyCon
+    | ARROWTy  of Ty * Ty
+    | PARTy    of Ty
+    | TUPLETyX  of Ty list
+
+  and TyRow' =
+      TyRow    of Lab * Ty * TyRow option
+\end{grm}
 
 \section{Gallina's abstract syntax tree}
 
