@@ -32,6 +32,9 @@ struct
         fun ~ (x @@ y) = x
 
         fun % f l = List.map (fn a => f(~a)) l
+
+        fun mkMatchNotationTerm (matcher : G.matchItem,  matchees: G.pattern) (body : G.term, exhaustive : bool) = 
+            G.MatchNotationTerm {matchItem = matcher, body = G.Equation(matchees, body), exhaustive = exhaustive}
         (* mkSortTerm returns a Prop, Set or Type Gallina terms *)
         fun mkSortTerm (i : int) : G.term = 
         	let val typ = case i of  0 => G.Prop
@@ -45,11 +48,6 @@ struct
 
         (* mkName makes a Gallina name *)
         fun mkName (s : string) : G.name = G.Name (checkLegal s)
-
-
-        fun mkApplyTem (i : int) ("tuple" : G.ident) (term :G.term) : G.term = 
-            G.ApplyTerm (G.IdentTerm "tuple" , [G.Arg (G.NumTerm (Int.toString i)), G.Arg term])
-            | mkApplyTem _ id term = G.ApplyTerm (G.IdentTerm ("_"^id) , [G.Arg term])
 
 
         fun mkExplicitTerm ((G.IdentTerm term1): G.term) (terms : G.term list) : G.term =
@@ -72,6 +70,7 @@ struct
             in
                 List.map term2binder terms
             end
+
 
 
 
