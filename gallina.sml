@@ -58,6 +58,7 @@ struct
   | OrTerm of term * term
   | AndTerm of term * term
   | Axiom of axiom
+  | MatchNotationTerm of {matchItem : matchItem, body : equation, exhaustive: bool}
 
 and arg = Arg of term | NamedArg of ident * term
 and binder = 
@@ -168,6 +169,5 @@ and orPattern = OrPattern of pattern list
         one constructor
   Three : Declarations with more than one definition that require the patternFailure axiom
   *)
-  and category = One | Two of pattern | Three of pattern
 
 end   

@@ -17,6 +17,9 @@ Group
  structure DynamicObjectsCore 
  structure VIdMap
  structure IdStatus
+ structure PPStaticEnv
+ structure PrettyPrint
+ structure PPType
  is
   $/basis.cm
   $/smlnj-lib.cm

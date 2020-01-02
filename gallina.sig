@@ -42,6 +42,7 @@ sig
   | HexTerm of string
     (* extra : denotes tuple types e.g. int * int *)
   | TupleTerm of term list 
+  | MatchNotationTerm of {matchItem : matchItem, body : equation, exhaustive: bool}
 
 and arg = Arg of term | NamedArg of ident * term
 and binder = 
