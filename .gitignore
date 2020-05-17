@@ -1,3 +1,7 @@
 **/.cm
 **/*.swp
 
+**/*.aux
+**/*.log
+**/*.synctex.gz
+
