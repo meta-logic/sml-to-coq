@@ -28,6 +28,8 @@
   %
   identifierstyle=\ttfamily,
   %
+  otherkeywords= {=>, ;},
+  %
   morekeywords= {
     EQUAL, GREATER, LESS, NONE, SOME, 
     abstraction, abstype, and, andalso, 
@@ -115,7 +117,7 @@ HaMLet translates the derived forms as specified in SML's definition.
 Translating this subset of SML's syntax to Coq is correct -- semantically
 speaking -- however, the resulting Coq code will look very different: an
 \smle{orelse} expression will be translated to an \coqe{if...then...else}
-expression. Therefore, we decided to keep the original grammatical form and
+expression. Thus, we decided to keep the original grammatical form and
 translate that to Gallina.
 
 Even though the translation is done on the abstract syntax tree with the derived
@@ -132,70 +134,97 @@ straighforward.
 
 \section{SML's abstract syntax tree}
 
+The datatypes used for SML's abstract syntax tree is defined in the file
+\texttt{hamlet/syntax/SyntaxCoreFn.sml}. It is reproduced here in a grammar
+format, and whenever possible we have used the same datatype names. Whenever
+possible the actual SML syntax is used for clarity.
+
+Elements in $\langle\rangle$ are optional.
+
 % Constructors ending in X are Laila's additions
 \giselle{Unit is the empty tuple. Why do we need it as a separate entity?}
 \begin{grm}
-SpecialConst ::= /* integer, real, word, strings, 
-                    and character constants */
+/* Special Constants */
+SCon ::= /* integer, real, word, strings, 
+            and character constants (e.g. 42) */
 
-Id ::= /* allowed identifiers */
+/* Type Constructors */
+TyCon ::= unit
+        | bool
+        | int
+        | word
+        | real
+        | string
+        | char
+        | list
+        | ref
+        | exn
+        | /* valid names for types */
+
+Id ::= /* allowed identifiers -- longVId or VId */
 
 /* Atomic Expressions */
-AtExp ::= SpecialConst | op Id | Id | {Lab: Exp, Lab: Exp, ...} 
-        | let Dec in Exp end | (Exp) 
+AtExp ::= SpecialConst 
+        | op Id 
+        | Id 
+        | {Lab: Exp, Lab: Exp, ...} 
+        | let Dec in Exp end 
+        | (Exp) 
         /* Added expressions (translated to records originally) */
-        | () |  (Exp, Exp, ...) | [Exp, Exp, ...]
+        | () 
+        | (Exp, Exp, ...) 
+        | [Exp, Exp, ...]
 
 /* Expressions */
-Exp ::= AtExp | Exp AtExp | Exp : Ty | Exp handle Match
-      | raise Exp | fn Match
+Exp ::= AtExp 
+      | Exp AtExp 
+      | Exp : Ty 
+      | Exp handle Match
+      | raise Exp 
+      | fn Match
       /* Added expressions (derived forms) */
-      | case Exp of Match | if Exp then Exp else Exp
-      | Exp andalso Exp | Exp orelse Exp
+      | case Exp of Match 
+      | if Exp then Exp else Exp
+      | Exp andalso Exp 
+      | Exp orelse Exp
 
 /* Pattern matching */
-Match ::= Pat => Exp +
+Match ::= Pat => Exp !$\langle$! | Match !$\rangle$!
 
 /* Declarations */
-Dec ::= 
+Dec ::= val TyVarSeq ValBind /* E.g. val 'a x = 5 */
+      | type TypBind
+      | datatype DatBind
+      | datatype TyCon = datatype <longtycon>
+      | abstype Datbind with Dec end
+      | exception ExBind
+      | local Dec in Dec end
+      | open <longstrid> ... <longstrid>
+      | !$\varepsilon$!
+      | Dec ; Dec
+      
+/* Value binding */
+ValBind ::= Pat = Exp !$\langle$! and ValBind !$\rangle$!
+          | rec ValBind
 
+/* Type binding */
+TypBind ::= TyVarSeq TyCon = Ty !$\langle$! and TypBind !$\rangle$!
 
+/* Data binding */
+DatBind ::= TyVarSeq TyCon = ConBind !$\langle$! and DatBind !$\rangle$!
 
+/* Not an actual datatype in the implementation */
+TyVarSeq ::= !$\varepsilon$!
+           | TyVar
+           | (TyVar, TyVar, ...)
 
+/* Constructor binding */
+ConBind ::= !$\langle$! op !$\rangle$! Id !$\langle$! of Ty !$\rangle$! !$\langle$! | ConBind !$\rangle$!
 
-  (* Declarations [Figures 2 and 4] *)
+/* Exception binding */
+ExBind ::= !$\langle$! op !$\rangle$! Id !$\langle$! of Ty !$\rangle$! !$\langle$! and ExBind !$\rangle$!
+         | !$\langle$! op !$\rangle$! Id = !$\langle$! Id !$\rangle$! !$\langle$! and ExBind !$\rangle$!
 
-  and Dec' =
-      VALDec       of TyVar seq * ValBind
-    | TYPEDec      of TypBind
-    | DATATYPEDec  of DatBind
-    | DATATYPE2Dec of TyCon * longTyCon
-    | ABSTYPEDec   of DatBind * Dec
-    | EXCEPTIONDec of ExBind
-    | LOCALDec     of Dec * Dec
-    | OPENDec      of longStrId list
-    | EMPTYDec
-    | SEQDec       of Dec * Dec
-
-
-  (* Bindings [Figures 2 and 4] *)
-
-  and ValBind' =
-      PLAINValBind of Pat * Exp * ValBind option
-    | RECValBind   of ValBind
-
-  and TypBind' =
-      TypBind of TyVar seq * TyCon * Ty * TypBind option
-
-  and DatBind' =
-      DatBind of TyVar seq * TyCon * ConBind * DatBind option
-
-  and ConBind' =
-      ConBind of Op option * VId * Ty option * ConBind option
-
-  and ExBind' =
-      NEWExBind   of Op option * VId * Ty option * ExBind option
-    | EQUALExBind of Op option * VId * Op option * longVId * ExBind option
 
 
   (* Patterns [Figures 2 and 3] *)
