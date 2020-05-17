@@ -4,4 +4,13 @@
 **/*.aux
 **/*.log
 **/*.synctex.gz
+**/*.aux.make
+**/*.auxbbl.make
+**/*.auxbbl.make.temp
+**/*.auxtarget.make
+**/*.bbl
+**/*.blg
+**/*.d
+**/*.fls
+**/*.out.make
 
