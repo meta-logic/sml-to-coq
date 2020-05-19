@@ -116,8 +116,8 @@ the equivalent \smle{if ... then ... else}:
 HaMLet translates the derived forms as specified in SML's definition.
 Translating this subset of SML's syntax to Coq is correct -- semantically
 speaking -- however, the resulting Coq code will look very different: an
-\smle{orelse} expression will be translated to an \coqe{if...then...else}
-expression. Thus, we decided to keep the original grammatical form and
+\smle{orelse} expression will be translated into an \coqe{if...then...else}
+expression. Therefore, we decided to keep the original grammatical form and
 translate that to Gallina.
 
 Even though the translation is done on the abstract syntax tree with the derived
