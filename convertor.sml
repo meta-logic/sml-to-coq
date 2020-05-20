@@ -5,7 +5,7 @@ struct
     open ConvertorProgram    
     infix @@;
 
-  fun convert(source : string) : G.sentence list = 
+  fun convert'(source : string) : G.sentence list = 
     let
       val ((J, B_BIND), (B_STAT, B_DYN), s) =  Sml.lib()
       val parseArgs = (J, B_BIND)
@@ -28,5 +28,17 @@ struct
       program2sents program 
     end
 
+  fun convert(source: string) : G.sentence list =
+    let
+      val ins = TextIO.openIn source 
+      fun loop ins = 
+       case TextIO.inputLine ins of 
+          SOME line => line :: loop ins 
+        | NONE      => [] 
+      val codeList = loop ins before TextIO.closeIn ins 
+      val code = String.concat codeList  
+    in 
+      convert' code
+    end
 
 end
