@@ -116,8 +116,8 @@ the equivalent \smle{if ... then ... else}:
 HaMLet translates the derived forms as specified in SML's definition.
 Translating this subset of SML's syntax to Coq is correct -- semantically
 speaking -- however, the resulting Coq code will look very different: an
-\smle{orelse} expression will be translated to an \coqe{if...then...else}
-expression. Thus, we decided to keep the original grammatical form and
+\smle{orelse} expression will be translated into an \coqe{if...then...else}
+expression. Therefore, we decided to keep the original grammatical form and
 translate that to Gallina.
 
 Even though the translation is done on the abstract syntax tree with the derived
@@ -136,8 +136,7 @@ straighforward.
 
 The datatypes used for SML's abstract syntax tree is defined in the file
 \texttt{hamlet/syntax/SyntaxCoreFn.sml}. It is reproduced here in a grammar
-format, and whenever possible we have used the same datatype names. Whenever
-possible the actual SML syntax is used for clarity.
+format, where the same datatype names are used, and SML keywords are explicit.
 
 Elements in $\langle\rangle$ are optional.
 
@@ -149,28 +148,24 @@ SCon ::= /* integer, real, word, strings,
             and character constants (e.g. 42) */
 
 /* Type Constructors */
-TyCon ::= unit
-        | bool
-        | int
-        | word
-        | real
-        | string
-        | char
-        | list
-        | ref
-        | exn
+TyCon ::= unit   | bool | int  | word | real
+        | string | char | list | ref  | exn
         | /* valid names for types */
 
-Id ::= /* allowed identifiers -- longVId or VId */
+/* Names and identifiers */
+VId   ::= /* allowed value identifiers */
+StrId ::= /* allowed structure identifiers */
+Lab   ::= /* allowed record labels */
+TyVar ::= /* allowed type variable names */
 
 /* Atomic Expressions */
-AtExp ::= SpecialConst 
-        | op Id 
-        | Id 
+AtExp ::= SCon 
+        | op VId 
+        | VId 
         | {Lab: Exp, Lab: Exp, ...} 
         | let Dec in Exp end 
         | (Exp) 
-        /* Added expressions (translated to records originally) */
+        /* Added expressions (records in hamlet) */
         | () 
         | (Exp, Exp, ...) 
         | [Exp, Exp, ...]
@@ -189,80 +184,69 @@ Exp ::= AtExp
       | Exp orelse Exp
 
 /* Pattern matching */
-Match ::= Pat => Exp !$\langle$! | Match !$\rangle$!
+Match ::= Pat => Exp !$\langle$!| Match!$\rangle$!
 
 /* Declarations */
-Dec ::= val TyVarSeq ValBind /* E.g. val 'a x = 5 */
+Dec ::= val !$\langle$!TyVar!$\rangle^*$! ValBind /* E.g. val 'a x = 5 */
       | type TypBind
       | datatype DatBind
-      | datatype TyCon = datatype <longtycon>
+      | datatype TyCon = datatype TyCon
       | abstype Datbind with Dec end
       | exception ExBind
       | local Dec in Dec end
-      | open <longstrid> ... <longstrid>
+      | open StrId ... StrId
       | !$\varepsilon$!
       | Dec ; Dec
       
 /* Value binding */
-ValBind ::= Pat = Exp !$\langle$! and ValBind !$\rangle$!
+ValBind ::= Pat = Exp !$\langle$!and ValBind!$\rangle$!
           | rec ValBind
 
 /* Type binding */
-TypBind ::= TyVarSeq TyCon = Ty !$\langle$! and TypBind !$\rangle$!
+TypBind ::= !$\langle$!TyVar!$\rangle^*$!  TyCon = Ty !$\langle$!and TypBind!$\rangle$!
 
 /* Data binding */
-DatBind ::= TyVarSeq TyCon = ConBind !$\langle$! and DatBind !$\rangle$!
-
-/* Not an actual datatype in the implementation */
-TyVarSeq ::= !$\varepsilon$!
-           | TyVar
-           | (TyVar, TyVar, ...)
+DatBind ::= !$\langle$!TyVar!$\rangle^*$!  TyCon = ConBind !$\langle$!and DatBind!$\rangle$!
 
 /* Constructor binding */
-ConBind ::= !$\langle$! op !$\rangle$! Id !$\langle$! of Ty !$\rangle$! !$\langle$! | ConBind !$\rangle$!
+ConBind ::= !$\langle$!op!$\rangle$! VId !$\langle$!of Ty!$\rangle$! !$\langle$!| ConBind!$\rangle$!
 
 /* Exception binding */
-ExBind ::= !$\langle$! op !$\rangle$! Id !$\langle$! of Ty !$\rangle$! !$\langle$! and ExBind !$\rangle$!
-         | !$\langle$! op !$\rangle$! Id = !$\langle$! Id !$\rangle$! !$\langle$! and ExBind !$\rangle$!
+ExBind ::= !$\langle$!op!$\rangle$! VId !$\langle$!of Ty!$\rangle$! !$\langle$!and ExBind!$\rangle$!
+         | !$\langle$!op!$\rangle$! VId = !$\langle$!VId!$\rangle$! !$\langle$!and ExBind!$\rangle$!
 
+/* Atomic Patterns */
+AtPat ::= _ 
+        | SCon
+        | !$\langle$!op!$\rangle$! VId 
+        | { !$\langle$!PatRow!$\rangle$! }
+        | ( Pat )
+        /* Added patterns (translated to records originally) */
+        | ()
+        | (Pat, Pat, ...)
+        | [Pat, Pat, ...]
 
+/* Record Patterns */
+PatRow ::= ... /* Wildcard for records */
+         | Lab = Pat !$\langle$!, PatRow!$\rangle$!
 
-  (* Patterns [Figures 2 and 3] *)
+/* Patterns */
+Pat ::= AtPat
+      | !$\langle$!op!$\rangle$! VId AtPat
+      | Pat : Ty
+      | !$\langle$!op!$\rangle$! VId !$\langle$!: Ty!$\rangle$! as pat
 
-  and AtPat' =
-      WILDCARDAtPat
-    | SCONAtPat   of SCon
-    | IDAtPat     of Op option * longVId
-    | RECORDAtPat of PatRow option
-    | PARAtPat    of Pat
-    | UNITAtPatX
-    | TUPLEAtPatX of Pat list
-    | LISTAtPatX of Pat list
+/* Types */
+Ty ::= TyVar
+     | { TyRow }
+     | !$\langle$!Ty!$\rangle^*$! TyCon /* e.g. 'a, 'b Tree */
+     | Ty -> Ty
+     | (Ty)
+     /* Added types */
+     | (Ty, Ty, ...)
 
-
-  and PatRow' =
-      DOTSPatRow
-    | FIELDPatRow of Lab * Pat * PatRow option
-
-  and Pat' =
-      ATPat       of AtPat
-    | CONPat      of Op option * longVId * AtPat
-    | COLONPat    of Pat * Ty
-    | ASPat       of Op option * VId * Ty option * Pat
-
-
-  (* Type expressions [Figures 2 and 3] *)
-
-  and Ty' =
-      VARTy    of TyVar
-    | RECORDTy of TyRow option
-    | CONTy    of Ty seq * longTyCon
-    | ARROWTy  of Ty * Ty
-    | PARTy    of Ty
-    | TUPLETyX  of Ty list
-
-  and TyRow' =
-      TyRow    of Lab * Ty * TyRow option
+/* Record Types */
+TyRow ::= Lab : Ty !$\langle$!, TyRow!$\rangle$!
 \end{grm}
 
 \section{Gallina's abstract syntax tree}
