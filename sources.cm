@@ -1,4 +1,5 @@
 Group
+ structure Generator 
  structure Gallina
  structure ConvertorUtil
  structure Convertor
@@ -26,6 +27,7 @@ Group
 
   hamlet/sources.cm
   (*gallina.sig*)
+  generator.sml
   gallina.sml
   convertor.sml
   convertorUtil.sml

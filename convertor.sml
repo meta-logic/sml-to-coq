@@ -28,7 +28,7 @@ struct
       program2sents program 
     end
 
-  fun convert(source: string) : G.sentence list =
+  fun convert(source: string): G.sentence list =
     let
       val ins = TextIO.openIn source 
       fun loop ins = 
@@ -40,5 +40,4 @@ struct
     in 
       convert' code
     end
-
 end
