@@ -250,6 +250,149 @@ TyRow ::= Lab : Ty !$\langle$!, TyRow!$\rangle$!
 \end{grm}
 
 \section{Gallina's abstract syntax tree}
+The grammar format is copied from Coq's reference manual (The Gallina specification language). "An expression enclosed in square brackets […] means at most one occurrence of this expression (this corresponds to an optional component). The notation “entry sep … sep entry” stands for a non empty sequence of expressions parsed by entry and separated by the literal “sep”. Similarly, the notation “entry … entry” stands for a non empty sequence of expressions parsed by the “entry” entry, without any separator between."
+\begin{grm}
+/* Identifiers */
+ident :			  ::= first_letter[subsequent_letter...subsequent_letter]
+field             ::=  .ident
+first_letter      ::=  a..z | A..Z | _ | unicode_letter 
+subsequent_letter ::=  first_letter| 0..9| ' | unicode_id_part
+qualid  ::=  global constants/variables (definitions, lemmas, theorems, etc.)
+
+/* Numerals */
+numeral ::=  num[.num][exp[sign]num]
+int     ::=  [-]num
+num     ::=  digit ... digit
+digit   ::=  0..9
+exp     ::=  e | E
+sign    ::=  + | -
+
+/* Terms */
+term  ::=  forall binders , term
+		 | fun binders => term
+		 | fix fix_bodies
+		 | cofix cofix_bodies
+		 | let ident [binders] [: term] := term in term
+		 | let fix fix_body in term
+		 | let cofix cofix_body in term
+		 | let ( [name , ... , name] ) [dep_ret_type] ::= term in term
+		 | let ' pattern [in term] := term [return_type] in term
+		 | if term [dep_ret_type] then term else term
+		 | term : term
+		 | term <: term
+		 | term :>
+		 | term -> term
+		 | term arg ... arg   
+		 | @ qualid [term ... term]
+		 | term % ident      
+		 | match match_iterm , ... , match_iterm [return_type] with
+		 	[[|]] equation | ... | equation ] end    
+		 | qualid
+		 | sort
+		 | num
+
+arg  ::=  term
+		| ( ident := term )
+
+binders ::=  binder ... binder
+
+binder  ::=  name
+		   | ( name ... name : term )
+		   | ( name [: term] := term )
+		   | ' pattern
+
+name  ::=  ident | _
+
+qualid ::=  ident | qualid field
+
+sort  ::=  SProp | Prop | Set | Type
+
+fix_bodies  ::=  fix_body
+			   | fix_body with fix_body with ... with fix_body for ident
+
+cofix_bodies  ::=  cofix_body
+				 | cofix_body with cofix_body with ... with cofix_body for ident
+
+fix_body  ::=  ident binders [annotation] [: term] := term
+
+cofix_body  ::=  ident [binders] [: term] := term
+
+annotation  ::=  { struct ident }
+
+match_item  ::=  term [as name] [in qualid [pattern ... pattern]]
+
+dep_ret_type  ::=  [as name] return_type
+
+return_type  ::=  return term
+
+equation  ::=  mult_pattern | ... | mult_pattern => term
+
+mult_pattern  ::=  pattern , ... , pattern
+
+pattern  ::=  qualid pattern ... pattern
+			| @ qualid pattern ... pattern
+			| pattern as ident
+			| pattern % ident
+			| qualid
+			| _ 
+			| num
+			| ( pattern | ... | pattern )
+
+/* The Vernacular */
+decorated-sentence  ::=  [ decoration ... decoration ] sentence
+
+sentence  ::=  assumption 
+			|  definition
+			| inductive
+			| fixpoint
+			| assertion proof
+			
+assumption  ::=  assumption_keyword assums.
+
+assumption_keyword  ::=  Axopm 
+					  | Conjecture	
+					  | Parameter	
+					  | Parameters
+					  | Variable
+					  | Variables
+					  | Hypothesis
+					  | Hypotheses
+					  	
+assums  ::=  ident ... ident : term
+		   | ( ident ... ident : term ) ... ( ident ... ident : term )					
+		   
+definition  ::=  [Local] Definition ident [binders] [: term] := term .		   
+		       | Let ident [binders] [: term] := term .
+
+inductive  ::=  Inductive ind_body with ... with ind_body .
+			  | CoInductive ind_body with ... with ind_body .
+			  
+ind_body  ::=  ident [binders] : term := 
+				[[|]] ident [binders] [:term] | ... | ident [binders] [:term]]			  
+fixpoint  ::=  Fixpoint fix_body with ... with fix_body .
+			 | CoFixpoint cofix_body with ... with cofix_body .
+
+assertion  ::=  assertion_keyword ident [binders] : term .
+
+assertion_keyword  ::=  Theorem | Lemma
+					  | Remark | Fact
+					  | Corollary | Property | Proposition
+					  | Definition | Example
+
+proof  ::=  Proof . ... Qed .
+		  | Proof . ... Defined .
+		  | Proof. ... Admitted .
+
+decoration  ::=  #[ attributes ]
+
+attributes  ::=  [attribute, ... , attribute]
+
+attribute  ::=  ident
+			  | ident = string
+			  | ident ( attributes )
+
+\end{grm}
+
 
 \bibliography{references}{}
 \bibliographystyle{abbrv}
