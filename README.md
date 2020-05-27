@@ -17,3 +17,11 @@ For example:
 ```
 Convertor.convert("test.sml");
 ```
+
+The main function for generating the Coq code is `Generator.generate()` in `generator.sml`. It takes as a parameter a file path to the SML program to be translated as a string, and returns the corresponding Gallina code. Its type is `string -> string`. 
+
+For example:
+
+```
+Generator.generate("test.sml");
+```
