@@ -80,7 +80,7 @@ struct
 			(* in scope term because the operator "*" is overloaded *)
 			| ty2term (TUPLETyX (tys)) = 
 				if List.length(tys) > 1 then
-				G.InScopeTerm (G.TupleTerm (% ty2term tys), "type") 
+				G.InScopeTerm (G.ProductTerm (% ty2term tys), "type") 
 				else
 				G.ParensTerm (List.nth ((% ty2term tys), 0))
 			(* CONTy is constructor type, e.g. int  *)			

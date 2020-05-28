@@ -54,6 +54,7 @@ struct
   | HexTerm of string
     (* extra : denotes tuple types e.g. int * int *)
   | TupleTerm of term list 
+  | ProductTerm of term list
   | ListTerm of term list
   | OrTerm of term * term
   | AndTerm of term * term
