@@ -1,9 +1,16 @@
+val m = ~5
 val x = "4";
+(*val i = 3 + 5;*)
+val q = 4.2;
 val y = (3,4,5);
 val z = true andalso false;
 val l = [1,2,3];
 val b = #"b"
 val k = if true andalso false then true else false
+(*val i = 0xA5;
+val r = 0w541;
+val rx = 0wx541;*)
+
 (*val e = {first = "John", last = "Doe", age = 150, balance = 0.12}*)
 
 (*val y = 2;*)
@@ -15,8 +22,9 @@ val k = if true andalso false then true else false
 *)
   
 datatype tree = Empty (* I think there is somthing wrong with The AST*)
-              | Node of tree * tree;
+              | Node of tree * string * tree;
 
+ 
 (*  [InductiveSentence
      (Inductive
         [IndBody
@@ -31,8 +39,8 @@ datatype tree = Empty (* I think there is somthing wrong with The AST*)
                                    [IdentTerm "tree",IdentTerm "int",
                                     IdentTerm "tree"],"type"),
                               ExplicitTerm ("tree",[]))))],id="tree",
-            typ=SortTerm Type}])] : Gallina.sentence list
-*)
+            typ=SortTerm Type}])] : Gallina.sentence list*)
+
 
 (*fun negb (b:bool): bool =
   case b of
@@ -42,6 +50,8 @@ datatype tree = Empty (* I think there is somthing wrong with The AST*)
 (*val a:string = "halawallah";*)
 (*val t : bool = true;*)
 (*val l = [];*)
+(*val x::f = [1,2,3]*)
+(*val (t,e)  = (true,false)*)
 
 (*val a = let
     val (t,e) = (true,false)
