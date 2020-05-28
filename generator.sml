@@ -2,10 +2,16 @@ structure Generator =
 struct
     structure G = Gallina;
     structure C = Convertor;
+    structure S = String;
 
 
-  fun concatListWith (p, f, l) = (String.concatWith p (List.map f l))
-
+  fun concatListWith (p, f, l) = (S.concatWith p (List.map f l))
+  val stringLib = ref false
+  val intLib    = ref false
+  val realLib   = ref false
+  val hexLib    = ref false
+  val listLib   = ref false
+  val boolLib   = ref false
 
   (* generate: string -> string
    * ENSURES: generate(source) = code, where code is the string that represents 
@@ -14,12 +20,39 @@ struct
   fun generate(source: string): string=
     let
       
-      val ast = C.convert source
-      val codeList = sentenceG(ast)
-      val () = print((String.concatWith ("\n") codeList)^ "\n" ) (*To see the result*)
+      val ast        = C.convert source
+      val codeList   = sentenceG(ast)
+      val codeList   = "\n" :: codeList
+      
+      val realLibL   = if !realLib = true
+      then "Require Import Reals.\nOpen Scope R_scope."::codeList
+      else codeList
+      
+      val intLibL    = if !intLib = true
+      then "Require Import ZArith.\nOpen Scope Z_scope."::realLibL
+      else realLibL
+      
+      val listLibL   = if !listLib = true
+      then "Require Import List.\nImport ListNotations."::intLibL
+      else intLibL
+      
+      val boolLibL   = if !boolLib = true
+      then "Require Import Bool."::listLibL
+      else listLibL
+      
+      val hexLibL    = if !hexLib = true
+      then "Require Import String HexString.\nOpen Scope string_scope."::boolLibL
+      else boolLibL
+      
+      val stringLibL = if !stringLib = true 
+      then "Require Import String.\nOpen Scope string_scope."::hexLibL
+      else hexLibL
+      
+      val () = print((S.concatWith ("\n") stringLibL)^ "\n" ) (*To see the result*)
     in
-      (String.concatWith ("\n") codeList)^ "\n" 
+      (S.concatWith ("\n") stringLibL)^ "\n" 
     end
+
 
   and termG (term: G.term): string =
     case term of                              
@@ -31,17 +64,21 @@ struct
       "\n" ^ "  let " ^ i ^ (concatListWith (" ", binderG, bL)) ^
       (case tO of NONE => "" | SOME t => " : "^termG(t))^
       " := " ^ termG(bT) ^ " in " ^ termG(inT)
+
     | G.LetFixTerm(fb, t)   => "\n"^"  let fix "^fixbodyG(fb)^" in "^termG(t)
     | G.LetCofixTerm(cb, t) => "\n"^"  let cofix "^coFixbodyG(cb)^" in "^termG(t)
     | G.LetTupleTerm{names=nL, body=bT, inBody=inT} =>
       "\n" ^ " let " ^ "(" ^ (concatListWith (", ", nameG, nL)) ^ ")" ^
       " := " ^ termG(bT) ^ " in " ^ termG(inT)
+    
     | G.LetPatternTerm{pat=patt, inTerm=tO, body=bT, inBody=inT} => 
       "\n"^" let "^" ' "^ patternG(patt)^
       (case tO of NONE => "" | SOME t => " in "^termG(t))^
       " := " ^ termG(bT) ^ " in " ^ termG(inT)
+    
     | G.IfTerm{test=tes, thenTerm=the,  elseTerm=els} => 
       "if "^termG(tes)^" then "^termG(the)^" else "^termG(els)
+    
     | G.HasTypeTerm(v1,v2)  => termG(v1) ^ " : " ^ termG(v2) 
   (*| omitting check type <: *) 
   (*| omitting tu support type :> *) 
@@ -51,25 +88,33 @@ struct
     | G.InScopeTerm(v1,v2)  => termG(v1) ^ " % " ^ v2 
     | G.MatchTerm{matchItems=mL, body=eL} => 
       "match" ^ (concatListWith (", ", matchItemG, mL)) ^ "with" ^ "\n  " ^
-      (String.concatWith ("  \n  | ") (List.map equationG eL)) ^ "end"
-    | G.IdentTerm(v)        => v (*bool or Prop ?*) (*boo -> Not built-in*)
-    | G.SortTerm(v)         => sortG(v)
-    | G.NumTerm(v)          => v 
+      (S.concatWith ("  \n  | ") (List.map equationG eL)) ^ "end"
+    
+    | G.IdentTerm(v)        => v before boolLib := true
+    | G.SortTerm(v)         => sortG(v) 
+    | G.NumTerm(v)          => 
+      (if S.isPrefix "~" v then "-"^S.substring(v, 1, S.size(v)-1) else v) 
+      before intLib:= true 
+      
     | G.WildcardTerm        => "_"
     | G.ParensTerm(v)       => "(" ^ termG(v) ^ ")" 
     (*Additional terms to match sml built-in types. (!) *)  
     | G.WordTerm(v)         => v
-    | G.RealTerm(v)         => v
-    | G.StringTerm(v)       => "\"" ^ v ^ "\"" 
-    | G.CharTerm(v)         => "#" ^ v 
-    | G.HexTerm(v)          => v 
+    | G.RealTerm(v)         => v before realLib := true 
+    | G.StringTerm(v)       => "\"" ^ v ^ "\"" before stringLib := true 
+    | G.CharTerm(v)         => "\"" ^ v ^ "\"" before stringLib := true
+    | G.HexTerm(v)          => "\"" ^ "0x"^ S.map Char.toLower v ^ "\""
+                               before hexLib := true
     (* extra : denotes tuple types e.g. int * int. (!) *)
     | G.TupleTerm(tL)       => "(" ^ (concatListWith (", ", termG, tL)) ^ ")"
+    | G.ProductTerm (tL)    => "(" ^ (concatListWith (" * ", termG, tL)) ^ ")"
     | G.ListTerm(tL)        => "[" ^ (concatListWith ("; ", termG, tL)) ^ "]" 
-    | G.OrTerm(v1, v2)      => termG(v1) ^ " || "  ^ termG(v2) 
-    | G.AndTerm(v1, v2)     => termG(v1) ^ " && "  ^ termG(v2) 
+                               before listLib := true
+    | G.OrTerm(v1, v2)      => termG(v1) ^ " || "  ^ termG(v2) before boolLib := true
+    | G.AndTerm(v1, v2)     => termG(v1) ^ " && "  ^ termG(v2) before boolLib := true
     | G.Axiom(a)            => "Not Implemented Yet"
     | G.MatchNotationTerm{matchItem=mI, body=e, exhaustive=bbool} => "Not Implemented Yet"
+
 
 
   and argG (G.Arg(t))        = termG(t)
@@ -96,7 +141,7 @@ struct
 
 
   and cofixbodiesG (G.CoFixbodies(cL, i)) = 
-      (String.concatWith ("with ") (List.map coFixbodyG cL)) ^ " for " ^ i
+      (S.concatWith ("with ") (List.map coFixbodyG cL)) ^ " for " ^ i
 
 
   and fixbodyG (G.Fixbody{id=i, binders=bL, decArg=aO, typ=tO, body=t}) = 
@@ -134,17 +179,21 @@ struct
     | G.ScopePat(p, i)   => patternG(p) ^ " % " ^ i 
     | G.QualidPat(i)     => i
     | G.WildcardPat      => "_"
-    | G.NumPat(s)        => s
+    | G.NumPat(s)        => 
+    (if S.isPrefix "~" s then "-"^S.substring(s, 1, S.size(s)-1) else s) 
+    before intLib:= true  
   (*| omitting pattern OrPat(oL) => "(" ^o rPatternG(oL) ^ ")"*)
     (*Additional Patternss*)
     | G.WordPat(s)       => s
-    | G.RealPat(s)       => s
-    | G.StringPat(s)     => "\"" ^ s ^ "\""
-    | G.CharPat(s)       => "#" ^ s
-    | G.HexPat(s)        => s
+    | G.RealPat(s)       => s before realLib := true 
+    | G.StringPat(s)     => "\"" ^ s ^ "\"" before stringLib := true 
+    | G.CharPat(s)       => "\"" ^ s ^ "\"" before stringLib := true
+    | G.HexPat(s)        => "\"" ^ "0x"^ S.map Char.toLower s ^ "\"" 
+                            before hexLib := true
       (* extra *)  
     | G.TuplePat(pL)     => "(" ^ concatListWith (", ", patternG, pL) ^ ")"
     | G.ListPat(pL)      => "[" ^ concatListWith (", ", patternG, pL) ^ "]" 
+                            before listLib := true
     | G.ParPat(p)        => patternG(p)
 
 
