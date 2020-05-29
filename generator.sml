@@ -12,21 +12,26 @@ struct
   val hexLib    = ref false
   val listLib   = ref false
   val boolLib   = ref false
+  val pFailure  = ref false
 
   (* generate: string -> string
    * ENSURES: generate(source) = code, where code is the string that represents 
    *          the equivelant Gallina code to the SML code from the source
    *)
-  fun generate(source: string): string=
+  fun generate(source: string): string =
     let
       
       val ast        = C.convert source
       val codeList   = sentenceG(ast)
       val codeList   = "\n" :: codeList
       
-      val realLibL   = if !realLib = true
-      then "Require Import Reals.\nOpen Scope R_scope."::codeList
+      val pFailureL  = if !pFailure = true
+      then "Local Axiom patternFailure: forall{a}, a."::codeList
       else codeList
+
+      val realLibL   = if !realLib = true
+      then "Require Import Reals.\nOpen Scope R_scope."::pFailureL
+      else pFailureL
       
       val intLibL    = if !intLib = true
       then "Require Import ZArith.\nOpen Scope Z_scope."::realLibL
@@ -112,9 +117,12 @@ struct
                                before listLib := true
     | G.OrTerm(v1, v2)      => termG(v1) ^ " || "  ^ termG(v2) before boolLib := true
     | G.AndTerm(v1, v2)     => termG(v1) ^ " && "  ^ termG(v2) before boolLib := true
-    | G.Axiom(a)            => "Not Implemented Yet"
-    | G.MatchNotationTerm{matchItem=mI, body=e, exhaustive=bbool} => "Not Implemented Yet"
-
+    | G.Axiom(a)            => "patternFailure" before pFailure := true
+    (*Datatypes with multiple constructors is not considered since it's not implemented yet*)
+    | G.MatchNotationTerm{matchItem=mI, body=e, exhaustive=b} => 
+      "match " ^ matchItemG(mI) ^ " with" ^ "\n  " ^ equationG(e) ^
+      (if b=true then""else "\n  | _ => patternFailure" 
+                            before pFailure := true)^" end"
 
 
   and argG (G.Arg(t))        = termG(t)

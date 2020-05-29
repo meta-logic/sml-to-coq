@@ -1,12 +1,11 @@
-val m = ~5
+(*val m = ~5
 val x = "4";
-(*val i = 3 + 5;*)
 val q = 4.2;
 val y = (3,4,5);
 val z = true andalso false;
 val l = [1,2,3];
 val b = #"b"
-val k = if true andalso false then true else false
+val k = if true andalso false then true else false*)
 (*val i = 0xA5;
 val r = 0w541;
 val rx = 0wx541;*)
@@ -21,25 +20,8 @@ val rx = 0wx541;*)
     _ => b5;
 *)
   
-datatype tree = Empty (* I think there is somthing wrong with The AST*)
-              | Node of tree * string * tree;
-
- 
-(*  [InductiveSentence
-     (Inductive
-        [IndBody
-           {bind=[],
-            clauses=[Clause ("Empty",[],NONE),
-                     Clause
-                       ("Node",[],
-                        SOME
-                          (ArrowTerm
-                             (InScopeTerm
-                                (TupleTerm
-                                   [IdentTerm "tree",IdentTerm "int",
-                                    IdentTerm "tree"],"type"),
-                              ExplicitTerm ("tree",[]))))],id="tree",
-            typ=SortTerm Type}])] : Gallina.sentence list*)
+(*datatype tree = Empty 
+              | Node of tree * string * tree;*)
 
 
 (*fun negb (b:bool): bool =
@@ -50,17 +32,18 @@ datatype tree = Empty (* I think there is somthing wrong with The AST*)
 (*val a:string = "halawallah";*)
 (*val t : bool = true;*)
 (*val l = [];*)
-(*val x::f = [1,2,3]*)
-(*val (t,e)  = (true,false)*)
 
-(*val a = let
+
+(*val x::f = [1,2,3];*)
+(*val (t,e)  = (true,false) ;*)
+
+(*
+val a = let
     val (t,e) = (true,false)
-    val t = true
-    val e = false
   in
     t andalso false
-  end;*)
-
+  end;
+*)
 
 (*------------------------------------------------------------*)
 
@@ -107,6 +90,3 @@ fun permutations l = case l
 (*datatype 'a evenList = ENil
                   | ECons of 'a * 'a oddList * 'a evenList;
 and 'a oddList = OCons of 'a * 'a evenList * 'a oddList; *)
-
-
-
