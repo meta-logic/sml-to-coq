@@ -89,17 +89,17 @@ struct
   (*| omitting tu support type :> *) 
     | G.ArrowTerm(v1,v2)    => termG(v1) ^ " -> " ^ termG(v2) 
     | G.ApplyTerm(v1,aL)    => termG(v1)^" "^(concatListWith (" ", argG, aL)) 
-    | G.ExplicitTerm(v1,tL) => "@ " ^ v1 ^ (concatListWith (" ", termG, tL)) 
+    | G.ExplicitTerm(v1,tL) => "@ " ^ v1 ^" "^(concatListWith (" ", termG, tL)) 
     | G.InScopeTerm(v1,v2)  => termG(v1) ^ " % " ^ v2 
     | G.MatchTerm{matchItems=mL, body=eL} => 
-      "match" ^ (concatListWith (", ", matchItemG, mL)) ^ "with" ^ "\n  " ^
-      (S.concatWith ("  \n  | ") (List.map equationG eL)) ^ "end"
+      "match " ^ (concatListWith (", ", matchItemG, mL)) ^ " with" ^ "\n  " ^
+      (S.concatWith ("  \n  | ") (List.map equationG eL)) ^ " end"
     
     | G.IdentTerm(v)        => v before boolLib := true
     | G.SortTerm(v)         => sortG(v) 
     | G.NumTerm(v)          => 
-      (if S.isPrefix "~" v then "-"^S.substring(v, 1, S.size(v)-1) else v) 
-      before intLib:= true 
+      (case (S.isPrefix "~" v) of true => "-"^S.substring(v, 1, S.size(v)-1)
+                                | false => v) before intLib:= true       
       
     | G.WildcardTerm        => "_"
     | G.ParensTerm(v)       => "(" ^ termG(v) ^ ")" 
@@ -121,18 +121,23 @@ struct
     (*Datatypes with multiple constructors is not considered since it's not implemented yet*)
     | G.MatchNotationTerm{matchItem=mI, body=e, exhaustive=b} => 
       "match " ^ matchItemG(mI) ^ " with" ^ "\n  " ^ equationG(e) ^
-      (if b=true then""else "\n  | _ => patternFailure" 
-                            before pFailure := true)^" end"
+      (case b of  true => ""
+         | false => "\n  | _ => patternFailure" before pFailure := true)^" end"
 
 
   and argG (G.Arg(t))        = termG(t)
     | argG (G.NamedArg(v,t)) = "(" ^ v ^ " := " ^ termG(t) ^ ")"
 
 
-  and binderG (G.SingleBinder{name=n, typ=tO, inferred=inf}) = nameG(n)
+  and binderG (G.SingleBinder{name=n, typ=tO, inferred=inf}) = 
+      (case inf of false => 
+      "(" ^ nameG(n) ^ (case tO of NONE => "" | SOME x =>" : "^termG(x))^")"
+      | true => 
+      "{" ^ nameG(n) ^(case tO of NONE => "" | SOME x =>" : "^termG(x))^ "}")   
     | binderG (G.LetBinder{names=nL, typ=tO, body=bT})       = 
-      "(" ^ (concatListWith (" ", nameG, nL)) ^ " : " ^ termG(bT) ^ ")"
-    | binderG (G.PatternBinder(p)) = patternG(p)         
+      "(" ^ (concatListWith (" ", nameG, nL)) ^ 
+      (case tO of NONE => "" | SOME x =>" : "^termG(x))^" : " ^ termG(bT) ^ ")"
+    | binderG (G.PatternBinder(p)) ="' " ^ patternG(p)         
 
 
   and nameG (G.Name(n))      = n 
@@ -145,11 +150,11 @@ struct
 
 
   and fixbodiesG (G.Fixbodies(fL, i)) = 
-      (concatListWith ("with ", fixbodyG, fL)) ^ " for " ^ i
+      (concatListWith ("\nwith ", fixbodyG, fL)) ^ " for " ^ i
 
 
   and cofixbodiesG (G.CoFixbodies(cL, i)) = 
-      (S.concatWith ("with ") (List.map coFixbodyG cL)) ^ " for " ^ i
+      (S.concatWith ("\nwith ") (List.map coFixbodyG cL)) ^ " for " ^ i
 
 
   and fixbodyG (G.Fixbody{id=i, binders=bL, decArg=aO, typ=tO, body=t}) = 
@@ -249,12 +254,12 @@ struct
 
   and inductiveG (ind: G.inductive): string  = (* I think there is somthing wrong with the AST*)
     case ind of
-        G.Inductive(inbL)   => "Inductive "   ^ concatListWith("with ", indBodyG, inbL)^"."
-      | G.CoInductive(inbL) => "CoInductive " ^ concatListWith("with ", indBodyG, inbL)^"."
+        G.Inductive(inbL)   => "Inductive "   ^ concatListWith("\nwith ", indBodyG, inbL)^"."
+      | G.CoInductive(inbL) => "CoInductive " ^ concatListWith("\nwith ", indBodyG, inbL)^"."
   
 
   and indBodyG (G.IndBody{id=i, bind=bL, typ=t, clauses=cL}) =
-      i ^ concatListWith(" ", binderG, bL) ^ " : " ^ termG(t) ^
+      i ^" "^concatListWith(" ", binderG, bL) ^ " : " ^ termG(t) ^
       " := " ^ "\n  " ^ concatListWith("  \n  | ", clauseG, cL)
 
 
@@ -265,6 +270,6 @@ struct
 
   and fixpointG (fp: G.fixpoint): string =
     case fp of
-        G.Fixpoint(fL)   => "Fixpoint "    ^ concatListWith("with ", fixbodyG, fL)^"."
-      | G.CoFixpoint(fL) => "CoFixpoint  " ^ concatListWith("with ", fixbodyG, fL)^"."  
+        G.Fixpoint(fL)   => "Fixpoint "    ^ concatListWith("\nwith ", fixbodyG, fL)^"."
+      | G.CoFixpoint(fL) => "CoFixpoint  " ^ concatListWith("\nwith ", fixbodyG, fL)^"."  
 end
