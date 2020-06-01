@@ -62,6 +62,7 @@ struct
   | MatchNotationTerm of {matchItem : matchItem, body : equation, exhaustive: bool}
 
 and arg = Arg of term | NamedArg of ident * term
+
 and binder = 
   SingleBinder of {name : name, typ : term option, inferred : bool}   
   | LetBinder of {names : name list, typ : term option, body : term}

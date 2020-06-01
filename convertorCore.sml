@@ -9,10 +9,7 @@
  * TO SECTION: section and page number in Coq's documentation (if applicable)
  * KEYWORD: keyword in Coq's documentation (if applicable)
  * NOTES: additional notes
-  *)
-
-
-
+ *)
 structure ConvertorCore = 
 struct
 	open ConvertorUtil
@@ -27,6 +24,12 @@ struct
 	in
 		exception WildCard
 
+    (* FROM: Scon.sml: 15 -> 20
+		 * TO:   Gallina.sml : 16 -> 53 
+		 * FROM SECTION: -
+		 * TO SECTION: 4.1.3 page 115
+		 * KEYWORD: term
+		 *)
 		fun scon2term (SCon.STRING s : SCon.SCon) : G.term = G.StringTerm s
 			| scon2term (SCon.CHAR s) = G.CharTerm s
 			| scon2term (SCon.REAL s) = G.RealTerm s
@@ -34,6 +37,12 @@ struct
 			(* Need to check what's a word constant *)
 			| scon2term (SCon.WORD (b, s)) = G.WordTerm s 
 
+    (* FROM: Scon.sml: 15 -> 20
+		 * TO:   Gallina.sml : 97 -> 115
+		 * FROM SECTION: -
+		 * TO SECTION: 4.1.3 page 115
+		 * KEYWORD: pattern
+		 *)
 		fun scon2pattern (SCon.STRING s : SCon.SCon) : G.pattern = G.StringPat s
 			| scon2pattern (SCon.CHAR s) = G.CharPat s
 			| scon2pattern (SCon.REAL s) = G.RealPat s
@@ -46,10 +55,9 @@ struct
 		 * TO:   Gallina.sml : 55
 		 * FROM SECTION: Appendix C.1 page 103
 		 * KEYWORD: tyseq
-		 * TO SECTION: 3.1.3 page 26
+		 * TO SECTION: 4.1.3 page 115
 		 * KEYWORD: arg
-		 * NOTES:
-		*)	
+		*)
 		fun tyseq2args (Seq tys : Ty seq') : G.arg list = % ty2arg tys
 
 		(* EXAMPLE: check tyseq2args
@@ -57,7 +65,7 @@ struct
 		 * TO:   Gallina.sml : 55
 		 * FROM SECTION: Appendix C.1 page 103
 		 * KEYWORD: tyseq
-		 * TO SECTION: 3.1.3 page 26
+		 * TO SECTION: 4.1.3 page 115
 		 * KEYWORD: arg
 		 * NOTES: Associativity: Might solve this by explicitly adding 
 		 * parenthesis or by requiring the user to explicitly put parenthesis? 
@@ -70,53 +78,53 @@ struct
 		 * TO:   Gallina.sml : 16 -> 53
 		 * FROM SECTION: Appendix C.1 page 103
 		 * KEYWORD: ty
-		 * TO SECTION: 3.1.3 page 25
+		 * TO SECTION: 4.1.3 page 115
 		 * KEYWORD: term
 		 * NOTES: skipped RECORDTy
 		*)	
-			(* VARty is type variable, e.g. 'a list  *)
+		(* VARty is type variable, e.g. 'a list  *)
 		and ty2term ((VARTy tyvar) : Ty') : G.term = 
 				G.IdentTerm (checkLegal(TyVar.toString (~tyvar)))
 			(* in scope term because the operator "*" is overloaded *)
 			| ty2term (TUPLETyX (tys)) = 
 				if List.length(tys) > 1 then
-				G.InScopeTerm (G.ProductTerm (% ty2term tys), "type") 
+				    G.InScopeTerm (G.ProductTerm (% ty2term tys), "type") 
 				else
-				G.ParensTerm (List.nth ((% ty2term tys), 0))
+				    G.ParensTerm (List.nth ((% ty2term tys), 0))
 			(* CONTy is constructor type, e.g. int  *)			
 			| ty2term (CONTy (tyseq, tycon)) = let
 					val terms = % ty2term ($(~tyseq))
 					val tycon = ltycon2id (~tycon)
-				in
+			in
 					(case terms of [] => G.IdentTerm tycon | _ => G.ExplicitTerm(tycon, terms))
-				end
-			(* PARTy is parenthesis type, e.g. (int)  *)							
+			end
+			(* PARTy is parenthesis type, e.g. (int)  *)
 			| ty2term (PARTy ty) = G.ParensTerm (ty2term (~ty))
-			(* ARROWTy is arrow type, e.g. int -> int  *)							
+			(* ARROWTy is arrow type, e.g. int -> int  *)
 			| ty2term (ARROWTy(ty1, ty2)) = G.ArrowTerm(ty2term (~ty1), ty2term (~ty2))
-
 		and  clause2defsent (_ : bool) (G.Clause(_, _, NONE) : G.clause) : G.sentence list = []
-            | clause2defsent exhaustive (G.Clause(ident, _, SOME typ)) = 
-                let
-                	val G.ArrowTerm (input, output) = typ
-                	val G.ExplicitTerm (_, terms) = output
-                	val implicitBinders = mkBinders terms
-                    val equation2 = if exhaustive then [] else [G.Equation(G.WildcardPat, G.Axiom G.PatternFailure)]
-                    val matchItems = [G.MatchItem (G.IdentTerm "x")]
-                    val body = G.Equation(G.ArgsPat(ident, [G.QualidPat "y"]), G.IdentTerm "y") :: equation2
-                in
-                    G.DefinitionSentence
-                    (
-                        G.DefinitionDef
-                            {localbool = false, 
-                            id = "_"^ident, 
-                            binders = implicitBinders @ 
-                            	[G.SingleBinder{name = G.Name "x", typ = SOME output, inferred = false}],
-                            body = G.MatchTerm {matchItems = matchItems, body = body},
-                            typ = NONE}
-                    ) :: []
-                end
-
+       | clause2defsent exhaustive (G.Clause(ident, _, SOME typ)) = 
+         let
+             val G.ArrowTerm (input, output) = typ
+             val G.ExplicitTerm (_, terms) = output
+             val implicitBinders = mkBinders terms
+             val equation2 = if exhaustive then [] else [G.Equation(G.WildcardPat, G.Axiom G.PatternFailure)]
+             val matchItems = [G.MatchItem (G.IdentTerm "x")]
+             val body = G.Equation(G.ArgsPat(ident, [G.QualidPat "y"]), G.IdentTerm "y") :: equation2
+         in
+             G.DefinitionSentence
+                 (
+                   G.DefinitionDef
+                       {localbool = false, 
+                        id = "_"^ident, 
+                        binders = implicitBinders @ 
+                            	    [G.SingleBinder{name = G.Name "x", typ = SOME output, inferred = false}],
+                        body = G.MatchTerm {matchItems = matchItems, body = body},
+                        typ = NONE}
+                 ) :: []
+         end
+            
+    (* Helper function doesn't have corresponding sections, check ???? *)
 		and indBodies2sent (indBodies : G.indBody list) : G.sentence = 
 			let
 				fun indBody2match (indBody as G.IndBody{clauses, ...}) = 
@@ -131,7 +139,13 @@ struct
 				G.SeqSentences (G.InductiveSentence(G.Inductive indBodies)::matches)
 			end
 
-
+    (* FROM: SyntaxCoreFn.sml: 103 -> 104
+	   * TO:   Gallina.sml: 95
+	   * FROM SECTION: Appendix C.1 page 103
+	   * KEYWORD: mrule
+	   * TO SECTION: Section 4.1.3 Page 115
+	   * KEYWORD: equation
+	   *)
 		and mrule2equation (Mrule(pat, exp) : Mrule') : G.equation = 
 			let
 				val pattern = pat2pattern (~ pat)
@@ -140,9 +154,22 @@ struct
 				G.Equation(pattern, term)
 			end
 
+    (* FROM: SyntaxCoreFn.sml: 84 -> 94
+	   * TO:   Gallina.sml: 89
+	   * FROM SECTION: Appendix C.1 page 102
+	   * KEYWORD: exp
+	   * TO SECTION: Section 4.1.3 Page 115
+	   * KEYWORD: match_item
+	   *)
 		and exp2matchitem (exp : Exp') : G.matchItem = G.MatchItem (exp2term(exp))
 
-
+    (* FROM: SyntaxCoreFn.sml: 100 -> 101
+	   * TO:   Gallina.sml: 95
+	   * FROM SECTION: Appendix C.1 page 103
+	   * KEYWORD: match
+	   * TO SECTION: Section 4.1.3 Page 115
+	   * KEYWORD: equation
+	   *)
 		and match2equations (Match(mrule, match2) @@ A : Match) : G.equation list = 
 			let
 				fun match2equations' (Match(mrule, match2)@@_ : Match) =
@@ -155,13 +182,19 @@ struct
 				equations
 			end
 
-
+    (* FROM: SyntaxCoreFn.sml: 71 -> 79
+	   * TO:   Gallina.sml: 64
+	   * FROM SECTION: Appendix C.1 page 102
+	   * KEYWORD: atexp
+	   * TO SECTION: Section 4.1.3 Page 115
+	   * KEYWORD: arg
+	   *)
 		and atexp2args (atexp : AtExp') : G.arg list = [G.Arg (atexp2term atexp)]
 
+    (* Helper function doesn't have corresponding sections, check atexp2term *)
 		and sentterm2letTerm ((G.DefinitionSentence (G.DefinitionDef sent)) : G.sentence, term : G.term) = 
 			G.LetTerm {id = #id sent, binders = #binders sent, typ = #typ sent,
 									body = #body sent, inBody = term}
-				
 			| sentterm2letTerm (G.SeqSentences sents, term) = 
 				let
 					fun nested([] : G.sentence list) = term
@@ -172,6 +205,13 @@ struct
 				end	
 			| sentterm2letTerm _ =raise Fail "Translating this sentence to let is invalid/Unimplemented \n"		
 
+    (* FROM: SyntaxCoreFn.sml: 71 -> 79
+	   * TO:   Gallina.sml: 21 -> 62
+	   * FROM SECTION: Appendix C.1 page 102
+	   * KEYWORD: atexp
+	   * TO SECTION: Section 4.1.3 Page 115
+	   * KEYWORD: term
+	   *)
 		and atexp2term (SCONAtExp scon : AtExp') : G.term = scon2term (~scon)
 			(* ignoring Op for now *)
 			| atexp2term (IDAtExp (_, longvid)) = G.IdentTerm (lvid2id (~longvid))
@@ -190,6 +230,13 @@ struct
 			| atexp2term (LISTAtExpX(exps)) = G.ListTerm(% exp2term exps)
 
 
+    (* FROM: SyntaxCoreFn.sml: 84 -> 94
+	   * TO:   Gallina.sml: 21 -> 62
+	   * FROM SECTION: Appendix C.1 page 102
+	   * KEYWORD: exp
+	   * TO SECTION: Section 4.1.3 Page 115
+	   * KEYWORD: term
+	   *)
 		and exp2term (ATExp atexp : Exp') : G.term = atexp2term (~atexp)
 			| exp2term (APPExp (exp, atexp)) = 
 				G.ApplyTerm(exp2term (~exp), atexp2args (~atexp))
@@ -224,7 +271,13 @@ struct
 			end
 
 
-
+	  (* FROM: SyntaxCoreFn.sml: 144 -> 152
+	   * TO:   Gallina.sml : 96 -> 114
+	   * FROM SECTION: Appendix C.1 page 103
+	   * KEYWORD: atpat
+	   * TO SECTION: Section 4.1.3 Page 115
+	   * KEYWORD: pattern
+	   *)
 		and atpat2pattern (WILDCARDAtPat : AtPat') : G.pattern = G.WildcardPat
 			| atpat2pattern (SCONAtPat scon) = scon2pattern (~scon)
 			(* ignoring Op for now *)
@@ -235,6 +288,13 @@ struct
 			| atpat2pattern (TUPLEAtPatX pats) = G.TuplePat (% pat2pattern pats)
 			| atpat2pattern (LISTAtPatX pats) = G.ListPat (% pat2pattern pats)
 
+	  (* FROM: SyntaxCoreFn.sml: 159 -> 163
+	   * TO:   Gallina.sml : 96 -> 114
+	   * FROM SECTION: Appendix C.1 page 103
+	   * KEYWORD: pat
+	   * TO SECTION: Section 4.1.3 Page 115
+	   * KEYWORD: pattern
+	   *)
 		and pat2pattern (ATPat atpat  : Pat') : G.pattern = atpat2pattern (~ atpat)
 			(* ignoring Op for now *)
 			| pat2pattern (CONPat (_, longvid, atpat)) = G.ArgsPat (lvid2id (~longvid), [atpat2pattern (~ atpat)])
@@ -247,22 +307,31 @@ struct
 					val _ = if Option.isSome ty then print "Coq doesn't support type casting in patterns!\n" 
 							else () 
 				in G.AsPat(pat2pattern(~ pat), vid2id (~vid)) end
-			
 
+    (* Helper function doesn't have corresponding sections, check valBind2sent *)
 		and patBody2sents (G.QualidPat ident : G.pattern, body : G.term) (_ : bool): G.sentence list = 
 				[G.DefinitionSentence
 					(G.DefinitionDef
-						{localbool = false, id = ident, binders = [], typ = NONE, body = body})]
+						   {localbool = false, id = ident, binders = [], typ = NONE, body = body})]
+      (* As patterns are split into two definitions:
+         val x as y = 1 becomes Defintion x := 1; Definition y := 1 *)
 			| patBody2sents (G.AsPat (pat, id), body) exhaustive = 
 				(patBody2sents (G.QualidPat id, body) exhaustive) @ (patBody2sents (pat, body) exhaustive)
+      (* Wildcard patterns are ignored because apart from side effects, they cannot change the context *)
 			| patBody2sents (G.WildcardPat, _) (_) = []
-			| patBody2sents (G.ParPat pat, body) exhaustive = patBody2sents (pat, body) exhaustive
-			| patBody2sents (pat as G.TuplePat pats, body) exhaustive = List.concat (List.map (patBody2sents' (pat, body, exhaustive)) pats)
+			(* Parenthesis patterns are ignored (e.g. val (x) = 1) *)
+      | patBody2sents (G.ParPat pat, body) exhaustive = patBody2sents (pat, body) exhaustive
+      (* N-ary Tuple patterms are split into N-ary definitions:
+         val (x, y) = (1, 2) becomes Definition x := 1; Definition y := 2 *)
+      | patBody2sents (pat as G.TuplePat pats, body) exhaustive = List.concat (List.map (patBody2sents' (pat, body, exhaustive)) pats)
+      (* N-ary Tuple patterms are split into N-ary definitions:
+         val (x, y) = (1, 2) becomes Definition x := 1; Definition y := 2 *)
 			| patBody2sents (pat as G.ListPat pats, body) exhaustive = List.concat (List.map (patBody2sents' (pat, body, exhaustive)) pats)
 			| patBody2sents (pat as G.ArgsPat (id, pats), body) exhaustive = List.concat (List.map (patBody2sents' (pat, body, exhaustive)) pats)
 			| patBody2sents _ _ = raise Fail "Invalid pattern! \n"
 
-		and patBody2sents' (matchees : G.pattern, matcher : G.term, exhaustive : bool) (pat as G.QualidPat ident : G.pattern) : G.sentence list = 
+    (* Helper function doesn't have corresponding sections, check valBind2sent *)
+    and patBody2sents' (matchees : G.pattern, matcher : G.term, exhaustive : bool) (pat as G.QualidPat ident : G.pattern) : G.sentence list = 
 				patBody2sents(pat, mkMatchNotationTerm (G.MatchItem matcher, matchees) (G.IdentTerm ident, exhaustive)) exhaustive
 			| patBody2sents' (matchees, matcher, exhaustive) (G.AsPat (pat, id)) = 
 					(patBody2sents' (matchees, matcher, exhaustive) pat) @ 
@@ -285,7 +354,7 @@ struct
 		 * TO:   Gallina.sml : 59
 		 * FROM SECTION: -
 		 * KEYWORD: -	
-		 * TO SECTION: 3.1.4 page 26
+		 * TO SECTION: 4.1.3 page 115
 		 * KEYWORD: binder
 		 * NOTES:
 		 * inferredVal is always false because the variable is always explicit
@@ -309,7 +378,7 @@ struct
 		 * TO:   Gallina.sml : 147
 		 * FROM SECTION: Appendix C.1 page 104
 		 * KEYWORD: conbind	
-		 * TO SECTION: 3.1.4 page 31
+		 * TO SECTION: 4.1.4 page 120
 		 * KEYWORD: indbody (rhs is a clause list)
 		 * NOTES:
 		 * ignoring Op for now, check SyntaxCore for more info
@@ -334,7 +403,7 @@ struct
 		 * FROM SECTION: Appendix C.1 page 104
 		 * KEYWORD: typbind/typdesc ---there is a typo in the reference manual
 		 	and typbind is replaced by typdesc
-		 * TO SECTION: 3.1.4 page 31
+		 * TO SECTION: 4.1.4 page 120
 		 * KEYWORD: definition
 		 * NOTES:
 		 * returns sentence list because one typbind can encode multiple 
@@ -365,10 +434,8 @@ struct
 		 * TO:   Gallina.sml : 100 -> 108
 		 * FROM SECTION: Appendix C.1 page 104
 		 * KEYWORD: datbind
-		 * TO SECTION: 3.1.4 page 31
+		 * TO SECTION: 4.1.4 page 120
 		 * KEYWORD: definition
-		 * NOTES:
-		 * returns G.sentence list to be consistent with typbind2sent 
 		*)
 		and datbind2sent(datbind : DatBind) : G.sentence =
 			let fun datbind2indbodies (datbind @@ _: DatBind) : G.indBody list =
@@ -389,10 +456,14 @@ struct
 
 		(* EXAMPLE: 1.  val x = 5
 		 *          2.  val (x, y) = (1, 2)
-		 * 			3.  val x :: l = [1, 2, 3]
+		 * 			    3.  val x :: l = [1, 2, 3]
 		 * FROM: SyntaxCoreFn.sml: 124 -> 126
 		 * TO:   Gallina.sml : 137 -> 138
-		*)
+     * FROM SECTION: Appendix C.1 page 104
+     * KEYWORD: valbind
+     * TO SECTION: Section 4.1.4 page 120
+     * KEYWORD : definition
+		 *)
 		and valbind2sent(valbind: ValBind): G.sentence = 
 			let fun valbind2sents (PLAINValBind(pat, exp, valbind2) @@ A) = 
 				let
@@ -412,17 +483,15 @@ struct
 		 * TO:   Gallina.sml : 100 -> 108
 		 * FROM SECTION: Appendix C.1 page 104
 		 * KEYWORD: dec
-		 * TO SECTION: 3.1.4 page 30
+		 * TO SECTION: 4.1.4 page 120
 		 * KEYWORD: sentence
 		 * NOTES:
 		 *)
-	  	and dec2sent ((TYPEDec(typbind)@@ _) : Dec): G.sentence = 
-		    	typbind2sent typbind
-		 | dec2sent (DATATYPEDec(datbind)@@_) = 
-		  		datbind2sent datbind
-		  (* ignoring tyvarseq for now (function declarations) *)
-	     | dec2sent (VALDec(tyvarseq, valbind)@@_) = 
+	  	and dec2sent ((TYPEDec(typbind)@@ _) : Dec): G.sentence = typbind2sent typbind
+		    | dec2sent (DATATYPEDec(datbind)@@_) = datbind2sent datbind
+		    (* ignoring tyvarseq for now (function declarations) *)
+	      | dec2sent (VALDec(tyvarseq, valbind)@@_) = 
 	     		valbind2sent valbind
-	     | dec2sent _ = raise Fail "Unimplemented declaration! \n"
+	      | dec2sent _ = raise Fail "Unimplemented declaration! \n"
 	end 
 end
