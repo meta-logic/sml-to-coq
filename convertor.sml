@@ -40,4 +40,28 @@ struct
     in 
       convert' code
     end
+
+  (* Functions for debugging *)
+
+  fun getAST(source: string) = 
+    let
+      val ((J, B_BIND), _, _) =  Sml.lib()
+      val parseArgs = (J, B_BIND)
+      val (J', program) = Sml.parse1 parseArgs (NONE, source)
+    in
+      program
+    end
+
+  fun getElabAST(source: string) = 
+    let
+      val ((J, B_BIND), (B_STAT, B_DYN), s) =  Sml.lib()
+      val parseArgs = (J, B_BIND)
+      val (J', program) = Sml.parse1 parseArgs (NONE, source)
+      val B_STAT' = Program.elabProgram true (B_STAT, program)
+      val s'      = ref s      
+      val B_DYN'  = Program.evalProgram true ((s', B_DYN), program)      
+    in
+      program
+    end
+
 end
