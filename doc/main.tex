@@ -250,7 +250,20 @@ TyRow ::= Lab : Ty !$\langle$!, TyRow!$\rangle$!
 \end{grm}
 
 \section{Gallina's abstract syntax tree}
-The grammar format is copied from Coq's reference manual (The Gallina specification language). "An expression enclosed in square brackets […] means at most one occurrence of this expression (this corresponds to an optional component). The notation “entry sep … sep entry” stands for a non empty sequence of expressions parsed by entry and separated by the literal “sep”. Similarly, the notation “entry … entry” stands for a non empty sequence of expressions parsed by the “entry” entry, without any separator between."
+
+The grammar format is copied from Coq's reference manual (The Gallina
+specification language).\giselle{Acutally, the grammar that we use is slightly
+different from the one in Gallina's specification. We should describe our
+grammar and highlight the differences.}
+
+``An expression enclosed in square brackets [...] means at
+most one occurrence of this expression (this corresponds to an optional
+component). The notation ``entry sep ... sep entry'' stands for a non empty sequence
+of expressions parsed by entry and separated by the literal ``sep''. Similarly,
+the notation ``entry ... entry'' stands for a non empty sequence of expressions
+parsed by the ``entry'' entry, without any separator between.''
+
+
 \begin{grm}
 /* Identifiers */
 ident :			  ::= first_letter[subsequent_letter...subsequent_letter]
@@ -297,7 +310,7 @@ arg  ::=  term
 binders ::=  binder ... binder
 
 binder  ::=  name
-		   | ( name ... name : term )
+		   | ( name ... name : term ) /* This one is not used */
 		   | ( name [: term] := term )
 		   | ' pattern
 
