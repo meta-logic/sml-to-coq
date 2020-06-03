@@ -34,9 +34,7 @@ struct
         inBody :  term} (* let '' *)
   | IfTerm of {test: term, thenTerm : term,  elseTerm : term}
   | HasTypeTerm of term * term
-  | (* omitting check type <: *) 
-    (* omitting tu support type :> *)
-    ArrowTerm of term * term
+  | ArrowTerm of term * term
   | ApplyTerm of term * arg list (* CANNOT be empty *)
   | ExplicitTerm of ident* term list
   | InScopeTerm of term * ident
@@ -140,8 +138,7 @@ and orPattern = OrPattern of pattern list
   (* def2 is NONE when category is 1 *)
   and definition = DefinitionDef of {localbool : bool, id : ident, 
               binders : binder list, typ : term option, body : term}
-              | LetDefinitionDef of {localbool : bool, id : ident, 
-              binders : binder list, typ : term option, body : term} 
+              | LetDefinitionDef of {id : ident, binders : binder list, typ : term option, body : term} 
 
   and inductive = Inductive of indBody list | CoInductive of indBody list
 

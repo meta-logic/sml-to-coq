@@ -246,7 +246,7 @@ struct
       (case ty of NONE => "" | SOME x => " : " ^ termG(x)) ^
        " := " ^ termG(term) ^ "."
 
-    | G.LetDefinitionDef{binders=bL, body=term ,id=i, localbool=loc ,typ=ty} =>
+    | G.LetDefinitionDef{binders=bL, body=term ,id=i, typ=ty} =>
       "Let " ^ i ^ concatListWith(" ", binderG, bL) ^ 
       (case ty of NONE => "" | SOME x => " : " ^ termG(x)) ^
        " := " ^ termG(term) ^ "."

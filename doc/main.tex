@@ -265,145 +265,115 @@ parsed by the ``entry'' entry, without any separator between.''
 
 
 \begin{grm}
-/* Identifiers */
-ident :			  ::= first_letter[subsequent_letter...subsequent_letter]
-field             ::=  .ident
-first_letter      ::=  a..z | A..Z | _ | unicode_letter 
-subsequent_letter ::=  first_letter| 0..9| ' | unicode_id_part
-qualid  ::=  global constants/variables (definitions, lemmas, theorems, etc.)
+Terminal symbols are coloured blue
+An expression enclosed in square brackets [...] means at most one occurrence of this expression (this corre-
+sponds to an optional component).
+The notation "entry sep .... sep entry" stands for a non empty sequence of expressions parsed by entry
+and separated by the literal "sep" 1 .
+Similarly, the notation "entry ... entry" stands for a non empty sequence of expressions parsed by the
+"entry" entry, without any separator between.
+At the end, the notation "[entry sep ... sep entry]" stands for a possibly empty sequence of expressions
+parsed by the "entry" entry, separated by the literal "sep".
+When a square bracket is part of the syntax, a comment is added.
 
-/* Numerals */
-numeral ::=  num[.num][exp[sign]num]
-int     ::=  [-]num
-num     ::=  digit ... digit
-digit   ::=  0..9
-exp     ::=  e | E
-sign    ::=  + | -
+/* Identifiers */
+ident ::= string
 
 /* Terms */
-term  ::=  forall binders , term
-		 | fun binders => term
-		 | fix fix_bodies
-		 | cofix cofix_bodies
-		 | let ident [binders] [: term] := term in term
-		 | let fix fix_body in term
-		 | let cofix cofix_body in term
-		 | let ( [name , ... , name] ) [dep_ret_type] ::= term in term
-		 | let ' pattern [in term] := term [return_type] in term
-		 | if term [dep_ret_type] then term else term
-		 | term : term
-		 | term <: term
-		 | term :>
-		 | term -> term
-		 | term arg ... arg   
-		 | @ qualid [term ... term]
-		 | term % ident      
-		 | match match_iterm , ... , match_iterm [return_type] with
-		 	[[|]] equation | ... | equation ] end    
-		 | qualid
-		 | sort
-		 | num
+term ::= forall binder ... binder , term
+       | fun binder ... binder => term
+       | fix fix_bodies
+       | cofix cofix_bodies
+       | let ident [binder ... binder] [: term] := term in term
+       | let fix fix_body in term
+       | let cofix cofix_body in term
+       | let ( name , ... , name ) := term in term
+       | let ' pattern [in term] := term in term
+       | if term then term else term
+       | term : term
+       | term -> term
+       | term arg ... arg   
+       | @ ident [term ... term]
+       | term % ident      
+       | match match_iterm , ... , match_iterm with
+               [ equation | ... | equation ] end    
+       | ident
+       | sort
+       | num
+       | _
+       | ( term )
+       | word
+       | real
+       | string
+       | char
+       | hex
+       | ( term , ... , term )
+       | term * ... * term
+       | [ term , ... , term ] /* syntactic square brackets */
+       
+       
+arg ::= term
+      | ( ident := term )
 
-arg  ::=  term
-		| ( ident := term )
+binder ::= ( name [: term] ) 
+         | ( name ... name [: term] := term ) /* probably can be omitted */
+         | ' pattern
 
-binders ::=  binder ... binder
+name ::= ident | _
 
-binder  ::=  name
-		   | ( name ... name : term ) /* This one is not used */
-		   | ( name [: term] := term )
-		   | ' pattern
+sort ::= Prop | Set | Type
 
-name  ::=  ident | _
+fix_bodies ::= fix_body with ... with fix_body for ident
 
-qualid ::=  ident | qualid field
+cofix_bodies ::= cofix_body with ... with cofix_body for ident
 
-sort  ::=  SProp | Prop | Set | Type
+fix_body ::= ident [binder ... binder] [annotation] [: term] := term
 
-fix_bodies  ::=  fix_body
-			   | fix_body with fix_body with ... with fix_body for ident
+cofix_body ::= ident [binder ... binder] [: term] := term
 
-cofix_bodies  ::=  cofix_body
-				 | cofix_body with cofix_body with ... with cofix_body for ident
+annotation ::= { struct ident }
 
-fix_body  ::=  ident binders [annotation] [: term] := term
+match_item ::= term 
 
-cofix_body  ::=  ident [binders] [: term] := term
+dep_ret_type ::= [as name] return_type /* not used */
 
-annotation  ::=  { struct ident }
+return_type ::= return term /* not used */
 
-match_item  ::=  term [as name] [in qualid [pattern ... pattern]]
+equation ::= pattern => term
 
-dep_ret_type  ::=  [as name] return_type
-
-return_type  ::=  return term
-
-equation  ::=  mult_pattern | ... | mult_pattern => term
-
-mult_pattern  ::=  pattern , ... , pattern
-
-pattern  ::=  qualid pattern ... pattern
-			| @ qualid pattern ... pattern
-			| pattern as ident
-			| pattern % ident
-			| qualid
-			| _ 
-			| num
-			| ( pattern | ... | pattern )
-
-/* The Vernacular */
-decorated-sentence  ::=  [ decoration ... decoration ] sentence
-
-sentence  ::=  assumption 
-			|  definition
-			| inductive
-			| fixpoint
-			| assertion proof
+pattern ::= ident pattern ... pattern
+          | @ ident pattern ... pattern
+          | pattern as ident
+          | pattern % ident
+          | qualid
+          | _ 
+          | num
+          | ( pattern , ... , pattern )
+          | [ pattern ; ... ; pattern ] /* syntactic square brackes */ 
+          | ( pattern ) /* only present in intermediate translation steps */
 			
-assumption  ::=  assumption_keyword assums.
+				
+/* The Vernacular */
+sentence ::= Definition definition
+           | Inductive inductive
+           | Fixpoint fixpoint
+           | sentence ... sentence
+           /* Gallina syntax extensions */
+           | Record [ recBody , ... , recBody ]
+					  	   
+definition ::= [Local] Definition ident [binder ... binder] [: term] := term .		   
+             | Let ident [binder ... binder] [: term] := term .
 
-assumption_keyword  ::=  Axopm 
-					  | Conjecture	
-					  | Parameter	
-					  | Parameters
-					  | Variable
-					  | Variables
-					  | Hypothesis
-					  | Hypotheses
-					  	
-assums  ::=  ident ... ident : term
-		   | ( ident ... ident : term ) ... ( ident ... ident : term )					
-		   
-definition  ::=  [Local] Definition ident [binders] [: term] := term .		   
-		       | Let ident [binders] [: term] := term .
-
-inductive  ::=  Inductive ind_body with ... with ind_body .
-			  | CoInductive ind_body with ... with ind_body .
+inductive ::= Inductive ind_body with ... with ind_body .
+            | CoInductive ind_body with ... with ind_body .
 			  
-ind_body  ::=  ident [binders] : term := 
-				[[|]] ident [binders] [:term] | ... | ident [binders] [:term]]			  
-fixpoint  ::=  Fixpoint fix_body with ... with fix_body .
-			 | CoFixpoint cofix_body with ... with cofix_body .
+ind_body ::= ident  [binder ... binder] : term := clause | ... | clause
 
-assertion  ::=  assertion_keyword ident [binders] : term .
-
-assertion_keyword  ::=  Theorem | Lemma
-					  | Remark | Fact
-					  | Corollary | Property | Proposition
-					  | Definition | Example
-
-proof  ::=  Proof . ... Qed .
-		  | Proof . ... Defined .
-		  | Proof. ... Admitted .
-
-decoration  ::=  #[ attributes ]
-
-attributes  ::=  [attribute, ... , attribute]
-
-attribute  ::=  ident
-			  | ident = string
-			  | ident ( attributes )
-
+clause ::= ident [binder ... binder] [:term]
+				
+						  
+fixpoint ::= Fixpoint fix_body with ... with fix_body .
+           | CoFixpoint cofix_body with ... with cofix_body .
 \end{grm}
 
 
