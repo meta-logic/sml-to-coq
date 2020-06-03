@@ -3,7 +3,12 @@
 \usepackage{hyperref}
 \usepackage{proof}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage[dvipsnames]{xcolor}
+
+\usepackage{amsthm}
+\newtheorem{theorem}{Theorem}
+
 \usepackage{listings}
 
 \usepackage{Coq}
@@ -481,6 +486,28 @@ OBS:
   \item In \textsf{TyCon}$_p$, $s$ is a sequence of types separated by commas. I
   am not sure if the type parameters are translated into Coq...
 \end{itemize}
+
+\section{Simulation}
+
+\giselle{This is *very* preliminary. Just some ideas to see where it goes.}
+
+Let $\rightsquigarrow_s$ and $\rightsquigarrow_g$ denote the evaluation
+semantics of SML and Gallina, respectively. Then a simulation theorem would look
+like this:
+
+\begin{theorem}
+Let $S$ be an SML expression(?) such that $S \stog G$, and 
+$S \rightsquigarrow_s S'$. Then, there exists $G'$ such that
+$S' \stog G'$ and $G \rightsquigarrow_g G'$.
+\end{theorem}
+
+Relation $\rightsquigarrow_g$ is probably the conversion rules of calculus of
+constructions, defined at
+\url{https://coq.inria.fr/refman/language/cic.html#conversion-rules}.
+
+Relation $\rightsquigarrow_s$ is probably SML's dynamic semantics, defined in
+section 6.7 (page 60) in \url{https://smlfamily.github.io/sml97-defn.pdf}.
+
 
 \bibliography{references}{}
 \bibliographystyle{abbrv}
