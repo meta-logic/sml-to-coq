@@ -1,0 +1,76 @@
+term:
+        Omitted:
+          * term <: term
+          * term :>
+        Modified:
+          * LetTupleTerm -- [dep_ret_type]
+          * LetPatternTerm -- [return_type]
+          * IfTerm -- [dep_ret_type] 
+          * MatchTerm -- [return_type]
+        Added:
+          * word
+          * real
+          * string
+          * char
+          * hex
+          * ( term , ... , term )
+          * [ term , ... , term ]
+
+binder:
+        Modified:
+          * cannot have multiple names with one type (since you can't have this in SML)
+          * 
+
+sort:
+        Omitted:
+          * SProp
+         
+match_item:
+        Modified:
+          * -- [as name] [in qualid [pattern ... pattern]]
+
+equation:
+        Modified:
+          * pattern replaces mult_pattern
+
+pattern:
+        Omitted:
+          * ( or_pattern , ... , or_pattern )
+        Added:
+          * ( pattern , ... , pattern )
+          * [ pattern ; ... ; pattern ]
+          * ( pattern ) /* intermediate */
+
+sentence:
+        Omitted:
+          * assumption
+          * assertion proof
+
+ind_body: split into ind_body + clause
+
+Omitted Syntactic Constructs:
+        * binders
+        * qualid
+        * mult_pattern
+        * decoration
+        * decorated-sentence
+        * assumption
+        * assumption_keyword
+        * assums
+        * proof
+        * attribute
+        * attributes
+
+Added Syntactic Constructs:
+        * clause 
+     
+Global changes:
+        * ident replaces qualid
+
+
+Comments:
+  -> Square brackets are overloaded in the Gallina section (there should be a better way)
+  -> "Non-empty" occurences are not enforced in the AST structure, but is rather forced by the translation.
+  For example, when the grammar has "binder ... binder" this should mean at least one occurence of binders, but in the AST structure this is just "binder list", which can be empty - but isn't -
+  -> Everything that's omitted is omitted because there's no corresponding constructs in SML
+  -> 
