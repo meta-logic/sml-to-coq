@@ -58,8 +58,26 @@
 }
 \lstnewenvironment{grm}{\lstset{language=grammar}}{}
 
+%% This makes lstlistings work inside math environment
+\usepackage{letltxmacro}
+\newcommand*{\SavedLstInline}{}
+\LetLtxMacro\SavedLstInline\lstinline
+\DeclareRobustCommand*{\lstinline}{%
+  \ifmmode
+    \let\SavedBGroup\bgroup
+    \def\bgroup{%
+      \let\bgroup\SavedBGroup
+      \hbox\bgroup
+    }%
+  \fi
+  \SavedLstInline
+}
+
 \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
 \newcommand{\giselle}[1]{\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum]{G: #1}}
+
+% Macros for translation
+\newcommand\stog{\Longrightarrow}
 
 \title{Translation of SML programs into Coq programs}
 \date{}
@@ -243,7 +261,7 @@ Ty ::= TyVar
      | Ty -> Ty
      | (Ty)
      /* Added types */
-     | (Ty, Ty, ...)
+     | (Ty * Ty * ...)
 
 /* Record Types */
 TyRow ::= Lab : Ty !$\langle$!, TyRow!$\rangle$!
@@ -376,6 +394,93 @@ fixpoint ::= Fixpoint fix_body with ... with fix_body .
            | CoFixpoint cofix_body with ... with cofix_body .
 \end{grm}
 
+Note that types \coqe{int}, \coqe{string}, \coqe{real}, \coqe{char}, and
+\coqe{word} are defined in external libraries:\giselle{Some of these libraries
+we need to implement/extend. Ammar is looking into this. Update this list as
+this is developed.}
+
+\begin{itemize}
+  \item \coqe{int} is defined in \texttt{ZArith}.
+  \item \coqe{string} is defined in \texttt{String}
+  \item \coqe{real} is defined in \texttt{Reals}
+  \item \coqe{char} is defined in (our own char lib?)
+  \item \coqe{word} is defined in (our own word lib?)
+\end{itemize}
+
+\giselle{Reminder: Once all changes to the ASTs are stable, we should probably
+argue how our modified ASTs are correct w.r.t. the orginal ones.}
+
+\section{Translation}
+
+In this section we define the translation from our modified HaMLet AST to our
+also modified Gallina's AST. We will use a derivation system with the judgment
+$S \stog G$, where $S$ and $G$ are SML and Gallina ASTs respectively.
+
+\[
+\arraycolsep=15pt\def\arraystretch{2.2}
+\begin{array}{cc}
+\infer[\mathsf{TyCon}_{\smles{unit}}]{\smle{unit} \stog \coqe{??}}{}
+&
+\infer[\mathsf{TyCon}_{\smles{bool}}]{\smle{bool} \stog \coqe{bool}}{}
+\\
+\infer[\mathsf{TyCon}_{\smles{int}}]{\smle{int} \stog \coqe{int}}{}
+&
+\infer[\mathsf{TyCon}_{\smles{word}}]{\smle{word} \stog \coqe{word}}{}
+\\
+\infer[\mathsf{TyCon}_{\smles{real}}]{\smle{real} \stog \coqe{real}}{}
+&
+\infer[\mathsf{TyCon}_{\smles{string}}]{\smle{string} \stog \coqe{string}}{}
+\\
+\infer[\mathsf{TyCon}_{\smles{char}}]{\smle{char} \stog \coqe{char}}{}
+&
+\infer[\mathsf{TyCon}_{\smles{list}}]{\smle{list} \stog \coqe{list}}{}
+\\
+\infer[\mathsf{TyCon}_{\smles{ref}}]{\smle{ref} \stog \coqe{??}}{}
+&
+\infer[\mathsf{TyCon}_{\smles{exn}}]{\smle{exn} \stog \coqe{??}}{}
+\\
+\end{array}
+\]
+
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{TyVar}]{\smle{'X} \stog \coqe{\_X}}{X \text{ is alphanumeric}}
+&
+\infer[\mathsf{TyRow}]{\smle{\{ s \}} \stog \coqe{\{ g \}}}{s \stog g}
+\\
+\infer[\mathsf{TyCon}_p]{\smle{s t} \stog \coqe{?? h}}{
+  s \stog g
+  &
+  t \stog h
+}
+&
+\infer[\mathsf{Ty}_{\smles{->}}]{t_1 \smle{->} t_2 \stog g_1 \coqe{->} g_2}{
+  t_1 \stog g_1
+  &
+  t_2 \stog g_2}
+\\
+\infer[\mathsf{Ty}_{()}]{\smle!( $t$ )! \stog \coqe!( $g$ )!}{
+  t \stog g
+}
+&
+\infer[\mathsf{Ty}_*]{\smle!($t_1$ * $t_2$ * ... * $t_n$)! \stog 
+                      \coqe!($g_1$ * $g_2$ * ... * $g_n$)!}
+{
+  t_i \stog g_i \forall i. 1 \leq i \leq n
+}
+\\
+\end{array}
+\]
+
+OBS:
+\begin{itemize}
+  \item It is likely that the translation is still full of mistakes.
+  \item In \textsf{TyRow}, $s$ is a sequence of labels and types separated by
+  commas.
+  \item In \textsf{TyCon}$_p$, $s$ is a sequence of types separated by commas. I
+  am not sure if the type parameters are translated into Coq...
+\end{itemize}
 
 \bibliography{references}{}
 \bibliographystyle{abbrv}
