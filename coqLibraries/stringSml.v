@@ -1,8 +1,9 @@
 Require Import Bool.
 Require Import String.
-Open Scope string_scope.
 Require Import List.
 Import ListNotations.
+Open Scope string_scope.
+
 
 
 
@@ -12,32 +13,29 @@ Module String.
 
   Definition size (s:string): nat:= String.length s.
 
-  (*un-curry*)  
-  Definition sub (s:string) (n:nat):string:=  
+  Definition sub '((s, n):string * nat):string:=  
     match (String.get n s) with
     | None => ""
     | Some x => String.string_of_list_ascii([x])
     end.
-  
-  (*un-curry*)
-  Definition extract (s:string) (n:nat) (no:option nat):string:= 
+
+  Definition extract '((s, n, no):string * nat * option nat):string:= 
     match no with
     |None   => String.substring n ((String.length s) - n) s
     |Some m => String.substring n m s
     end.
 
-  (*un-curry*)
-  Definition substring (s:string) (n m:nat):string := 
+  Definition substring '((s, n, m):string * nat * nat):string := 
     String.substring n m s.
 
   (* ^ is already defined*)
-  Definition append (s1 s2:string):string := String.append s1 s2.
+  Definition append '((s1, s2):string * string):string := String.append s1 s2.
   Infix "++" := append (right associativity, at level 60). 
 
   Definition concatWith (s:string) (sl:list string): string :=
     String.concat s sl.
 
-  (**Char is not defined yet, it's just a singlr string*)
+  (**Char is not defined yet, it's just a single string*)
   Definition implode (sl:list string): string := String.concat "" sl.
 
   Definition concat (sl:list string): string := String.concat "" sl.
@@ -58,9 +56,9 @@ Module String.
   
   Fixpoint fields' (f:string->bool) (s:string) (i j time:nat): list string := 
     match time with
-    | 0       => (substring s i (j-1))::[]
-    | S time' => match (f (sub s j)) with
-               | true  => (substring s (i) (j-i))::(fields' f s (j+1) (j+1) time')
+    | 0       => (substring(s, i, (j-1)))::[]
+    | S time' => match (f (sub(s, j))) with
+               | true  => (substring(s, i, j-i))::(fields' f s (j+1) (j+1) time')
                | false => fields' f s i (j+1) time'
                 end
     end.
@@ -73,14 +71,17 @@ Module String.
 
   Definition isPrefix (s1 s2:string): bool := String.prefix s1 s2.
 
-  Definition isSuffix (s1 s2:string): bool := 
-    String.prefix (implode(List.rev (explode s1))) (implode(List.rev (explode s2))).
-
   Definition isSubstring  (s1 s2:string): bool := 
      match (String.index 0 s1 s2) with
      | Some x => true
      | None   => false
      end.
+
+  Definition isSuffix (s1 s2:string): bool := 
+    String.prefix (implode(List.rev (explode s1))) (implode(List.rev (explode s2))).
+
+  Definition compare '((s1, s2):string * string):comparison :=
+    Nat.compare (size s1) (size s2).
 
   Fixpoint collate' (f:string * string -> comparison) (l1 l2:list string): comparison:=
     match l1, l2 with
@@ -93,9 +94,9 @@ Module String.
                          end
    end.
 
-  (*un-curry*)
-  Fixpoint collate (f:string * string -> comparison) (s1 s2:string): comparison:=
-    collate' f (explode s1) (explode s2).
+  Definition collate (f:string * string -> comparison)
+             '((s1, s2):string * string): comparison:= 
+              collate' f (explode s1) (explode s2).
 
   (* the notations already exist !! *)
   (*  

@@ -11,7 +11,7 @@ datatype 'a evenList = ENil
 and 'a oddList = OCons of 'a * 'a evenList * 'a oddList; 
 
 (*Definition*)
-
+val x = op< (4,5);
 val a = ~5
 val b = "4";
 val c = 4.2;

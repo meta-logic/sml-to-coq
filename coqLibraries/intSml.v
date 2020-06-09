@@ -3,20 +3,19 @@ Open Scope Z_scope.
 
 
 Module Int.
+  Definition toLarge (i: Z):Z   := i.
 
-  Definition toLarge (i: Z): Z   := i.
+  Definition fromLarge (i: Z):Z := i.
 
-  Definition fromLarge (i: Z): Z := i.
+  Definition toInt (i: Z):Z     := i.
 
-  Definition toInt (i: Z): Z     := i.
+  Definition fromInt (i: Z):Z   := i.
 
-  Definition fromInt (i: Z): Z   := i.
+  Definition precision:option Z := Some 31.
 
-  Definition precision: option Z := Some 31.
+  Definition minInt:option Z    := Some (-1073741824).
 
-  Definition minInt: option Z    := Some (-1073741824).
-
-  Definition maxInt: option Z    := Some 1073741823.
+  Definition maxInt:option Z    := Some 1073741823.
 
   (*
    Definition + : Z * Z -> Z
@@ -24,21 +23,18 @@ Module Int.
    Definition * : Z * Z -> Z
   *)
 
-  (*un-curry*)
-  Definition div (i1 i2: Z): Z := i1 / i2.
+  Definition div '((i1, i2): Z * Z):Z := i1 / i2.
   Infix "div" := div (at level 40, left associativity).
 
   (* Definition mod: Z * Z -> Z*)
 
-  (*un-curry*)
-  Definition quot (i1 i2: Z): Z := (i1 -(i1 mod 12)) / i2.
+  Definition quot '((i1, i2): Z * Z):Z := (i1 -(i1 mod 12)) / i2.
 
-  (*un-curry*)
-  Definition rem (i1 i2: Z): Z := i1 mod i2.
+  Definition rem '((i1, i2): Z * Z):Z := i1 mod i2.
   Infix "rem" := rem (at level 40, no associativity).
 
   (*un-curry*)
-  Definition compare (i1 i2: Z): comparison :=  
+  Definition compare '((i1, i2): Z * Z):comparison :=  
     match (i1 =? i2) with
     | true  => Eq
     | false => match (i1 <? i2) with
@@ -58,15 +54,13 @@ Module Int.
 
   Definition abs (i: Z): Z := -1 * i.
 
-  (*un-curry*)
-  Definition min (i1 i2: Z): Z := 
+  Definition min '((i1, i2): Z * Z):Z := 
     match (i1 <=? i2) with
     | true  => i1
     | false => i2
     end.
 
-  (*un-curry*)
-  Definition max (i1 i2: Z): Z := 
+  Definition max '((i1, i2): Z * Z):Z := 
     match (i1 >=? i2) with
     | true  => i1
     | false => i2
@@ -81,8 +75,7 @@ Module Int.
                end
     end.
 
-  (*un-curry*)
-  Definition sameSign (i1 i2: Z): bool := sign i1 =? sign i2.
+  Definition sameSign '((i1, i2): Z * Z):bool := sign i1 =? sign i2.
 
   (*Sml Spacific*)
   (* 
@@ -155,11 +148,14 @@ Module Int.
 
   Definition toString' (n : nat) : string := writeNat n n "".
 
+  Open Scope Z_scope.
   Definition toString (n: Z): string := 
     let n' := Z.abs_nat(n) in 
-    match (sameSign n (-1))  with
+    match (sameSign(n, (-1)))  with
     | true  => "-" ++ (toString' n')
     | false => (toString' n')
     end.
 
 End Int.
+
+
