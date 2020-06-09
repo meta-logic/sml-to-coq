@@ -25,5 +25,5 @@ Module Bool.
     | "false" => Some false
     | _       => None
     end.
-    
+
 End Bool.

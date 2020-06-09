@@ -3,62 +3,66 @@ Require Import List.
 Import ListNotations.
 
 
-
-
 Module List.
 
   (* How to use it? *)
   Variables (A : Type) (B : Type).
 
-  Definition null (l:list A)   :=
+  Definition null {A: Type} (l:list A):bool :=
     match l with
     | [] => true
     | _  => false
     end.
 
-  Definition length (l:list A) := List.length l.
+  Definition length {A: Type} (l:list A):nat := List.length l.
 
-  Definition append (l1:list A) (l2:list A) := List.app l1 l2.
+  Definition append {A: Type} (l1:list A) (l2:list A):list A := List.app l1 l2.
   Infix "@" := append (right associativity, at level 60).
 
-  Definition hd (l:list A)     := List.hd l.
+  (* It will compile without default, However it will
+     return the right type iff you pass a default value *)
+  Definition hd {A: Type} (default:A) (l:list A):A := List.hd default l.
 
-  Definition tl (l:list A)     := List.tl l.
+  Definition tl {A: Type} (l:list A):list A := List.tl l.
 
-  Fixpoint  last (l:list A)    := List.last l. 
-  
-  Definition getItem (l:list A):=
+  (* It will compile without default, However it will
+     return the right type iff you pass a default value *)
+  Fixpoint last {A: Type} (l:list A) (default:A):A := List.last l default.
+
+  (* It will compile without default, However it will
+     return the right type iff you pass a default value *)
+  Definition getItem {A: Type} (l:list A) (default:A):option (A * list A) :=
     match l with
     | [] => None
-    | _  => Some (List.hd l, List.tl l)
+    | _  => Some (List.hd default l, List.tl l)
     end.
 
-  (* un-curry *)
-  Definition nth (n:nat) (l:list A)  := List.nth n l. 
+  (* It will compile without default, However it will
+     return the right type iff you pass a default value *)
+  Definition nth {A: Type} '((n, l):nat * list A) (default:A):A := 
+    List.nth n l default.
 
-  (* un-curry *)
-  Definition take (n:nat) (l:list A) := List.firstn n l.
+  Definition take {A: Type} '((n, l):nat * list A):list A := List.firstn n l.
 
-  (* un-curry *)
-  Definition drop (n:nat) (l:list A) := List.skipn n l.
+  Definition drop {A: Type} '((n, l):nat * list A):list A := List.skipn n l.
 
-  Definition rev (l:list A)          := List.rev l. 
+  Definition rev {A: Type} (l:list A):list A              := List.rev l. 
 
-  Definition concat (l:list(list A)) := List.concat l.
+  Definition concat {A: Type} (l:list(list A)):list A     := List.concat l.
 
-  (* un-curry *)
-  Definition revAppend (l l': list A):= List.rev_append l l'.
+  Definition revAppend {A: Type} '((l, l'):list A * list A):list A :=
+     List.rev_append l l'.
 
   (* What is equivelant to unit in Coq? *)
-  (*Definition app (f:A->unit) (l:list A): unit:= 
+  Fixpoint app {A: Type} (f:A->unit) (l:list A): unit:= 
     match l with
-    | [] => ()
-    | a :: t => (f a); app f t
-    end.*)
+    | [] => tt
+    | a :: t => let _ := (f a) in app f t
+    end.
 
-  Definition map (f: A->B) (l:list A) := List.map f l.
+  Definition map {A B: Type} (f: A->B) (l:list A):list B := List.map f l.
 
-  Fixpoint mapPartial (f: A-> option B) (l:list A) :=
+  Fixpoint mapPartial {A B: Type} (f: A-> option B) (l:list A):list B :=
     match l with
     | [] => []
     | x::l' => match f x with 
@@ -66,31 +70,32 @@ Module List.
                | Some y => y::mapPartial f l'
                end
     end.
- 
-  Definition find (f:A->bool) (l:list A)         := List.find f l.
 
-  Definition filter (f:A->bool) (l:list A)       := List.filter f l.
+  Definition find {A: Type} (f:A->bool) (l:list A):option A := List.find f l.
 
-  Definition partition (f:A->bool) (l:list A)    := List.partition f l.
+  Definition filter {A: Type} (f:A->bool) (l:list A):list A := List.filter f l.
 
-  Fixpoint foldl (f:A * B ->B) (b0:B) (l:list A) :=
+  Definition partition {A: Type} (f:A->bool) (l:list A):list A * list A :=
+     List.partition f l.
+
+  Fixpoint foldl {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
     match l with
     | nil => b0
     | cons a t => foldl f (f(a,b0)) t
     end.
 
-  Fixpoint foldr (f:A * B ->B) (b0:B) (l:list A) :=
+  Fixpoint foldr {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
     match l with
     | nil => b0
     | cons a t => f(a, foldr f b0 t)
     end.
 
   (*You can't have a function named exists*)
-  Definition existsb (f:A->bool) (l:list A) := List.existsb f l.
+  Definition existsb {A: Type} (f:A->bool) (l:list A):bool := List.existsb f l.
 
-  Definition all (f:A->bool) (l:list A)     := List.forallb f l.
+  Definition all {A: Type} (f:A->bool) (l:list A):bool     := List.forallb f l.
 
-  Fixpoint tabulate' (time n:nat)(f:nat->A) (l:list A) :=
+  Fixpoint tabulate' {A: Type} (time n:nat)(f:nat->A) (l:list A) :=
     match time with  
     | 0 => l
     | S time' => 
@@ -100,20 +105,21 @@ Module List.
       end
     end.
 
-  (* un-curry *)
-  Definition tabulate (n :nat) (f:nat->A) :=
+  Definition tabulate {A: Type} '((n, f):nat * (nat->A)):list A :=
     tabulate' n n f [].
 
-  (* un-curry / collate f (l1, l2) *) 
-  Fixpoint collate (f:A * A -> comparison) (l1 l2:list A): comparison:=
+  Fixpoint collate' {A: Type} (f:A * A -> comparison) (l1 l2:list A) :=
     match l1, l2 with
     | [],[] => Eq
     | [],_  => Lt
     | _ ,[] => Gt
     | x1::l1',x2::l2' => match f(x1,x2) with
-                         | Eq     => collate f l1' l2'
+                         | Eq     => collate' f l1' l2'
                          | other  => other
                          end
    end.
+
+  Definition collate (f:A * A -> comparison) 
+             '((l1, l2):list A * list A):comparison := collate' f l1 l2 .
 
 End List.
