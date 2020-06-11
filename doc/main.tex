@@ -6,6 +6,10 @@
 \usepackage{amssymb}
 \usepackage[dvipsnames]{xcolor}
 
+\usepackage{tabularx}
+\usepackage{appendix}
+\usepackage{mathpartir}
+
 \usepackage{amsthm}
 \newtheorem{theorem}{Theorem}
 
@@ -81,8 +85,16 @@
 \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
 \newcommand{\giselle}[1]{\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum]{G: #1}}
 
+
+\newcommand{\laila}[1]{\todo[linecolor=Green,backgroundcolor=Green!40,bordercolor=Green]{L: #1}}
+
 % Macros for translation
 \newcommand\stog{\Longrightarrow}
+\newcounter{infercount}
+\setcounter{infercount}{1}
+\newcommand{\infern}[3]{\infer[{\mathsf{#3}}_{\arabic{infercount}}\stepcounter{infercount}]{#2}{#1}}
+
+\newcommand\derived[2]{\smle{#1}&\smle{#2}}
 
 \title{Translation of SML programs into Coq programs}
 \date{}
@@ -154,6 +166,212 @@ form; or (2) we implement an extra case for the derived form when it is
 straighforward.
 
 % all modifications are sound.
+
+\section{Changes in HaMLet}
+The following tables are taken from SML's documentation but in our case, we restore the original forms (left column) from their equivalent forms (right column). The reason we do this step is because (while the semantics do not change) the code looks very foreign after derivation (and hence does the translation). \\
+Note that some derivations are not restored because the output doesn't affect the translation (see discussion on $fvalbind$ below). 
+
+\newcommand\changedto{\Longrightarrow}
+\noindent
+
+\textbf{Expressions}\\
+\begin{tabularx}{1.0\textwidth} { 
+  | >{\raggedright\arraybackslash}X
+  | >{\raggedright\arraybackslash}X | }
+ \hline
+ Derived Form & Equivalent Form \\
+ \hline
+ \derived{()}{\{ \}}\\
+ \hline
+ \derived{(exp_1, ... , exp_n)}{\{1 = exp_1, ... , n = exp_n\}}\\
+ \hline
+ \derived{[exp_1, ... , exp_n]}{exp_1 :: ... :: exp_n :: nil}\\
+ \hline
+ \derived{case exp of match}{(fn match) (exp)}\\
+ \hline
+ \derived{if exp_1 then exp_2 else exp_3}{case exp_1 of true => exp_2 \ \ \ \ \ \ \ \ \  | false => exp_3}
+ \\
+ \hline
+ \derived{exp_1 andalso exp_2}{if exp_1 then exp_2 else false}\\
+ \hline
+ \derived{exp_1 orelse exp_2}{if exp_1 then true else exp_2}\\
+\hline
+\end{tabularx}\\ \\
+
+\textbf{Patterns}\\
+\begin{tabularx}{1.0\textwidth} { 
+  | >{\raggedright\arraybackslash}X
+  | >{\raggedright\arraybackslash}X | }
+ \hline
+ Derived Form & Equivalent Form \\
+ \hline
+ \derived{()}{\{ \}}\\
+ \hline
+ \derived{(pat_1, ... , pat_n)}{\{1 = pat_1, ... , n = pat_n\}}\\
+ \hline
+ \derived{[pat_1, ... , pat_n]}{pat_1 :: ... :: pat_n :: nil}\\
+ \hline
+\end{tabularx}\\ \\
+
+\textbf{Types}\\
+\begin{tabularx}{1.0\textwidth} { 
+  | >{\raggedright\arraybackslash}X
+  | >{\raggedright\arraybackslash}X | }
+ \hline
+ Derived Form & Equivalent Form \\
+ \hline
+ \derived{ty_1 * ... * ty_n}{\{1 : ty_1, ..., n : ty_n\}}
+\\
+ \hline
+\end{tabularx}
+\\ \\
+\subsection{Useful Derived Forms}
+The derivation of function-value bindings $fvalbind$ is the one case where we need to keep the derivation because it simplifies translation. The syntax in Gallina doesn't allow for pattern-matching on function arguments, so the derivation (which ) solves the problem.
+
+
+\begin{tabularx}{1.0\textwidth} { 
+  | >{\raggedright\arraybackslash}X
+  | >{\raggedright\arraybackslash}X | }
+ \hline
+ Derived Form & Equivalent Form \\
+\hline
+ &\smle{[op] vid = fn vid_1 => ... => fn vid_n =>}\\
+ &\smle{case (vid_1, ..., vid_n) of}\\ 
+ \derived
+ {[op] vid atpat_11 ... atpat_1n [:ty] = exp_1}
+ {(atpat_11, ..., atpat_1n) => exp_1 [:ty]}\\
+ \derived
+ {| [op] vid atpat_21 ... atpat_2n [:ty] = exp_2}
+ {| (atpat_21, ..., atpat_2n) => exp_2 [:ty]} 
+  \\ 
+ \vdots & \vdots
+ \\ 
+ \derived
+ {| [op] atpat_m1 ... atpat_mn [:ty] = exp_m}
+ {| (atpat_m1, ..., atpat_mn) => exp_m [:ty]}
+ \\  
+ $\langle \texttt{and } fvalbind \rangle$ &
+  $\langle \texttt{and } fvalbind \rangle $ \\
+ \hline 
+\end{tabularx}\\ \\
+
+\section{Changes in Gallina}
+
+\section{Translation}
+
+In this section we define the translation from our modified HaMLet AST to our
+also modified Gallina's AST. We will use a derivation system with the judgment
+$S \stog G$, where $S$ and $G$ are SML and Gallina ASTs respectively.
+\subsection*{Atomic Expressions}
+\setlength{\jot}{0.5pt} 
+\[
+\arraycolsep=15pt\def\arraystretch{2.2}
+\begin{array}{cc}
+\infern{\texttt{e is SCon}}{\smle{e} \stog \coqe{e}}{AtExp}
+\qquad
+\infern{\texttt{e is VId}}{\smle{e} \stog \coqe{e}}{AtExp}
+\\
+\infern{\smle{e} \stog \coqe{t}\quad \smle{d}\stog \coqe{Definition d'}}{\smle{let d in e end} \stog \coqe{let d' in t}}{AtExp}
+\\
+\infern{
+\begin{gathered}\smle{e} \stog \coqe{t}\quad \smle{d}\stog \coqe{sentence_1 ... sentence_n}\\ \coqe{sentence_1} \equiv \coqe{Definition d_1} \quad ... \quad \coqe{sentence_n} \equiv \coqe{Definition d_n} \end{gathered}
+}{\smle{let d in e end} \stog \coqe{let d_1 in ... in let d_n in t}}{\mathsf{AtExp}}
+\\
+\infern{\smle{e} \stog \coqe{t}}{\smle{(e)}\stog\coqe{(t)}}{AtExp}
+\\
+\infern{\smle{e_1}\stog\coqe{t_1} \quad \smle{e_n}\stog\coqe{t_n}}{\smle{(e_1, ... , e_n)}\stog\coqe{(t_1, ... ,t_n)}}{AtExp}
+\\
+\infern{\smle{e_1}\stog\coqe{t_1} \quad \smle{e_n}\stog\coqe{t_n}}{\smle{[e_1, ... , e_n]}\stog\coqe{[t_1, ... ,t_n]}}{AtExp}
+\end{array}
+\]
+\laila{op VId, Records, and Units have not yet been translated}
+\subsection*{Type Constructors}
+\[
+\arraycolsep=15pt\def\arraystretch{2.2}
+\begin{array}{cc}
+\infer[\mathsf{TyCon}_{\smles{unit}}]{\smle{unit} \stog \coqe{??}}{}
+&
+\infer[\mathsf{TyCon}_{\smles{bool}}]{\smle{bool} \stog \coqe{bool}}{}
+\\
+\infer[\mathsf{TyCon}_{\smles{int}}]{\smle{int} \stog \coqe{int}}{}
+&
+\infer[\mathsf{TyCon}_{\smles{word}}]{\smle{word} \stog \coqe{word}}{}
+\\
+\infer[\mathsf{TyCon}_{\smles{real}}]{\smle{real} \stog \coqe{real}}{}
+&
+\infer[\mathsf{TyCon}_{\smles{string}}]{\smle{string} \stog \coqe{string}}{}
+\\
+\infer[\mathsf{TyCon}_{\smles{char}}]{\smle{char} \stog \coqe{char}}{}
+&
+\infer[\mathsf{TyCon}_{\smles{list}}]{\smle{list} \stog \coqe{list}}{}
+\\
+\infer[\mathsf{TyCon}_{\smles{ref}}]{\smle{ref} \stog \coqe{??}}{}
+&
+\infer[\mathsf{TyCon}_{\smles{exn}}]{\smle{exn} \stog \coqe{??}}{}
+\\
+\end{array}
+\]
+\subsection*{Type Expressions}
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{TyVar}]{\smle{'X} \stog \coqe{\_X}}{X \text{ is alphanumeric}}
+&
+\infer[\mathsf{TyRow}]{\smle{\{ s \}} \stog \coqe{\{ g \}}}{s \stog g}
+\\
+\infer[\mathsf{TyCon}_p]{\smle{s t} \stog \coqe{h g}}{
+  s \stog g
+  &
+  t \stog h
+}
+&
+\infer[\mathsf{Ty}_{\smles{->}}]{t_1 \smle{->} t_2 \stog g_1 \coqe{->} g_2}{
+  t_1 \stog g_1
+  &
+  t_2 \stog g_2}
+\\
+\infer[\mathsf{Ty}_{()}]{\smle!( $t$ )! \stog \coqe!( $g$ )!}{
+  t \stog g
+}
+&
+\infer[\mathsf{Ty}_*]{\smle!($t_1$ * $t_2$ * ... * $t_n$)! \stog 
+                      \coqe!($g_1$ * $g_2$ * ... * $g_n$)\%type!}
+{
+  t_i \stog g_i \forall i. 1 \leq i \leq n
+}
+\\
+\end{array}
+\]
+OBS:
+\begin{itemize}
+  \item It is likely that the translation is still full of mistakes.
+  \item In \textsf{TyRow}, $s$ is a sequence of labels and types separated by
+  commas.
+  \item In \textsf{TyCon}$_p$, $s$ is a sequence of types separated by commas. I
+  am not sure if the type parameters are translated into Coq... \laila{type parameters are indeed translated, but the type constructor comes in the beginning so 'a list become list \_a}
+\end{itemize}
+
+\section{Simulation}
+
+\giselle{This is *very* preliminary. Just some ideas to see where it goes.}
+
+Let $\rightsquigarrow_s$ and $\rightsquigarrow_g$ denote the evaluation
+semantics of SML and Gallina, respectively. Then a simulation theorem would look
+like this:
+
+\begin{theorem}
+Let $S$ be an SML expression(?) such that $S \stog G$, and 
+$S \rightsquigarrow_s S'$. Then, there exists $G'$ such that
+$S' \stog G'$ and $G \rightsquigarrow_g G'$.
+\end{theorem}
+
+Relation $\rightsquigarrow_g$ is probably the conversion rules of calculus of
+constructions, defined at
+\url{https://coq.inria.fr/refman/language/cic.html#conversion-rules}.
+
+Relation $\rightsquigarrow_s$ is probably SML's dynamic semantics, defined in
+section 6.7 (page 60) in \url{https://smlfamily.github.io/sml97-defn.pdf}.
+\begin{appendices}
 
 \section{SML's abstract syntax tree}
 
@@ -271,33 +489,18 @@ Ty ::= TyVar
 /* Record Types */
 TyRow ::= Lab : Ty !$\langle$!, TyRow!$\rangle$!
 \end{grm}
-
 \section{Gallina's abstract syntax tree}
-
-The grammar format is copied from Coq's reference manual (The Gallina
-specification language).\giselle{Acutally, the grammar that we use is slightly
-different from the one in Gallina's specification. We should describe our
-grammar and highlight the differences.}
-
-``An expression enclosed in square brackets [...] means at
+This AST is slightly different from Gallina's grammar in Coq's reference manual (see section ....). \\
+An expression enclosed in square brackets [...] means at
 most one occurrence of this expression (this corresponds to an optional
-component). The notation ``entry sep ... sep entry'' stands for a non empty sequence
-of expressions parsed by entry and separated by the literal ``sep''. Similarly,
-the notation ``entry ... entry'' stands for a non empty sequence of expressions
-parsed by the ``entry'' entry, without any separator between.''
+component). The notation "entry sep ... sep entry" stands for a non empty sequence
+of expressions parsed by entry and separated by the literal "sep". Similarly,
+the notation "entry ... entry" stands for a non empty sequence of expressions
+parsed by the "entry" entry, without any separator between.
 
 
 \begin{grm}
-Terminal symbols are coloured blue
-An expression enclosed in square brackets [...] means at most one occurrence of this expression (this corre-
-sponds to an optional component).
-The notation "entry sep .... sep entry" stands for a non empty sequence of expressions parsed by entry
-and separated by the literal "sep" 1 .
-Similarly, the notation "entry ... entry" stands for a non empty sequence of expressions parsed by the
-"entry" entry, without any separator between.
-At the end, the notation "[entry sep ... sep entry]" stands for a possibly empty sequence of expressions
-parsed by the "entry" entry, separated by the literal "sep".
-When a square bracket is part of the syntax, a comment is added.
+
 
 /* Identifiers */
 ident ::= string
@@ -377,9 +580,9 @@ pattern ::= ident pattern ... pattern
 			
 				
 /* The Vernacular */
-sentence ::= Definition definition
-           | Inductive inductive
-           | Fixpoint fixpoint
+sentence ::= definition
+           | inductive
+           | fixpoint
            | sentence ... sentence
            /* Gallina syntax extensions */
            | Record [ recBody , ... , recBody ]
@@ -414,100 +617,7 @@ this is developed.}
 
 \giselle{Reminder: Once all changes to the ASTs are stable, we should probably
 argue how our modified ASTs are correct w.r.t. the orginal ones.}
-
-\section{Translation}
-
-In this section we define the translation from our modified HaMLet AST to our
-also modified Gallina's AST. We will use a derivation system with the judgment
-$S \stog G$, where $S$ and $G$ are SML and Gallina ASTs respectively.
-
-\[
-\arraycolsep=15pt\def\arraystretch{2.2}
-\begin{array}{cc}
-\infer[\mathsf{TyCon}_{\smles{unit}}]{\smle{unit} \stog \coqe{??}}{}
-&
-\infer[\mathsf{TyCon}_{\smles{bool}}]{\smle{bool} \stog \coqe{bool}}{}
-\\
-\infer[\mathsf{TyCon}_{\smles{int}}]{\smle{int} \stog \coqe{int}}{}
-&
-\infer[\mathsf{TyCon}_{\smles{word}}]{\smle{word} \stog \coqe{word}}{}
-\\
-\infer[\mathsf{TyCon}_{\smles{real}}]{\smle{real} \stog \coqe{real}}{}
-&
-\infer[\mathsf{TyCon}_{\smles{string}}]{\smle{string} \stog \coqe{string}}{}
-\\
-\infer[\mathsf{TyCon}_{\smles{char}}]{\smle{char} \stog \coqe{char}}{}
-&
-\infer[\mathsf{TyCon}_{\smles{list}}]{\smle{list} \stog \coqe{list}}{}
-\\
-\infer[\mathsf{TyCon}_{\smles{ref}}]{\smle{ref} \stog \coqe{??}}{}
-&
-\infer[\mathsf{TyCon}_{\smles{exn}}]{\smle{exn} \stog \coqe{??}}{}
-\\
-\end{array}
-\]
-
-\[
-\arraycolsep=10pt\def\arraystretch{3}
-\begin{array}{cc}
-\infer[\mathsf{TyVar}]{\smle{'X} \stog \coqe{\_X}}{X \text{ is alphanumeric}}
-&
-\infer[\mathsf{TyRow}]{\smle{\{ s \}} \stog \coqe{\{ g \}}}{s \stog g}
-\\
-\infer[\mathsf{TyCon}_p]{\smle{s t} \stog \coqe{?? h}}{
-  s \stog g
-  &
-  t \stog h
-}
-&
-\infer[\mathsf{Ty}_{\smles{->}}]{t_1 \smle{->} t_2 \stog g_1 \coqe{->} g_2}{
-  t_1 \stog g_1
-  &
-  t_2 \stog g_2}
-\\
-\infer[\mathsf{Ty}_{()}]{\smle!( $t$ )! \stog \coqe!( $g$ )!}{
-  t \stog g
-}
-&
-\infer[\mathsf{Ty}_*]{\smle!($t_1$ * $t_2$ * ... * $t_n$)! \stog 
-                      \coqe!($g_1$ * $g_2$ * ... * $g_n$)!}
-{
-  t_i \stog g_i \forall i. 1 \leq i \leq n
-}
-\\
-\end{array}
-\]
-
-OBS:
-\begin{itemize}
-  \item It is likely that the translation is still full of mistakes.
-  \item In \textsf{TyRow}, $s$ is a sequence of labels and types separated by
-  commas.
-  \item In \textsf{TyCon}$_p$, $s$ is a sequence of types separated by commas. I
-  am not sure if the type parameters are translated into Coq...
-\end{itemize}
-
-\section{Simulation}
-
-\giselle{This is *very* preliminary. Just some ideas to see where it goes.}
-
-Let $\rightsquigarrow_s$ and $\rightsquigarrow_g$ denote the evaluation
-semantics of SML and Gallina, respectively. Then a simulation theorem would look
-like this:
-
-\begin{theorem}
-Let $S$ be an SML expression(?) such that $S \stog G$, and 
-$S \rightsquigarrow_s S'$. Then, there exists $G'$ such that
-$S' \stog G'$ and $G \rightsquigarrow_g G'$.
-\end{theorem}
-
-Relation $\rightsquigarrow_g$ is probably the conversion rules of calculus of
-constructions, defined at
-\url{https://coq.inria.fr/refman/language/cic.html#conversion-rules}.
-
-Relation $\rightsquigarrow_s$ is probably SML's dynamic semantics, defined in
-section 6.7 (page 60) in \url{https://smlfamily.github.io/sml97-defn.pdf}.
-
+\end{appendices}
 
 \bibliography{references}{}
 \bibliographystyle{abbrv}
