@@ -95,17 +95,37 @@ Module String.
    end.
 
   Definition collate (f:string * string -> comparison)
-             '((s1, s2):string * string): comparison:= 
+             '((s1, s2):string * string): comparison := 
               collate' f (explode s1) (explode s2).
 
-  (* the notations already exist !! *)
   (*  
-  val op<  = op<  : string * string -> bool
-  val op<= = op<= : string * string -> bool
-  val op>  = op>  : string * string -> bool
-  val op>= = op<= : string * string -> bool
+      =   : =?
+      <   : <?
+      <=  : <=?
+      >   : >?
+      >=  : >=?
   *)
-  
+
+  Definition opeq s1 s2:bool := Nat.eqb (size s1) (size s2). 
+  Notation "op=( x , y )" := (opeq x y) (at level 70) : nat_scope.
+  Infix "=?" := opeq (at level 70) : nat_scope.
+
+  Definition oplt s1 s2:bool := Nat.ltb (size s1) (size s2). 
+  Notation "op<( x , y )" := (oplt x y) (at level 70) : nat_scope.
+  Infix "<?" := oplt (at level 70) : nat_scope.
+
+  Definition ople s1 s2:bool := Nat.leb (size s1) (size s2). 
+  Notation "op<=( x , y )" := (ople x y) (at level 70) : nat_scope.
+  Infix "<=?" := ople (at level 70) : nat_scope.
+
+  Definition opgt s1 s2:bool := Nat.ltb (size s2) (size s1). 
+  Notation "op>( x , y )" := (opgt x y) (at level 70) : nat_scope.
+  Infix ">?" := opgt (at level 70) : nat_scope.
+
+  Definition opge s1 s2:bool := Nat.leb (size s2) (size s1). 
+  Notation "op>=( x , y )" := (opge x y) (at level 70) : nat_scope.
+  Infix ">=?" := opge (at level 70) : nat_scope.
+
   (* SML spacific *)
   Definition toString (s:string):string           := s.
   Definition fromString (s:string):option string  := Some s.

@@ -45,12 +45,23 @@ Module Int.
 
   (* Already defined as *)
   (*
+    =  : =?
     <  : <?
     <= : <=?
     >  : >?
     >= : <=?
     ~  : -
   *)
+
+  Notation "op=( x , y )" := (Z.eqb x y) (at level 70, no associativity) : Z_scope.
+
+  Notation "op<( x , y )" := (Z.ltb x y) (at level 70, no associativity) : Z_scope.
+
+  Notation "op<=( x , y )" := (Z.leb x y) (at level 70, no associativity) : Z_scope.
+
+  Notation "op>( x , y )" := (Z.gtb x y) (at level 70, no associativity) : Z_scope.
+
+  Notation "op>=( x , y )" := (Z.geb x y) (at level 70, no associativity) : Z_scope.
 
   Definition abs (i: Z): Z := -1 * i.
 
@@ -157,5 +168,3 @@ Module Int.
     end.
 
 End Int.
-
-
