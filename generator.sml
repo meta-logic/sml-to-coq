@@ -7,6 +7,7 @@ struct
 
   fun concatListWith (p, f, l) = (S.concatWith p (List.map f l))
   val stringLib = ref false
+  val asciiLib  = ref false
   val intLib    = ref false
   val realLib   = ref false
   val hexLib    = ref false
@@ -49,9 +50,13 @@ struct
       then "Require Import String HexString.\nOpen Scope string_scope."::boolLibL
       else boolLibL
       
-      val stringLibL = if !stringLib = true 
-      then "Require Import String.\nOpen Scope string_scope."::hexLibL
+      val asciiLibL = if !asciiLib = true 
+      then "Require Import Ascii.\nOpen Scope ascii_scope."::hexLibL
       else hexLibL
+      
+      val stringLibL = if !stringLib = true 
+      then "Require Import String.\nOpen Scope string_scope."::asciiLibL
+      else asciiLibL
       
       val () = print((S.concatWith ("\n") stringLibL)^ "\n" ) (*To see the result*)
     in
@@ -107,7 +112,7 @@ struct
     | G.WordTerm(v)         => v
     | G.RealTerm(v)         => v before realLib := true 
     | G.StringTerm(v)       => "\"" ^ v ^ "\"" before stringLib := true 
-    | G.CharTerm(v)         => "\"" ^ v ^ "\"" before stringLib := true
+    | G.CharTerm(v)         => "\"" ^ v ^ "\"" ^ "%" ^ "char" before asciiLib := true
     | G.HexTerm(v)          => "\"" ^ "0x"^ S.map Char.toLower v ^ "\""
                                before hexLib := true
     (* extra : denotes tuple types e.g. int * int. (!) *)
