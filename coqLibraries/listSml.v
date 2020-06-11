@@ -5,7 +5,6 @@ Import ListNotations.
 
 Module List.
 
-  (* How to use it? *)
   Variables (A : Type) (B : Type).
 
   Definition null {A: Type} (l:list A):bool :=
@@ -21,16 +20,19 @@ Module List.
 
   (* It will compile without default, However it will
      return the right type iff you pass a default value *)
+  (* We can pass a default while genrating the code after knowing the type of A*)
   Definition hd {A: Type} (default:A) (l:list A):A := List.hd default l.
 
   Definition tl {A: Type} (l:list A):list A := List.tl l.
 
   (* It will compile without default, However it will
      return the right type iff you pass a default value *)
+  (* We can pass a default while genrating the code after knowing the type of A*)
   Fixpoint last {A: Type} (l:list A) (default:A):A := List.last l default.
 
   (* It will compile without default, However it will
      return the right type iff you pass a default value *)
+  (* We can pass a default while genrating the code after knowing the type of A*)
   Definition getItem {A: Type} (l:list A) (default:A):option (A * list A) :=
     match l with
     | [] => None
@@ -39,6 +41,7 @@ Module List.
 
   (* It will compile without default, However it will
      return the right type iff you pass a default value *)
+  (* We can pass a default while genrating the code after knowing the type of A*)
   Definition nth {A: Type} '((n, l):nat * list A) (default:A):A := 
     List.nth n l default.
 
@@ -53,7 +56,6 @@ Module List.
   Definition revAppend {A: Type} '((l, l'):list A * list A):list A :=
      List.rev_append l l'.
 
-  (* What is equivelant to unit in Coq? *)
   Fixpoint app {A: Type} (f:A->unit) (l:list A): unit:= 
     match l with
     | [] => tt
