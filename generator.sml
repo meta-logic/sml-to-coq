@@ -112,7 +112,7 @@ struct
     | G.WordTerm(v)         => v
     | G.RealTerm(v)         => v before realLib := true 
     | G.StringTerm(v)       => "\"" ^ v ^ "\"" before stringLib := true 
-    | G.CharTerm(v)         => "\"" ^ v ^ "\"" ^ "%" ^ "char" before asciiLib := true
+    | G.CharTerm(v)         => "\"" ^ v ^ "\"" ^ "%"^ "char" before asciiLib := true
     | G.HexTerm(v)          => "\"" ^ "0x"^ S.map Char.toLower v ^ "\""
                                before hexLib := true
     (* extra : denotes tuple types e.g. int * int. (!) *)
