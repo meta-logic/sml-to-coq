@@ -31,7 +31,6 @@ Module String.
      ^ : ++ 
   *)
   Definition append '((s1, s2):string * string):string := String.append s1 s2.
-  Infix "++" := append (right associativity, at level 60). 
 
   Definition concatWith (s:string) (sl:list string): string :=
     String.concat s sl.
@@ -95,33 +94,25 @@ Module String.
              '((s1, s2):string * string): comparison := 
               collate' f (explode s1) (explode s2).
 
-  (*  
-      =   : =?
-      <   : <?
-      <=  : <=?
-      >   : >?
-      >=  : >=?
-  *)
-
   Definition opeq s1 s2:bool := Nat.eqb (size s1) (size s2). 
   Notation "op=( x , y )" := (opeq x y) (at level 70) : nat_scope.
-  Infix "=?" := opeq (at level 70) : nat_scope.
+  Infix "=" := opeq (at level 70) : string_scope.
 
   Definition oplt s1 s2:bool := Nat.ltb (size s1) (size s2). 
   Notation "op<( x , y )" := (oplt x y) (at level 70) : nat_scope.
-  Infix "<?" := oplt (at level 70) : nat_scope.
+  Infix "<" := oplt (at level 70) : string_scope.
 
   Definition ople s1 s2:bool := Nat.leb (size s1) (size s2). 
   Notation "op<=( x , y )" := (ople x y) (at level 70) : nat_scope.
-  Infix "<=?" := ople (at level 70) : nat_scope.
+  Infix "<=" := ople (at level 70) : string_scope.
 
   Definition opgt s1 s2:bool := Nat.ltb (size s2) (size s1). 
   Notation "op>( x , y )" := (opgt x y) (at level 70) : nat_scope.
-  Infix ">?" := opgt (at level 70) : nat_scope.
+  Infix ">" := opgt (at level 70) : string_scope.
 
   Definition opge s1 s2:bool := Nat.leb (size s2) (size s1). 
   Notation "op>=( x , y )" := (opge x y) (at level 70) : nat_scope.
-  Infix ">=?" := opge (at level 70) : nat_scope.
+  Infix ">=" := opge (at level 70) : string_scope.
 
   (* SML spacific *)
   Definition toString (s:string):string           := s.

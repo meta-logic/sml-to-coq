@@ -24,33 +24,25 @@ Module Char.
   Definition compare '((c, d):ascii * ascii):comparison := 
     Nat.compare (ord c) (ord d).
 
-  (*  
-      =   : =?
-      <   : <?
-      <=  : <=?
-      >   : >?
-      >=  : >=?
-  *)
-
   Definition opeq s1 s2:bool := Nat.eqb (ord s1) (ord s2). 
   Notation "op=( x , y )" := (opeq x y) (at level 70) : nat_scope.
-  Infix "=?" := opeq  : char_scope.
+  Infix "=" := opeq  : char_scope.
 
   Definition oplt s1 s2:bool := Nat.ltb (ord s1) (ord s2). 
   Notation "op<( x , y )" := (oplt x y) (at level 70) : nat_scope.
-  Infix "<?" := oplt (at level 70) : char_scope.
+  Infix "<" := oplt (at level 70) : char_scope.
 
   Definition ople s1 s2:bool := Nat.leb (ord s1) (ord s2). 
   Notation "op<=( x , y )" := (ople x y) (at level 70) : nat_scope.
-  Infix "<=?" := ople (at level 70) : char_scope.
+  Infix "<=" := ople (at level 70) : char_scope.
 
   Definition opgt s1 s2:bool := Nat.ltb (ord s2) (ord s1). 
   Notation "op>( x , y )" := (opgt x y) (at level 70) : nat_scope.
-  Infix ">?" := opgt (at level 70) : char_scope.
+  Infix ">" := opgt (at level 70) : char_scope.
 
   Definition opge s1 s2:bool := Nat.leb (ord s2) (ord s1). 
   Notation "op>=( x , y )" := (opge x y) (at level 70) : nat_scope.
-  Infix ">=?" := opge (at level 70) : char_scope.
+  Infix ">=" := opge (at level 70) : char_scope.
 
   Definition contains (s:string) (c:ascii):bool :=
     Nat.ltb 0 (List.length(List.filter (fun x=> x =? c)

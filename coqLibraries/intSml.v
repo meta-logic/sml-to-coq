@@ -45,25 +45,30 @@ Module Int.
 
   (* Already defined as *)
   (*
-    =  : =?
-    <  : <?
-    <= : <=?
-    >  : >?
-    >= : <=?
     ~  : -
   *)
 
+  Definition opeq i1 i2:bool := i1 =? i2.
   Notation "op=( x , y )" := (Z.eqb x y) (at level 70, no associativity) : Z_scope.
+  Infix "=" := opeq : Z_scope.
 
+  Definition oplt i1 i2:bool := i1 <? i2.
   Notation "op<( x , y )" := (Z.ltb x y) (at level 70, no associativity) : Z_scope.
+  Infix "<" := oplt : Z_scope.
 
+  Definition ople i1 i2:bool := i1 <=? i2.
   Notation "op<=( x , y )" := (Z.leb x y) (at level 70, no associativity) : Z_scope.
+  Infix "<=" := ople : Z_scope.
 
+  Definition opgt i1 i2:bool := i1 >? i2.
   Notation "op>( x , y )" := (Z.gtb x y) (at level 70, no associativity) : Z_scope.
+  Infix ">" := opgt : Z_scope.
 
+  Definition opge i1 i2:bool := i1 >=? i2.
   Notation "op>=( x , y )" := (Z.geb x y) (at level 70, no associativity) : Z_scope.
+  Infix ">=" := opge : Z_scope.
 
-  Definition abs (i: Z): Z := -1 * i.
+  Definition abs (i: Z): Z := if (i <=? 0) then i else -1 * i.
 
   Definition min '((i1, i2): Z * Z):Z := 
     match (i1 <=? i2) with
