@@ -31,7 +31,7 @@ struct
       else codeList
 
       val realLibL   = if !realLib = true
-      then "Require Import Reals.\nOpen Scope R_scope."::pFailureL
+      then "Require Import Floats.\nOpen Scope float_scope."::pFailureL
       else pFailureL
       
       val intLibL    = if !intLib = true
@@ -110,7 +110,7 @@ struct
     | G.ParensTerm(v)       => "(" ^ termG(v) ^ ")" 
     (*Additional terms to match sml built-in types. (!) *)  
     | G.WordTerm(v)         => v
-    | G.RealTerm(v)         => v before realLib := true 
+    | G.RealTerm(v)         => v ^ "%" ^ "float" before realLib := true 
     | G.StringTerm(v)       => "\"" ^ v ^ "\"" before stringLib := true 
     | G.CharTerm(v)         => "\"" ^ v ^ "\"" ^ "%"^ "char" before asciiLib := true
     | G.HexTerm(v)          => "\"" ^ "0x"^ S.map Char.toLower v ^ "\""
