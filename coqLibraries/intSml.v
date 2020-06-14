@@ -1,4 +1,6 @@
 Require Import ZArith.
+Require Import Ascii.
+Require Import String.
 Open Scope Z_scope. 
 
 
@@ -99,7 +101,6 @@ Module Int.
     scan
   *)
 
-  Require Import Ascii.
   Open Scope char_scope.
 
   Definition digitToZ (c: ascii) : option Z :=
@@ -118,7 +119,6 @@ Module Int.
     | _ => None
     end.
 
-  Require Import String.
   Open Scope string_scope. 
 
   Fixpoint readZ (s: string) (acc: Z) : option Z :=
