@@ -11,6 +11,7 @@ datatype 'a evenList = ENil
 and 'a oddList = OCons of 'a * 'a evenList * 'a oddList; 
 
 (*Definition*)
+(*val r = ("abcd" > "asdsd") andalso (5 > 3);*)
 val t = Char.ord(#"d");
 val x = op< (4,5);
 val a = ~5
