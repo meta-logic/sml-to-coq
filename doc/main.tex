@@ -7,7 +7,6 @@
 \usepackage[dvipsnames]{xcolor}
 
 \usepackage{tabularx}
-\usepackage{appendix}
 \usepackage{mathpartir}
 
 \usepackage{amsthm}
@@ -279,12 +278,13 @@ $S \stog G$, where $S$ and $G$ are SML and Gallina ASTs respectively.
 \\
 \infern{\smle{e} \stog \coqe{t}}{\smle{(e)}\stog\coqe{(t)}}{AtExp}
 \\
-\infern{\smle{e_1}\stog\coqe{t_1} \quad \smle{e_n}\stog\coqe{t_n}}{\smle{(e_1, ... , e_n)}\stog\coqe{(t_1, ... ,t_n)}}{AtExp}
+\infern{\smle{e_1}\stog\coqe{t_1} & \dots & \smle{e_n}\stog\coqe{t_n}}{\smle{(e_1, ... , e_n)}\stog\coqe{(t_1, ... ,t_n)}}{AtExp}
 \\
-\infern{\smle{e_1}\stog\coqe{t_1} \quad \smle{e_n}\stog\coqe{t_n}}{\smle{[e_1, ... , e_n]}\stog\coqe{[t_1, ... ,t_n]}}{AtExp}
+\infern{\smle{e_1}\stog\coqe{t_1} & \dots & \smle{e_n}\stog\coqe{t_n}}{\smle{[e_1, ... , e_n]}\stog\coqe{[t_1; ... ;t_n]}}{AtExp}
 \end{array}
 \]
 \laila{op VId, Records, and Units have not yet been translated}
+\giselle{Definitions in let expressions are translated as external definitions?}
 \subsection*{Type Constructors}
 \[
 \arraycolsep=15pt\def\arraystretch{2.2}
@@ -337,7 +337,7 @@ $S \stog G$, where $S$ and $G$ are SML and Gallina ASTs respectively.
 \infer[\mathsf{Ty}_*]{\smle!($t_1$ * $t_2$ * ... * $t_n$)! \stog 
                       \coqe!($g_1$ * $g_2$ * ... * $g_n$)\%type!}
 {
-  t_i \stog g_i \forall i. 1 \leq i \leq n
+  t_i \stog g_i & \forall i. 1 \leq i \leq n
 }
 \\
 \end{array}
@@ -371,7 +371,8 @@ constructions, defined at
 
 Relation $\rightsquigarrow_s$ is probably SML's dynamic semantics, defined in
 section 6.7 (page 60) in \url{https://smlfamily.github.io/sml97-defn.pdf}.
-\begin{appendices}
+
+\appendix
 
 \section{SML's abstract syntax tree}
 
@@ -489,6 +490,7 @@ Ty ::= TyVar
 /* Record Types */
 TyRow ::= Lab : Ty !$\langle$!, TyRow!$\rangle$!
 \end{grm}
+
 \section{Gallina's abstract syntax tree}
 This AST is slightly different from Gallina's grammar in Coq's reference manual (see section ....). \\
 An expression enclosed in square brackets [...] means at
@@ -617,7 +619,7 @@ this is developed.}
 
 \giselle{Reminder: Once all changes to the ASTs are stable, we should probably
 argue how our modified ASTs are correct w.r.t. the orginal ones.}
-\end{appendices}
+
 
 \bibliography{references}{}
 \bibliographystyle{abbrv}
