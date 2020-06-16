@@ -5,6 +5,14 @@ Open Scope float_scope.
 
 Module Real.
 
+  Axiom  DomainException : forall{a}, a.
+
+  Axiom  UnorderedException : forall{a}, a.
+
+  Axiom  OverflowException : forall{a}, a.
+
+  Axiom  DivException : forall{a}, a.
+
   (*
     Sml: int
     Coq: float
@@ -96,10 +104,12 @@ Module Real.
     Sml: real -> int
     Coq: float -> float
     - It should raise exception if nan is passed to it, but since 
-      Coq doesn't support exceptions, then it will return 0 
+      Coq doesn't support exceptions, then it will return the axiom
+      DomainException
   *)
   Definition sign (r:float):float := 
-    if (is_zero r) || (is_nan r) then zero else
+    if (is_zero r) then zero else
+    if (is_nan r) then DomainException else
     match (get_sign r) with
     | true  => (-one)%float
     | false => one
@@ -137,9 +147,11 @@ Module Real.
     Sml: real * real -> IEEEReal.real_order
     Coq: float * float -> float_comparison
     - It should raise exception for unordered arguments, but since 
-      Coq doesn't support exceptions, then it will return Eq 
+      Coq doesn't support exceptions, then it will return the axiom
+      UnorderedException   
   *)
   Definition compare '((r1, r2):float*float):comparison :=
+    if (is_nan r1) || (is_nan r2) then UnorderedException else
     match (compare r1 r2) with
     | FLt => Lt
     | FGt => Gt
@@ -279,7 +291,7 @@ Module Real.
   *)
   Definition split (x:float):nmbr := 
     let w := exWhole' x in let f := x-w in
-    match (abs f) == 1.0 with
+	  match (abs f) == 1.0 with
     | true  => (mknmbr (w+f) (0.0))
     | false => (mknmbr (w) (f))
     end.
@@ -326,9 +338,12 @@ Module Real.
     Sml: real -> real
     Coq: float -> float
     - It should raise Overflow if x is an infinity, and raises Div if x is NaN.
-      But, since Coq doesn't have exceptions then it will just return them.
+      But, since Coq doesn't have exceptions then it will return the axioms
+      OverflowException, and DivException
   *)
-  Definition checkFloat (r:float):float := r.
+  Definition checkFloat (r:float):float := 
+    if (r != infinity) then OverflowException else
+    if (isNan r) then DivException else r.
 
   (*
     Sml: real -> real
@@ -379,8 +394,6 @@ Module Real.
     | TO_NEGINF
     | TO_POSINF
     | TO_ZERO.
-Compute f2zDigit 2.
-Compute realTrunc(215 / 10).
 
   Fixpoint toInt' (f:float) (time:nat) (acc:float) :float :=
     match time with
@@ -405,9 +418,12 @@ Compute realTrunc(215 / 10).
     - For now The user should give me how many digits, until we fix numdigits,
       It's also so inefficient.
     - It should also raise an exception for infinity and nan but since Coq 
-      doesn't support exceptions then it will return 0.
+      doesn't support exceptions then it will return the axioms
+      OverflowException, and DivException
     *)
   Definition toInt (m:rounding_mode) (f:float) (nd:nat):Z :=
+    if (f != infinity) then OverflowException else
+    if (isNan f) then DivException else
     match m with 
     | TO_NEAREST => if (f < 0) then -1 * (toInt'' (toInt' (abs(realRound f)) nd 0) nd 0)
                     else toInt'' (toInt' (realRound f) nd 0) nd 0
@@ -425,7 +441,8 @@ Compute realTrunc(215 / 10).
     - For now The user should give me how many digits, until we fix numdigits,
       It's also so inefficient.
     - It should also raise an exception for infinity and nan but since Coq 
-      doesn't support exceptions then it will return 0.
+      doesn't support exceptions then it will return the axioms
+      OverflowException, and DivException
     *)
   Definition toLargeInt (m:rounding_mode) (f:float) (nd:nat):Z := toInt m f nd.
 
@@ -435,7 +452,8 @@ Compute realTrunc(215 / 10).
     - For now The user should give me how many digits, until we fix numdigits,
       It's also so inefficient.
     - It should also raise an exception for infinity and nan but since Coq 
-      doesn't support exceptions then it will return 0.
+      doesn't support exceptions then it will return the axioms
+      OverflowException, and DivException
     *)
   Definition floor (r:float) (nd:nat):Z := toInt TO_NEGINF (realFloor r) nd.
 
@@ -445,7 +463,8 @@ Compute realTrunc(215 / 10).
     - For now The user should give me how many digits, until we fix numdigits,
       It's also so inefficient.
     - It should also raise an exception for infinity and nan but since Coq 
-      doesn't support exceptions then it will return 0.
+      doesn't support exceptions then it will return the axioms
+      OverflowException, and DivException
     *)
   Definition ceil (r:float) (nd:nat):Z := toInt TO_POSINF (realCeil r) nd.
 
@@ -455,7 +474,8 @@ Compute realTrunc(215 / 10).
     - For now The user should give me how many digits, until we fix numdigits,
       It's also so inefficient.
     - It should also raise an exception for infinity and nan but since Coq 
-      doesn't support exceptions then it will return 0.
+      doesn't support exceptions then it will return the axioms
+      OverflowException, and DivException
     *)
   Definition trunc (r:float) (nd:nat):Z := toInt TO_ZERO (realTrunc r) nd.
 
@@ -465,7 +485,8 @@ Compute realTrunc(215 / 10).
     - For now The user should give me how many digits, until we fix numdigits,
       It's also so inefficient.
     - It should also raise an exception for infinity and nan but since Coq 
-      doesn't support exceptions then it will return 0.
+      doesn't support exceptions then it will return the axioms
+      OverflowException, and DivException
     *)
   Definition round (r:float) (nd:nat):Z := toInt TO_NEAREST (realRound r) nd.
 

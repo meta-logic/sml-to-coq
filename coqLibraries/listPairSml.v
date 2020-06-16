@@ -5,6 +5,8 @@ Module ListPair.
 
   Variable (A:Type) (B:Type) (C:Type).
 
+  Axiom  UnequalLengthsException : forall{a}, a.
+
   Fixpoint zip' {A B:Type} (l1:list A) (l2:list B):list(A * B) :=
     match l1,l2 with
     | [], _  => []
@@ -23,14 +25,15 @@ Module ListPair.
     Sml: 'a list * 'b list -> ('a * 'b) list
     Coq: list A * list A -> list (A * B)
     - It should raise exception if l1 and l2 have different lengths, but 
-      since Coq doen't have exceptions, it will return [] as a default value 
+      since Coq doen't have exceptions, it will return the axiom [] 
+      UnequalLengthsException 
   *)
   Definition zipEq {A B:Type} '((l1, l2):list A * list B):list(A * B) :=
     match (Nat.eqb (List.length l1) (List.length l2)) with
     | true  => zip' l1 l2
-    | false => []
+    | false => UnequalLengthsException
     end.
-
+Compute zipEq([1;2;3],[4;5]).
   (*
     Sml: ('a * 'b) list -> 'a list * 'b list
     Coq: list (A * B) -> list A * list A
@@ -58,11 +61,15 @@ Module ListPair.
   (*
     Sml: ('a * 'b -> unit) -> 'a list * 'b list -> unit
     Coq: (A * B -> unit) -> list A * list B -> unit
-    - It should raise exception if l1 and l2 have different sizes, but 
-      since Coq doen't have exceptions, it will return unit as a default value
+    - It should raise exception if l1 and l2 have different lengths, but 
+      since Coq doen't have exceptions, it will return the axiom [] 
+      UnequalLengthsException 
   *)
   Definition appEq {A B:Type} (f:A*B->unit) '((l1, l2):list A * list B):unit :=
-    app' f l1 l2.
+    match (Nat.eqb (List.length l1) (List.length l2)) with
+    | true  => app' f l1 l2
+    | false => UnequalLengthsException
+    end.
 
   (*
     Sml: ('a * 'b -> 'c) -> 'a list * 'b list -> 'c list
@@ -74,13 +81,14 @@ Module ListPair.
   (*
     Sml: ('a * 'b -> 'c) -> 'a list * 'b list -> 'c list
     Coq: (A * B -> C) -> list A * list B -> list C
-    - It should raise exception if l1 and l2 have different sizes, but 
-      since Coq doen't have exceptions, it will return [] as a default value
+    - It should raise exception if l1 and l2 have different lengths, but 
+      since Coq doen't have exceptions, it will return the axiom [] 
+      UnequalLengthsException 
   *)
   Definition mapEq {A B C:Type} (f:A*B->C) '((l1, l2):list A*list B):list C :=
     match (Nat.eqb (List.length l1) (List.length l2)) with
     | true  =>  List.map f (zipEq (l1, l2))
-    | false => []
+    | false => UnequalLengthsException
     end.
 
   Fixpoint foldl' {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
@@ -106,14 +114,15 @@ Module ListPair.
   (*
     Sml: ('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
     Coq: (A * B * C -> C) -> C -> list A * list B -> C
-    - It should raise exception if l1 and l2 have different sizes, but 
-      since Coq doen't have exceptions, it will return init as a default value
+    - It should raise exception if l1 and l2 have different lengths, but 
+      since Coq doen't have exceptions, it will return the axiom [] 
+      UnequalLengthsException 
   *)
   Definition foldlEq {A B C:Type} (f:A*B*C->C) (init:C) 
              '((l1, l2):list A * list B):C :=
              match (Nat.eqb (List.length l1) (List.length l2)) with
              | true  => foldl' (fun '((a,b),c)=>f(a,b,c)) init (zipEq (l1, l2))
-             | false => init
+             | false => UnequalLengthsException
              end.
 
   (*
@@ -127,14 +136,15 @@ Module ListPair.
   (*
     Sml: ('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
     Coq: (A * B * C -> C) -> C -> list A * list B -> C
-    - It should raise exception if l1 and l2 have different sizes, but 
-      since Coq doen't have exceptions, it will return init as a default value
+    - It should raise exception if l1 and l2 have different lengths, but 
+      since Coq doen't have exceptions, it will return the axiom [] 
+      UnequalLengthsException
   *)
   Definition foldrEq {A B C:Type} (f:A*B*C->C) (init:C) 
              '((l1, l2):list A * list B):C :=
              match (Nat.eqb (List.length l1) (List.length l2)) with
              | true  => foldr' (fun '((a,b),c)=>f(a,b,c)) init (zipEq (l1, l2))
-             | false => init
+             | false => UnequalLengthsException
              end.
 
   (*

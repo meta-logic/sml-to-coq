@@ -7,6 +7,10 @@ Open Scope string_scope.
 
 Module String.
 
+  Axiom  SubscriptException : forall{a}, a.
+
+  Axiom  SizeException : forall{a}, a.
+
   (*
     Sml: int
     Coq: nat
@@ -22,8 +26,12 @@ Module String.
   (*
     Sml: string * int -> char
     Coq: string * nat -> ascii
+    - It should raise an exception if n < 0 or n >= length l.,
+      but since Coq doesn't have exceptions then it will return the axiom 
+      SubscriptException
   *)
-  Definition sub '((s, n):string * nat):ascii:=  
+  Definition sub '((s, n):string * nat):ascii:=
+    if (Nat.ltb n 0) || (Nat.ltb (size s) n) then SubscriptException else
     match (String.get n s) with
     | None => "0"%char
     | Some x => x
@@ -32,12 +40,17 @@ Module String.
   (*
     Sml: string * int * int option -> string
     Coq: string * nat * option nat -> string
+    - It should raise an exception if n < 0, n >= length l, m < 0,
+      or length l < n+m, but since Coq doesn't have exceptions then
+      it will return the axiom SubscriptException
   *)
   Definition extract '((s, n, no):string * nat * option nat):string:= 
+    if (Nat.ltb n 0) || (Nat.ltb (size s) n) then SubscriptException else
     match no with
     |None   => String.substring n ((String.length s) - n) s
-    |Some m => String.substring n m s
-    end.
+    |Some m =>
+     if (Nat.ltb m 0) || (Nat.ltb (m+n) (size s)) then SubscriptException else
+     String.substring n m s end.
 
   (*
     Sml: string * int * int -> string
@@ -49,24 +62,36 @@ Module String.
   (*
     Sml: string * string -> string
     Coq: string * string -> string
+    - It should raise an exception if |s1|+|s2| > maxsize, but since Coq 
+      doesn't have exceptions then it will return the axiom SizeException
   *)
-  Definition append (s1 s2:string):string := String.append s1 s2.
+  Definition append (s1 s2:string):string := 
+    if Nat.ltb maxSize (size s1 + size s2) 
+    then SizeException else String.append s1 s2.
   Notation "op^( x , y )" := (append x y) (at level 70, no associativity) : Z_scope.
   Infix "^" := append :string_scope.
 
   (*
     Sml: string -> string list -> string
     Coq: string -> list string -> string
+    - It should raises an exception if the size of the resulting string
+      would be greater than maxSize. , but since Coq doesn't have 
+      exceptions then it will return the axiom SizeException
   *)
   Definition concatWith (s:string) (sl:list string): string :=
-    String.concat s sl.
+    let r := String.concat s sl in 
+    if Nat.ltb maxSize (size r) then SizeException else r .
 
   (*
     Sml: string list -> string
     Coq: list string -> string
+    - It should raises an exception if the size of the resulting string
+      would be greater than maxSize. , but since Coq doesn't have 
+      exceptions then it will return the axiom SizeException
   *)
-  Definition concat (sl:list string): string := String.concat "" sl.
-
+  Definition concat (sl:list string): string :=
+    let r := String.concat "" sl in
+    if Nat.ltb maxSize (size r) then SizeException else r .
   (*
     Sml: char -> string
     Coq: ascii -> string
@@ -76,6 +101,9 @@ Module String.
   (*
     Sml: char list -> string
     Coq: list ascii -> string
+    - It should raises an exception if the size of the resulting string
+      would be greater than maxSize. , but since Coq doesn't have 
+      exceptions then it will return the axiom SizeException
   *)
   Definition implode (l:list ascii): string :=  concat (List.map str l).
 
@@ -99,7 +127,6 @@ Module String.
   Definition translate (f:ascii->string) (s:string): string := 
     concat(List.map f (explode s)).
 
-  
   Fixpoint fields' (f:ascii->bool) (s:string) (i j time:nat): list string := 
     match time with
     | 0       => (substring(s, i, (j-1)))::[]
