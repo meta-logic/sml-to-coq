@@ -6,6 +6,10 @@ Module List.
 
   Variables (A : Type) (B : Type).
 
+  Axiom  EmptyException : forall{a}, a.
+
+  Axiom  SubscriptException : forall{a}, a.
+
   (*
     Sml: 'a list -> bool
     Coq: list A -> bool
@@ -31,62 +35,80 @@ Module List.
 
   (*
     Sml: 'a list -> 'a
-    Coq: A -> list A  -> A
-    - It will compile without default, However it will
-      return the right type iff you pass a default value
-    - We can pass a default while genrating the code after knowing the type of A
+    Coq: list A  -> A
+    - It should raise an exception if you pass an empty list to it,
+      but since Coq doesn't have exceptions then it will return the axiom 
+      EmptyException
   *)
-  Definition hd {A: Type} (default:A) (l:list A):A := List.hd default l.
+  Definition hd {A: Type} (l:list A):A := List.hd EmptyException l.
 
   (*
     Sml: 'a list -> 'a list
     Coq: list A -> list A
+    - It should raise an exception if you pass an empty list to it,
+      but since Coq doesn't have exceptions then it will return the axiom 
+      EmptyException
   *)
-  Definition tl {A: Type} (l:list A):list A := List.tl l.
+  Definition tl {A: Type} (l:list A):list A :=
+    match l with
+    | [] => EmptyException
+    | _  => List.tl l
+    end.
 
   (*
     Sml: 'a list -> 'a
-    Coq: list A -> A -> A
-    - It will compile without default, However it will
-      return the right type iff you pass a default value
-    - We can pass a default while genrating the code after knowing the type of A
+    Coq: list A -> A
+    - It should raise an exception if you pass an empty list to it,
+      but since Coq doesn't have exceptions then it will return the axiom 
+      EmptyException
   *)
-  Fixpoint last {A: Type} (l:list A) (default:A):A := List.last l default.
+  Fixpoint last {A: Type} (l:list A):A := List.last l EmptyException.
 
   (*
     Sml: 'a list -> ('a * 'a list) option
-    Coq: list A -> A -> option ('a * 'a list)
-    - It will compile without default, However it will
-      return the right type iff you pass a default value
-    - We can pass a default while genrating the code after knowing the type of A
+    Coq: list A -> option ('a * 'a list)
   *)
-  Definition getItem {A: Type} (l:list A) (default:A):option (A * list A) :=
+  Definition getItem {A: Type} (l:list A):option (A * list A) :=
     match l with
     | [] => None
-    | _  => Some (List.hd default l, List.tl l)
+    | _  => Some (List.hd l, List.tl l)
     end.
 
   (*
     Sml: 'a list * int -> 'a
-    Coq: list A * nat -> A -> A
-    - It will compile without default, However it will
-      return the right type iff you pass a default value
-    - We can pass a default while genrating the code after knowing the type of A
+    Coq: list A * nat -> A
+    - It should raise an exception if n < 0 or n >= length l.,
+      but since Coq doesn't have exceptions then it will return the axiom 
+      SubscriptException
   *)
-  Definition nth {A: Type} '((l, n):list A * nat) (default:A):A := 
-    List.nth n l default.
+  Definition nth {A: Type} '((l, n):list A * nat):A := 
+    List.nth n l SubscriptException.
 
   (*
     Sml: 'a list * int -> 'a list
     Coq: list A * nat -> list A
+    - It should raise an exception if n < 0 or n >= length l.,
+      but since Coq doesn't have exceptions then it will return the axiom 
+      SubscriptException
   *)
-  Definition take {A: Type} '((l, n):list A * nat):list A := List.firstn n l.
+  Definition take {A: Type} '((l, n):list A * nat):list A := 
+    match (Nat.ltb n 0) || (Nat.ltb (length l) n) with 
+    | true  => SubscriptException
+    | false => List.firstn n l
+    end.
 
   (*
     Sml: 'a list * int -> 'a list
     Coq: list A * nat -> list A
+    - It should raise an exception if n < 0 or n >= length l.,
+      but since Coq doesn't have exceptions then it will return the axiom 
+      SubscriptException
   *)
-  Definition drop {A: Type} '((l, n):list A * nat):list A := List.skipn n l.
+  Definition drop {A: Type} '((l, n):list A * nat):list A := 
+    match (Nat.ltb n 0) || (Nat.ltb (length l) n) with 
+    | true  => SubscriptException
+    | false => List.skipn n l
+    end. 
 
   (*
     Sml: 'a list -> 'a list

@@ -3,6 +3,8 @@ Module Option.
 
   Variable (A:Type) (B:Type) (C:Type).
 
+  Axiom OptionException : forall{a}, a.
+
   (*
     Sml: 'a option * 'a -> 'a
     Coq: option A * A -> A
@@ -25,13 +27,13 @@ Module Option.
 
   (*
     Sml: 'a option -> A
-    Coq: option A -> A -> A
-    - It will compile without default, However it will
-      return the right type iff you pass a default value
-    - We can pass a default while genrating the code after knowing the type of A
+    Coq: option A -> A
+    - It should raise an exception if you pass None to it, but since 
+      Coq doesn't have exceptions then it will return the axiom 
+      OptionException
   *)
-  Definition ValOf {A:Type} (opt:option A) (default:A):A := 
-    getOPt(opt, default).
+  Definition ValOf {A:Type} (opt:option A) :A := 
+    getOPt(opt, OptionException).
 
   (*
     Sml: ('a -> bool) -> 'a -> 'a option

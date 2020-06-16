@@ -224,7 +224,6 @@ Module Int.
   Definition fromString (s: string): option Z := readZ s 0.
 
   Open Scope nat_scope.
-  
   Definition natToDigit (n: nat) : ascii :=
     match n with
     | 0 => "0"
