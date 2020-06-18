@@ -1,9 +1,8 @@
+Require Import Bool.
 Require Import String.
 Require Import Ascii.
 Open Scope char_scope. 
 Require Import List.
- 
-
 
 Module Char.
 
@@ -259,33 +258,149 @@ Module Char.
     | false => c
     end.
 
+  Definition toControl (c:ascii):string := 
+    "\\^" ++ String (chr(ord c + ord "@")) "".
+
+  Definition toAscii (c:ascii):string := 
+    "\\" ++ (String (chr(Nat.div (ord c) 100 + ord "0")) "")
+         ++ (String (chr(Nat.div (Nat.modulo (ord c) 100) 10 + ord "0")) "")
+         ++ (String (chr(Nat.modulo (ord c) 10 + ord "0")) "").
+
+  Definition toOctAscii (c:ascii):string := 
+    "\\" ++ (String (chr(Nat.div (ord c) 64 + ord "0")) "")
+         ++ (String (chr(Nat.div (Nat.modulo (ord c) 64) 8 + ord "0")) "")
+         ++ (String (chr(Nat.modulo (ord c) 8 + ord "0")) "").
+
   (* 
     Sml: char -> string
     Coq: ascii -> string
   *)
-  Definition toString (c:ascii):string := String c "".
+  Definition toString (c:ascii):string := 
+    match c with 
+    | "092" => "\\\\"
+    | "034" => """"
+    | "007" => "\\a"
+    | "008" => "\\b"
+    | "009" => "\\t"
+    | "010" => "\\n"
+    | "011" => "\\v"
+    | "012" => "\\f"
+    | "013" => "\\r"
+    | c     => if Nat.ltb (ord c) 32 then toControl c 
+               else if Nat.ltb 126 (ord c) then toAscii c 
+               else String c "" 
+    end.
 
+  (* 
+    Sml: char -> String.string
+    Coq: ascii -> string
+  *)
+  Definition toCString (c:ascii):string := 
+    match c with 
+    | "092" => "\\\\"
+    | "034" => """"
+    | "063" => "\\?"
+    | "039" => "\\'"
+    | "007" => "\\a"
+    | "008" => "\\b"
+    | "009" => "\\t"
+    | "010" => "\\n"
+    | "011" => "\\v"
+    | "012" => "\\f"
+    | "013" => "\\r"
+    | c     => if isPrint c then String c "" else toOctAscii c
+    end.
+
+  Definition value c := 
+    ord(toUpper c) - (if c < "A" then ord "0" else ord "A" - 10).
+Compute value "a".
+  Import ListNotations.
+
+  Definition scanAscii (cl:list ascii):option (ascii * string) :=
+    match cl with
+    | [] => None 
+    | c1::[] => None
+    | c1::c2::[] => None
+    | c1::c2::c3::cl' => 
+      if (isDigit(c1)&&isDigit(c2)&&isDigit(c3)) then
+      ( let i := 100*value c1 + 10*value c2 + value c3 in 
+        if Nat.leb i 255 then Some(chr i,String.string_of_list_ascii(cl'))
+        else None ) else None
+    end.
+
+  Definition scanUnicode (cl:list ascii):option (ascii * string) :=
+    match cl with
+    | [] => None 
+    | c1::[] => None
+    | c1::c2::[] => None
+    | c1::c2::c3::[] => None
+    | c1::c2::c3::c4::cl' => 
+      if (isHexDigit(c1)&&isHexDigit(c2)&&isHexDigit(c3)&&isHexDigit(c4)) then
+      ( let i := 4096*value c1 + 256*value c2 + 16*value c3 + value c4 in 
+        if Nat.leb i 255 then Some(chr i,String.string_of_list_ascii(cl'))
+        else None ) else None
+    end.
+
+  Definition scanControl (cl:list ascii):option (ascii * string) :=
+    match cl with
+    | [] => None
+    | c::cl' => 
+      if (Nat.leb 64 (ord c)) && (Nat.leb (ord c) 96) 
+      then Some(chr(ord c - 64),String.string_of_list_ascii(cl') ) else
+      None
+    end.
+
+
+  Definition scanEscape (cl:list ascii):option (ascii * string) :=
+    match cl with
+    | [] => None 
+    | c::l => if isDigit c then scanAscii cl else 
+              if isSpace c then None else
+              match c with
+              | "a"   => Some("007", String.string_of_list_ascii(l))
+              | "b"   => Some("008", String.string_of_list_ascii(l))
+              | "t"   => Some("009", String.string_of_list_ascii(l))
+              | "n"   => Some("010", String.string_of_list_ascii(l))
+              | "v"   => Some("011", String.string_of_list_ascii(l))
+              | "f"   => Some("012", String.string_of_list_ascii(l))
+              | "r"   => Some("013", String.string_of_list_ascii(l))
+              | "092" => Some("092", String.string_of_list_ascii(l))
+              | """"  => Some("034", String.string_of_list_ascii(l))
+              | "^"   => scanControl cl
+              | "u"   => scanUnicode cl
+              | _     => None
+              end
+    end.
+
+  Definition scan' (cl:list ascii):option (ascii * string) :=
+    match cl with
+    | [] => None
+    | c::[] => Some(c,""%string)
+    | c1::c2::cl' => match (c1 = "\") && (c2 = "\") with
+                     | true => scanEscape cl'
+                     | flase => if isPrint c1 
+                     then Some(c1,String.string_of_list_ascii(c2::cl')) 
+                     else None
+                     end
+    end.
+
+  (*
+    Sml: (Char.char, 'a) StringCvt.reader -> (char, 'a) StringCvt.reader
+    Coq: ascii -> string -> option (ascii * string) 
+  *)
+  Definition scan (c:ascii) (s:string):option (ascii * string) :=
+    let cl := String.list_ascii_of_string(s) in scan' cl.
 
   (* 
     Sml: String.string -> char option
-    Coq: string -> option ascii
-    - Partially correct, It will not work for
-      chars like "\\a", which works in Sml    
+    Coq: string -> option ascii  
   *)
-  Import ListNotations.
+
   Definition fromString (s:string):option ascii := 
-    match (String.length s) with
-    | 1 => (let c := String.list_ascii_of_string(s) in match c with
-                                                     | [] => None
-                                                     | c::l => Some c
-                                                      end)
-    | _ => None
+    let c := scan " " s in
+    match c with 
+    | None => None
+    | Some (x, str) => Some x 
     end.
-
-  (* Sml Spacific 
-
-    scan
-    toCString
- *)
 
 End Char.
