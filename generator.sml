@@ -63,7 +63,6 @@ struct
       (S.concatWith ("\n") stringLibL)^ "\n" 
     end
 
-
   and termG (term: G.term): string =
     case term of                              
       G.ForallTerm(bL,t) => "forall "^(concatListWith (" ", binderG, bL))^" , " ^termG(t)
@@ -112,7 +111,7 @@ struct
     | G.WordTerm(v)         => v
     | G.RealTerm(v)         => v ^ "%" ^ "float" before realLib := true 
     | G.StringTerm(v)       => "\"" ^ v ^ "\"" before stringLib := true 
-    | G.CharTerm(v)         => "\"" ^ v ^ "\"" ^ "%"^ "char" before asciiLib := true
+    | G.CharTerm(v)         => (convertChar v) before  asciiLib := true
     | G.HexTerm(v)          => "\"" ^ "0x"^ S.map Char.toLower v ^ "\""
                                before hexLib := true
     (* extra : denotes tuple types e.g. int * int. (!) *)
@@ -277,4 +276,19 @@ struct
     case fp of
         G.Fixpoint(fL)   => "Fixpoint "    ^ concatListWith("\nwith ", fixbodyG, fL)^"."
       | G.CoFixpoint(fL) => "CoFixpoint  " ^ concatListWith("\nwith ", fixbodyG, fL)^"."  
+
+  and convertChar (s: string): string = 
+      let
+        val c = ord(Option.valOf ( Char.fromString(s) ))
+        val c' = if c = 34 then "\"\"" else 
+                if c < 32 then Int.toString c else 
+                if c > 126 then Int.toString c else s
+        val r = if (List.all (Char.isDigit) (S.explode c')) then 
+                  (if (S.size c') = 3 then c' else 
+                   if (S.size c') = 2 then "0" ^ c' else
+                   if (S.size c') = 1 then "00" ^ c' else c' )
+                else c' 
+      in
+        "\"" ^ r ^ "\"" ^ "%"^ "char"
+      end
 end
