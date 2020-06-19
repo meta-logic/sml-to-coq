@@ -13,7 +13,7 @@ and 'a oddList = OCons of 'a * 'a evenList * 'a oddList;
 (*Definition*)
 val int:int = "sdasd";
 (*val r = ("abcd" > "asdsd") andalso (5 > 3);*)
-val t = #"\a";
+val t = #"\^U";
 val x = op< (4,5);
 val a = ~5
 val b = "4";
