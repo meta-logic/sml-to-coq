@@ -1,9 +1,10 @@
 Require Import ZArith.
 Require Import Ascii.
 Require Import String.
-Open Scope Z_scope. 
 
 Module Int.
+
+  Open Scope Z_scope. 
 
   (* 
     Sml: int -> LargeInt.int

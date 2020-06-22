@@ -1,9 +1,10 @@
 Require Import Bool.
 Require Import String.
 Require Import Ascii.
-Open Scope string_scope.
 
 Module Bool.
+
+  Open Scope string_scope.
 
   (* 
     Sml: bool -> bool 
