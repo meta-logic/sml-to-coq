@@ -1,5 +1,6 @@
 Require Import Bool.
 Require Import List.
+Require Import ZArith.
 Import ListNotations.
 
 Module List.
@@ -22,9 +23,9 @@ Module List.
 
   (*
     Sml: 'a list -> int
-    Coq: list A -> nat
+    Coq: list A -> Z
   *)
-  Definition length {A: Type} (l:list A):nat := List.length l.
+  Definition length {A: Type} (l:list A):Z := Z.of_nat(List.length l).
 
   (*
     Sml: 'a list * 'a list -> 'a list
@@ -76,38 +77,38 @@ Module List.
 
   (*
     Sml: 'a list * int -> 'a
-    Coq: list A * nat -> A
+    Coq: list A * Z -> A
     - It should raise an exception if n < 0 or n >= length l.,
       but since Coq doesn't have exceptions then it will return the axiom 
       SubscriptException
   *)
-  Definition nth {A: Type} '((l, n):list A * nat):A := 
-    List.nth n l SubscriptException.
+  Definition nth {A: Type} '((l, n):list A * Z):A := 
+    List.nth (Z.to_nat n) l SubscriptException.
 
   (*
     Sml: 'a list * int -> 'a list
-    Coq: list A * nat -> list A
+    Coq: list A * Z -> list A
     - It should raise an exception if n < 0 or n >= length l.,
       but since Coq doesn't have exceptions then it will return the axiom 
       SubscriptException
   *)
-  Definition take {A: Type} '((l, n):list A * nat):list A := 
-    match (Nat.ltb n 0) || (Nat.ltb (length l) n) with 
+  Definition take {A: Type} '((l, n):list A * Z):list A := 
+    match (Z.ltb n 0) || (Z.ltb (length l) n) with 
     | true  => SubscriptException
-    | false => List.firstn n l
+    | false => List.firstn (Z.to_nat n) l
     end.
 
   (*
     Sml: 'a list * int -> 'a list
-    Coq: list A * nat -> list A
+    Coq: list A * Z -> list A
     - It should raise an exception if n < 0 or n >= length l.,
       but since Coq doesn't have exceptions then it will return the axiom 
       SubscriptException
   *)
-  Definition drop {A: Type} '((l, n):list A * nat):list A := 
-    match (Nat.ltb n 0) || (Nat.ltb (length l) n) with 
+  Definition drop {A: Type} '((l, n):list A * Z):list A := 
+    match (Z.ltb n 0) || (Z.ltb (length l) n) with 
     | true  => SubscriptException
-    | false => List.skipn n l
+    | false => List.skipn (Z.to_nat n) l
     end. 
 
   (*
@@ -210,22 +211,19 @@ Module List.
   *)
   Definition all {A: Type} (f:A->bool) (l:list A):bool     := List.forallb f l.
 
-  Fixpoint tabulate' {A: Type} (time n:nat)(f:nat->A) (l:list A) :=
+  Fixpoint tabulate' {A: Type} (time:nat) (n:Z)(f:Z->A) (l:list A) :=
     match time with  
     | 0 => l
-    | S time' => 
-      match n with
-      | 0  => f 0::l
-      | n' =>(tabulate' time' (n'-1) f ((f n)::l)) 
-      end
+    | S time' => if (Z.eqb n 0) then (f (0%Z)::l) 
+                 else (tabulate' time' (n-1) f ((f n)::l))
     end.
 
   (*
     Sml:  int * (int -> 'a) -> 'a list
-    Coq:  nat * (nat -> A) -> list A
+    Coq:  nat * (Z -> A) -> list A
   *)
-  Definition tabulate {A: Type} '((n, f):nat * (nat->A)):list A :=
-    tabulate' n n f [].
+  Definition tabulate {A: Type} '((n, f):Z * (Z->A)):list A :=
+    tabulate' (Z.to_nat n) n f [].
 
   Fixpoint collate' {A: Type} (f:A * A -> comparison) (l1 l2:list A) :=
     match l1, l2 with

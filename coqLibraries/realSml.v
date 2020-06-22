@@ -1,10 +1,11 @@
 Require Import Bool.
 Require Import ZArith.
 Require Import Floats.
-Open Scope float_scope.
 
 Module Real.
 
+  Open Scope float_scope.
+  
   Axiom  DomainException : forall{a}, a.
 
   Axiom  UnorderedException : forall{a}, a.
@@ -15,9 +16,9 @@ Module Real.
 
   (*
     Sml: int
-    Coq: float
+    Coq: Z
   *)
-  Definition radix        := two.
+  Definition radix        := 2%Z.
 
   (*
     Sml: int
@@ -102,17 +103,17 @@ Module Real.
 
   (*
     Sml: real -> int
-    Coq: float -> float
+    Coq: float -> Z
     - It should raise exception if nan is passed to it, but since 
       Coq doesn't support exceptions, then it will return the axiom
       DomainException
   *)
-  Definition sign (r:float):float := 
-    if (is_zero r) then zero else
+  Definition sign (r:float):Z := 
+    if (is_zero r) then 0%Z else
     if (is_nan r) then DomainException else
     match (get_sign r) with
-    | true  => (-one)%float
-    | false => one
+    | true  => (-1)%Z
+    | false => 1%Z
     end.
 
   (*
@@ -291,7 +292,7 @@ Module Real.
   *)
   Definition split (x:float):nmbr := 
     let w := exWhole' x in let f := x-w in
-	  match (abs f) == 1.0 with
+    match (abs f) == 1.0 with
     | true  => (mknmbr (w+f) (0.0))
     | false => (mknmbr (w) (f))
     end.

@@ -1,11 +1,13 @@
 Require Import Bool.
 Require Import String.
 Require Import Ascii.
+Require Import ZArith.
 Require Import List.
 Import ListNotations.
-Open Scope string_scope.
 
 Module String.
+
+  Open Scope string_scope.
 
   Axiom  SubscriptException : forall{a}, a.
 
@@ -13,51 +15,51 @@ Module String.
 
   (*
     Sml: int
-    Coq: nat
+    Coq: Z
   *)
-  Definition maxSize:nat :=  16777215.
+  Definition maxSize:Z :=  16777215%Z.
 
   (*
     Sml: string -> int
-    Coq: string -> nat
+    Coq: string -> Z
   *)
-  Definition size (s:string): nat:= String.length s.
+  Definition size (s:string): Z := Z.of_nat(String.length s).
 
   (*
     Sml: string * int -> char
-    Coq: string * nat -> ascii
+    Coq: string * Z -> ascii
     - It should raise an exception if n < 0 or n >= length l.,
       but since Coq doesn't have exceptions then it will return the axiom 
       SubscriptException
   *)
-  Definition sub '((s, n):string * nat):ascii:=
-    if (Nat.ltb n 0) || (Nat.ltb (size s) n) then SubscriptException else
-    match (String.get n s) with
+  Definition sub '((s, n):string * Z):ascii:=
+    if (Z.ltb n 0) || (Z.ltb (size s) n) then SubscriptException else
+    match (String.get (Z.to_nat n) s) with
     | None => "0"%char
     | Some x => x
     end.
 
   (*
     Sml: string * int * int option -> string
-    Coq: string * nat * option nat -> string
+    Coq: string * Z * option Z -> string
     - It should raise an exception if n < 0, n >= length l, m < 0,
       or length l < n+m, but since Coq doesn't have exceptions then
       it will return the axiom SubscriptException
   *)
-  Definition extract '((s, n, no):string * nat * option nat):string:= 
-    if (Nat.ltb n 0) || (Nat.ltb (size s) n) then SubscriptException else
+  Definition extract '((s, n, no):string * Z * option Z):string:= 
+    if (Z.ltb n 0) || (Z.ltb (size s) n) then SubscriptException else
     match no with
-    |None   => String.substring n ((String.length s) - n) s
+    |None   => String.substring (Z.to_nat n) ((String.length s)-(Z.to_nat n)) s
     |Some m =>
-     if (Nat.ltb m 0) || (Nat.ltb (m+n) (size s)) then SubscriptException else
-     String.substring n m s end.
+     if (Z.ltb m 0) || (Z.ltb (m+n) (size s)) then SubscriptException else
+     String.substring (Z.to_nat n) (Z.to_nat m) s end.
 
   (*
     Sml: string * int * int -> string
-    Coq: string * nat * nat -> string
+    Coq: string * Z * Z -> string
   *)
-  Definition substring '((s, n, m):string * nat * nat):string := 
-    String.substring n m s.
+  Definition substring '((s, n, m):string * Z * Z):string := 
+    String.substring (Z.to_nat n) (Z.to_nat m) s.
 
   (*
     Sml: string * string -> string
@@ -66,7 +68,7 @@ Module String.
       doesn't have exceptions then it will return the axiom SizeException
   *)
   Definition append (s1 s2:string):string := 
-    if Nat.ltb maxSize (size s1 + size s2) 
+    if Z.ltb maxSize (size s1 + size s2) 
     then SizeException else String.append s1 s2.
   Notation "op^( x , y )" := (append x y) (at level 70, no associativity) : Z_scope.
   Infix "^" := append :string_scope.
@@ -80,7 +82,7 @@ Module String.
   *)
   Definition concatWith (s:string) (sl:list string): string :=
     let r := String.concat s sl in 
-    if Nat.ltb maxSize (size r) then SizeException else r .
+    if Z.ltb maxSize (size r) then SizeException else r .
 
   (*
     Sml: string list -> string
@@ -91,7 +93,7 @@ Module String.
   *)
   Definition concat (sl:list string): string :=
     let r := String.concat "" sl in
-    if Nat.ltb maxSize (size r) then SizeException else r .
+    if Z.ltb maxSize (size r) then SizeException else r .
   (*
     Sml: char -> string
     Coq: ascii -> string
@@ -127,11 +129,11 @@ Module String.
   Definition translate (f:ascii->string) (s:string): string := 
     concat(List.map f (explode s)).
 
-  Fixpoint fields' (f:ascii->bool) (s:string) (i j time:nat): list string := 
+  Fixpoint fields' (f:ascii->bool) (s:string) (i j:Z) (time:nat): list string := 
     match time with
-    | 0       => (substring(s, i, (j-1)))::[]
+    | 0       => (substring(s, i, (Z.sub j 1)))::[]
     | S time' => match (f (sub(s, j))) with
-               | true  => (substring(s, i, j-i))::(fields' f s (j+1) (j+1) time')
+               | true  => (substring(s, i, (Z.sub j 1)))::(fields' f s (j+1) (j+10) time')
                | false => fields' f s i (j+1) time'
                 end
     end.
@@ -141,7 +143,7 @@ Module String.
     Coq: (ascii -> bool) -> string -> list string
   *)
   Definition fields (f:ascii->bool) (s:string): list string := 
-    fields' f s 0 0 (size s).
+    fields' f s 0 0 (Z.to_nat (size s)).
 
   (*
     Sml: (char -> bool) -> string -> string list
@@ -178,7 +180,7 @@ Module String.
     Coq: string * string -> comparison
   *)
   Definition compare '((s1, s2):string * string):comparison :=
-    Nat.compare (size s1) (size s2).
+    Z.compare (size s1) (size s2).
 
   Fixpoint collate' (f:ascii * ascii -> comparison) (l1 l2:list ascii): comparison:=
     match l1, l2 with
@@ -203,7 +205,7 @@ Module String.
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
-  Definition opeq s1 s2:bool := Nat.eqb (size s1) (size s2). 
+  Definition opeq s1 s2:bool := Z.eqb (size s1) (size s2). 
   Notation "op=( x , y )" := (opeq x y) (at level 70) : nat_scope.
   Infix "=" := opeq (at level 70) : string_scope.
 
@@ -211,7 +213,7 @@ Module String.
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
-  Definition oplt s1 s2:bool := Nat.ltb (size s1) (size s2). 
+  Definition oplt s1 s2:bool := Z.ltb (size s1) (size s2). 
   Notation "op<( x , y )" := (oplt x y) (at level 70) : nat_scope.
   Infix "<" := oplt (at level 70) : string_scope.
 
@@ -219,7 +221,7 @@ Module String.
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
-  Definition ople s1 s2:bool := Nat.leb (size s1) (size s2). 
+  Definition ople s1 s2:bool := Z.leb (size s1) (size s2). 
   Notation "op<=( x , y )" := (ople x y) (at level 70) : nat_scope.
   Infix "<=" := ople (at level 70) : string_scope.
 
@@ -227,7 +229,7 @@ Module String.
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
-  Definition opgt s1 s2:bool := Nat.ltb (size s2) (size s1). 
+  Definition opgt s1 s2:bool := Z.ltb (size s2) (size s1). 
   Notation "op>( x , y )" := (opgt x y) (at level 70) : nat_scope.
   Infix ">" := opgt (at level 70) : string_scope.
 
@@ -235,7 +237,7 @@ Module String.
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
-  Definition opge s1 s2:bool := Nat.leb (size s2) (size s1). 
+  Definition opge s1 s2:bool := Z.leb (size s2) (size s1). 
   Notation "op>=( x , y )" := (opge x y) (at level 70) : nat_scope.
   Infix ">=" := opge (at level 70) : string_scope.
 

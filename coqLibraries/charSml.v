@@ -1,10 +1,12 @@
 Require Import Bool.
 Require Import String.
 Require Import Ascii.
-Open Scope char_scope. 
 Require Import List.
+Require Import ZArith.
 
 Module Char.
+
+  Open Scope char_scope. 
 
   (* 
     Sml: char
@@ -22,19 +24,19 @@ Module Char.
     Sml: char
     Coq: ascii
   *)
-  Definition maxOrd:nat     := 255.
+  Definition maxOrd:Z     := 255%Z.
 
   (* 
     Sml: char -> int
-    Coq: ascii -> nat
+    Coq: ascii -> Z
   *)
-  Definition ord (c:ascii):nat := Ascii.nat_of_ascii(c).
+  Definition ord (c:ascii):Z := Z.of_nat(Ascii.nat_of_ascii(c)).
 
   (* 
     Sml: int -> char
     Coq: nat -> ascii
   *)
-  Definition chr (n:nat):ascii := Ascii.ascii_of_nat(n).
+  Definition chr (n:Z):ascii := Ascii.ascii_of_nat(Z.to_nat(n)).
 
   (* 
     Sml: char -> char
@@ -53,13 +55,13 @@ Module Char.
     Coq: ascii * ascii -> comparison
   *)
   Definition compare '((c, d):ascii * ascii):comparison := 
-    Nat.compare (ord c) (ord d).
+    Z.compare (ord c) (ord d).
 
   (* 
     Sml: char * char -> bool
     Coq: ascii * ascii -> bool
   *)
-  Definition opeq s1 s2:bool := Nat.eqb (ord s1) (ord s2). 
+  Definition opeq s1 s2:bool := Z.eqb (ord s1) (ord s2). 
   Notation "op=( x , y )" := (opeq x y) (at level 70) : nat_scope.
   Infix "=" := opeq  : char_scope.
 
@@ -67,7 +69,7 @@ Module Char.
     Sml: char * char -> bool
     Coq: ascii * ascii -> bool
   *)
-  Definition oplt s1 s2:bool := Nat.ltb (ord s1) (ord s2). 
+  Definition oplt s1 s2:bool := Z.ltb (ord s1) (ord s2). 
   Notation "op<( x , y )" := (oplt x y) (at level 70) : nat_scope.
   Infix "<" := oplt (at level 70) : char_scope.
 
@@ -75,7 +77,7 @@ Module Char.
     Sml: char * char -> bool
     Coq: ascii * ascii -> bool
   *)
-  Definition ople s1 s2:bool := Nat.leb (ord s1) (ord s2). 
+  Definition ople s1 s2:bool := Z.leb (ord s1) (ord s2). 
   Notation "op<=( x , y )" := (ople x y) (at level 70) : nat_scope.
   Infix "<=" := ople (at level 70) : char_scope.
 
@@ -83,7 +85,7 @@ Module Char.
     Sml: char * char -> bool
     Coq: ascii * ascii -> bool
   *)
-  Definition opgt s1 s2:bool := Nat.ltb (ord s2) (ord s1). 
+  Definition opgt s1 s2:bool := Z.ltb (ord s2) (ord s1). 
   Notation "op>( x , y )" := (opgt x y) (at level 70) : nat_scope.
   Infix ">" := opgt (at level 70) : char_scope.
 
@@ -91,7 +93,7 @@ Module Char.
     Sml: char * char -> bool
     Coq: ascii * ascii -> bool
   *)
-  Definition opge s1 s2:bool := Nat.leb (ord s2) (ord s1). 
+  Definition opge s1 s2:bool := Z.leb (ord s2) (ord s1). 
   Notation "op>=( x , y )" := (opge x y) (at level 70) : nat_scope.
   Infix ">=" := opge (at level 70) : char_scope.
 
@@ -118,7 +120,7 @@ Module Char.
     Coq: ascii -> bool
   *)
   Definition isAscii (c:ascii):bool := 
-    match (Nat.leb 0 (ord c)), (Nat.leb (ord c) 127) with
+    match (Z.leb 0 (ord c)), (Z.leb (ord c) 127) with
     | true, true => true
     | _   , _    => false
     end.
@@ -262,14 +264,14 @@ Module Char.
     "\\^" ++ String (chr(ord c + ord "@")) "".
 
   Definition toAscii (c:ascii):string := 
-    "\\" ++ (String (chr(Nat.div (ord c) 100 + ord "0")) "")
-         ++ (String (chr(Nat.div (Nat.modulo (ord c) 100) 10 + ord "0")) "")
-         ++ (String (chr(Nat.modulo (ord c) 10 + ord "0")) "").
+    "\\" ++ (String (chr(Z.div (ord c) 100 + ord "0")) "")
+         ++ (String (chr(Z.div (Z.modulo (ord c) 100) 10 + ord "0")) "")
+         ++ (String (chr(Z.modulo (ord c) 10 + ord "0")) "").
 
   Definition toOctAscii (c:ascii):string := 
-    "\\" ++ (String (chr(Nat.div (ord c) 64 + ord "0")) "")
-         ++ (String (chr(Nat.div (Nat.modulo (ord c) 64) 8 + ord "0")) "")
-         ++ (String (chr(Nat.modulo (ord c) 8 + ord "0")) "").
+    "\\" ++ (String (chr(Z.div (ord c) 64 + ord "0")) "")
+         ++ (String (chr(Z.div (Z.modulo (ord c) 64) 8 + ord "0")) "")
+         ++ (String (chr(Z.modulo (ord c) 8 + ord "0")) "").
 
   (* 
     Sml: char -> string
@@ -286,8 +288,8 @@ Module Char.
     | "011" => "\\v"
     | "012" => "\\f"
     | "013" => "\\r"
-    | c     => if Nat.ltb (ord c) 32 then toControl c 
-               else if Nat.ltb 126 (ord c) then toAscii c 
+    | c     => if Z.ltb (ord c) 32 then toControl c 
+               else if Z.ltb 126 (ord c) then toAscii c 
                else String c "" 
     end.
 
@@ -312,8 +314,9 @@ Module Char.
     end.
 
   Definition value c := 
-    ord(toUpper c) - (if c < "A" then ord "0" else ord "A" - 10).
-Compute value "a".
+    Z.to_nat(ord(toUpper c)) - 
+    (if c < "A" then Z.to_nat(ord "0") else Z.to_nat(ord "A") - 10).
+
   Import ListNotations.
 
   Definition scanAscii (cl:list ascii):option (ascii * string) :=
@@ -324,7 +327,7 @@ Compute value "a".
     | c1::c2::c3::cl' => 
       if (isDigit(c1)&&isDigit(c2)&&isDigit(c3)) then
       ( let i := 100*value c1 + 10*value c2 + value c3 in 
-        if Nat.leb i 255 then Some(chr i,String.string_of_list_ascii(cl'))
+        if Nat.leb i 255 then Some(chr (Z.of_nat i),String.string_of_list_ascii(cl'))
         else None ) else None
     end.
 
@@ -337,7 +340,7 @@ Compute value "a".
     | c1::c2::c3::c4::cl' => 
       if (isHexDigit(c1)&&isHexDigit(c2)&&isHexDigit(c3)&&isHexDigit(c4)) then
       ( let i := 4096*value c1 + 256*value c2 + 16*value c3 + value c4 in 
-        if Nat.leb i 255 then Some(chr i,String.string_of_list_ascii(cl'))
+        if Nat.leb i 255 then Some(chr (Z.of_nat i),String.string_of_list_ascii(cl'))
         else None ) else None
     end.
 
@@ -345,7 +348,7 @@ Compute value "a".
     match cl with
     | [] => None
     | c::cl' => 
-      if (Nat.leb 64 (ord c)) && (Nat.leb (ord c) 96) 
+      if (Z.leb 64 (ord c)) && (Z.leb (ord c) 96) 
       then Some(chr(ord c - 64),String.string_of_list_ascii(cl') ) else
       None
     end.
