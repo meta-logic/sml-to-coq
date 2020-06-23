@@ -94,6 +94,7 @@ Module String.
   Definition concat (sl:list string): string :=
     let r := String.concat "" sl in
     if Z.ltb maxSize (size r) then SizeException else r .
+
   (*
     Sml: char -> string
     Coq: ascii -> string
@@ -269,3 +270,51 @@ Module String.
   (* Definition scan := . *) 
 
 End String.
+
+(* These Functions could be called without the prefix "String." *)
+(* ---------------------------------------------------------------------------*)
+
+(*
+  Sml: string -> int
+  Coq: string -> Z
+*)
+Definition size (s:string): Z := String.size s.
+
+(*
+  Sml: char -> string
+  Coq: ascii -> string
+*)
+Definition str (c:ascii): string := String.str c.
+
+(*
+  Sml: string list -> string
+  Coq: list string -> string
+  - It should raises an exception if the size of the resulting string
+    would be greater than maxSize. , but since Coq doesn't have 
+    exceptions then it will return the axiom SizeException
+*)
+Definition concat (sl:list string): string := String.concat sl.
+
+(*
+  Sml: char list -> string
+  Coq: list ascii -> string
+  - It should raises an exception if the size of the resulting string
+    would be greater than maxSize. , but since Coq doesn't have 
+    exceptions then it will return the axiom SizeException
+*)
+Definition implode (l:list ascii): string :=  String.implode l.
+
+(*
+  Sml: string -> char list
+  Coq: string -> list ascii
+*)
+Definition explode (s:string): list ascii:= String.explode s.
+  
+(*
+  Sml: string * int * int -> string
+  Coq: string * Z * Z -> string
+*)
+Definition substring '((s, n, m):string * Z * Z):string := 
+    String.substring(s, n, m).
+
+(*----------------------------------------------------------------------------*)

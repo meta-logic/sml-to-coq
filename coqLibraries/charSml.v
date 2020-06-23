@@ -6,7 +6,7 @@ Require Import ZArith.
 
 Module Char.
 
-  Open Scope char_scope. 
+  Open Scope char_scope.
 
   (* 
     Sml: char
@@ -407,3 +407,20 @@ Module Char.
     end.
 
 End Char.
+
+(* These Functions could be called without the prefix "Char." *)
+(* ---------------------------------------------------------------------------*)
+
+(* 
+  Sml: char -> int
+  Coq: ascii -> Z
+*)
+Definition ord (c:ascii):Z := Char.ord c.
+
+(* 
+  Sml: int -> char
+  Coq: nat -> ascii
+*)
+Definition chr (n:Z):ascii := Char.chr n.
+
+(* ---------------------------------------------------------------------------*)
