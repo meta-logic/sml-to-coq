@@ -24,8 +24,8 @@ Notation "op>=( x , y )" := (geb x y) (at level 70).
 
 Instance compInfixesString : compInfixes string :=
 {
-  ltb := String.eqb; 
-  leb := String.eqb;
+  ltb := fun a b => Nat.ltb (String.length a) (String.length b);
+  leb := fun a b => Nat.leb (String.length a) (String.length b);
   gtb := fun a b => Nat.ltb (String.length b) (String.length a);
   geb := fun a b => Nat.leb (String.length b) (String.length a)
 }.
@@ -54,13 +54,14 @@ Instance compInfixesReal : compInfixes float :=
   geb := fun a b => PrimFloat.leb b a 
 }.
 
+
 (*---------------------------------------------------------------------------*)
 
 (* = , <> *)
 Class eqInfixes A : Type :=
 {
   eqb : A -> A -> bool;
-  neq : A -> A -> bool
+  neq : A -> A -> bool.
 }.
 Infix "="  := eqb (at level 70).
 Notation "op=( x , y )" := (eqb x y) (at level 70).
@@ -216,7 +217,7 @@ Instance powAppInfixNat : powAppInfix nat :=
 (*---------------------------------------------------------------------------*)
 
 (* Other Notations *)
-(* div , * , - *)
+(* div , @ , :: *)
 
 Definition div' (i1 i2: Z):Z := i1 / i2.
 Infix "div" := (div') (at level 40, left associativity).

@@ -1,4 +1,3 @@
-
 Module Option.
 
   Variable (A:Type) (B:Type) (C:Type).
@@ -9,7 +8,7 @@ Module Option.
     Sml: 'a option * 'a -> 'a
     Coq: option A * A -> A
   *)
-  Definition getOPt {A:Type} '((opt, a):option A * A):A := 
+  Definition getOpt {A:Type} '((opt, a):option A * A):A := 
     match opt with
     | None   => a
     | Some v => v
@@ -32,8 +31,8 @@ Module Option.
       Coq doesn't have exceptions then it will return the axiom 
       OptionException
   *)
-  Definition ValOf {A:Type} (opt:option A) :A := 
-    getOPt(opt, OptionException).
+  Definition valOf {A:Type} (opt:option A) :A := 
+    getOpt(opt, OptionException).
 
   (*
     Sml: ('a -> bool) -> 'a -> 'a option
@@ -108,3 +107,29 @@ Module Option.
     end.
 
 End Option.
+
+(* These Functions could be called without the prefix "Option." *)
+(* ---------------------------------------------------------------------------*)
+
+(*
+  Sml: 'a option * 'a -> 'a
+  Coq: option A * A -> A
+*)
+Definition getOpt {A:Type} '((opt, a):option A * A):A := Option.getOpt(opt,a).
+
+(*
+  Sml: 'a option -> bool
+  Coq: option A -> bool
+*)
+Definition isSome {A:Type} (opt:option A):bool := Option.isSome opt.
+
+(*
+  Sml: 'a option -> A
+  Coq: option A -> A
+  - It should raise an exception if you pass None to it, but since 
+    Coq doesn't have exceptions then it will return the axiom 
+    OptionException
+*)
+Definition valOf {A:Type} (opt:option A) :A := Option.valOf opt.
+
+(*----------------------------------------------------------------------------*)

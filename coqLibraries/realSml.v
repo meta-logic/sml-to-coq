@@ -5,7 +5,7 @@ Require Import Floats.
 Module Real.
 
   Open Scope float_scope.
-  
+
   Axiom  DomainException : forall{a}, a.
 
   Axiom  UnorderedException : forall{a}, a.
@@ -525,3 +525,58 @@ Module Real.
  *)
 
 End Real.
+
+(* These Functions could be called without the prefix "Real." *)
+(* ---------------------------------------------------------------------------*)
+
+(*
+  Sml: int -> real
+  Coq: Z -> float
+*)
+Definition fromInt (i:Z):float := Real.fromInt i.
+
+(*
+  Sml: real -> int
+  Coq: float -> nat -> Z
+  - For now The user should give me how many digits, until we fix numdigits,
+    It's also so inefficient.
+  - It should also raise an exception for infinity and nan but since Coq 
+    doesn't support exceptions then it will return the axioms
+    OverflowException, and DivException
+*)
+Definition trunc (r:float) (nd:nat):Z := Real.trunc r nd.
+
+(*
+  Sml: real -> int
+  Coq: float -> nat -> Z
+  - For now The user should give me how many digits, until we fix numdigits,
+    It's also so inefficient.
+  - It should also raise an exception for infinity and nan but since Coq 
+    doesn't support exceptions then it will return the axioms
+    OverflowException, and DivException
+*)
+Definition floor (r:float) (nd:nat):Z := Real.floor r nd.
+
+(*
+  Sml: real -> int
+  Coq: float -> nat -> Z
+  - For now The user should give me how many digits, until we fix numdigits,
+    It's also so inefficient.
+  - It should also raise an exception for infinity and nan but since Coq 
+    doesn't support exceptions then it will return the axioms
+    OverflowException, and DivException
+*)
+Definition ceil (r:float) (nd:nat):Z := Real.ceil r nd.
+
+(*
+  Sml: real -> int
+  Coq: float -> nat -> Z
+  - For now The user should give me how many digits, until we fix numdigits,
+    It's also so inefficient.
+  - It should also raise an exception for infinity and nan but since Coq 
+    doesn't support exceptions then it will return the axioms
+    OverflowException, and DivException
+*)
+Definition round (r:float) (nd:nat):Z := Real.round r nd.
+
+(*----------------------------------------------------------------------------*)

@@ -54,3 +54,18 @@ Module Bool.
     end.
 
 End Bool.
+
+(* These Functions could be called without the prefix "Bool." *)
+(* ---------------------------------------------------------------------------*)
+
+(* 
+    Sml: bool -> bool 
+    Coq: bool -> bool
+*)
+Definition not (b:bool):bool :=
+  match b with
+  | true  => false
+  | false => true
+  end.
+
+(* ---------------------------------------------------------------------------*)

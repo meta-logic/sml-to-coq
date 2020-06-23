@@ -244,3 +244,77 @@ Module List.
              '((l1, l2):list A * list A):comparison := collate' f l1 l2 .
 
 End List.
+
+(* These Functions could be called without the prefix "List." *)
+(* ---------------------------------------------------------------------------*)
+
+(*
+  Sml: 'a list -> bool
+  Coq: list A -> bool
+*)
+Definition null {A: Type} (l:list A):bool := List.null l.
+
+(*
+  Sml: 'a list -> 'a
+  Coq: list A  -> A
+  - It should raise an exception if you pass an empty list to it,
+    but since Coq doesn't have exceptions then it will return the axiom 
+    EmptyException
+*)
+Definition hd {A: Type} (l:list A):A := List.hd l.
+
+(*
+  Sml: 'a list -> 'a list
+  Coq: list A -> list A
+  - It should raise an exception if you pass an empty list to it,
+    but since Coq doesn't have exceptions then it will return the axiom 
+    EmptyException
+*)
+Definition tl {A: Type} (l:list A):list A := List.tl l.
+
+(*
+  Sml: 'a list -> int
+  Coq: list A -> Z
+*)
+Definition length {A: Type} (l:list A):Z := List.length l.
+
+(*
+  Sml: 'a list -> 'a list
+  Coq: list A -> list A
+*)
+Definition rev {A: Type} (l:list A):list A := List.rev l. 
+
+(*
+  Sml: 'a list * 'a list -> 'a list
+  Coq: list A * list A -> list A
+*)
+Definition append {A: Type} (l1:list A) (l2:list A):list A:= List.append l1 l2.
+Infix "@" := append (right associativity, at level 60).
+
+(*
+  Sml: ('a -> unit) -> 'a list -> unit
+  Coq: (A -> unit) -> list A -> unit
+*)
+Fixpoint app {A: Type} (f:A->unit) (l:list A): unit:= List.app f l.
+
+(*
+  Sml: ('a -> 'b) -> 'a list -> 'b list
+  Coq: (A -> B) -> list A -> list B
+*)
+Definition map {A B: Type} (f: A->B) (l:list A):list B := List.map f l.
+
+(*
+  Sml: ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+  Coq: (A * B -> B) -> B -> list A -> B
+*)
+Fixpoint foldl {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
+  List.foldl f b0 l.
+
+(*
+  Sml: ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+  Coq: (A * B -> B) -> B -> list A -> B
+*)
+Fixpoint foldr {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
+  List.foldr f b0 l.
+
+(* ---------------------------------------------------------------------------*)
