@@ -4,10 +4,9 @@ Require Import Ascii.
 Require Import ZArith.
 Require Import List.
 Import ListNotations.
+Open Scope string_scope.
 
 Module String.
-
-  Open Scope string_scope.
 
   Axiom  SubscriptException : forall{a}, a.
 

@@ -1,10 +1,9 @@
 Require Import ZArith.
 Require Import Ascii.
 Require Import String.
+Open Scope Z_scope.
 
 Module Int.
-
-  Open Scope Z_scope. 
 
   (* 
     Sml: int -> LargeInt.int
@@ -61,7 +60,8 @@ Module Int.
     Coq: Z * Z -> Z
   *)
   Definition div '((i1, i2): Z * Z):Z := i1 / i2.
-  Infix "div" := div (at level 40, left associativity).
+  Definition div' (i1 i2: Z):Z := i1 / i2.
+  Infix "div" := (div') (at level 40, left associativity).
 
   (* 
     Sml: int * int -> int
