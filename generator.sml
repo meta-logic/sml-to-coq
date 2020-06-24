@@ -103,7 +103,7 @@ struct
     | G.SortTerm(v)         => sortG(v) 
     | G.NumTerm(v)          => 
       (case (S.isPrefix "~" v) of true => "(-" ^ S.substring(v, 1, S.size(v)-1) ^ ")"
-                                | false => v) ^ "%" ^ "Z" before intLib:= true       
+                                | false => v)  before intLib:= true       
       
     | G.WildcardTerm        => "_"
     | G.ParensTerm(v)       => "(" ^ termG(v) ^ ")" 
