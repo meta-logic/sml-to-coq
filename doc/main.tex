@@ -223,11 +223,15 @@ Note that some derivations are not restored because the output doesn't affect th
 \\
  \hline
 \end{tabularx}
-\\ \\
+
 \subsection{Useful Derived Forms}
-The derivation of function-value bindings $fvalbind$ is the one case where we need to keep the derivation because it simplifies translation. The syntax in Gallina doesn't allow for pattern-matching on function arguments, so the derivation (which ) solves the problem.
 
+The derivation of function-value bindings $fvalbind$ is the one case where we
+need to keep the derivation because it simplifies translation. The syntax in
+Gallina doesn't allow for pattern-matching on function arguments, so the
+derivation (which ) solves the problem.
 
+\noindent
 \begin{tabularx}{1.0\textwidth} { 
   | >{\raggedright\arraybackslash}X
   | >{\raggedright\arraybackslash}X | }
@@ -252,7 +256,7 @@ The derivation of function-value bindings $fvalbind$ is the one case where we ne
  $\langle \texttt{and } fvalbind \rangle$ &
   $\langle \texttt{and } fvalbind \rangle $ \\
  \hline 
-\end{tabularx}\\ \\
+\end{tabularx}
 
 \section{Changes in Gallina}
 
@@ -261,35 +265,32 @@ The derivation of function-value bindings $fvalbind$ is the one case where we ne
 In this section we define the translation from our modified HaMLet AST to our
 also modified Gallina's AST. We will use a derivation system with the judgment
 $S \stog G$, where $S$ and $G$ are SML and Gallina ASTs respectively.
-\subsection*{Atomic Expressions}
-\setlength{\jot}{0.5pt} 
+
+The sections below are in the same order as SML's AST definition in the
+appendix.
+
+\subsection{Special constants}
+
+TODO: This is the place to document how we translate constants. Things we need
+to mention here:
+
+\begin{itemize}
+  \item We create the notation \# for characters in Coq to look like SML
+  characters\giselle{I think \# stands for something in Coq already, double
+  check.}
+
+  \item We use \coqe{\%float} for translating real numbers because numbers line
+  6 can be considered Z or floats, depending on which scope was imported last.
+  (In SML, 6 is always \smle{int}, and 6.0 is \smle{real}).
+
+\end{itemize}
+
+\subsection{Type Constructors}
+
 \[
 \arraycolsep=15pt\def\arraystretch{2.2}
 \begin{array}{cc}
-\infern{\texttt{e is SCon}}{\smle{e} \stog \coqe{e}}{AtExp}
-\qquad
-\infern{\texttt{e is VId}}{\smle{e} \stog \coqe{e}}{AtExp}
-\\
-\infern{\smle{e} \stog \coqe{t}\quad \smle{d}\stog \coqe{Definition d'}}{\smle{let d in e end} \stog \coqe{let d' in t}}{AtExp}
-\\
-\infern{
-\begin{gathered}\smle{e} \stog \coqe{t}\quad \smle{d}\stog \coqe{sentence_1 ... sentence_n}\\ \coqe{sentence_1} \equiv \coqe{Definition d_1} \quad ... \quad \coqe{sentence_n} \equiv \coqe{Definition d_n} \end{gathered}
-}{\smle{let d in e end} \stog \coqe{let d_1 in ... in let d_n in t}}{\mathsf{AtExp}}
-\\
-\infern{\smle{e} \stog \coqe{t}}{\smle{(e)}\stog\coqe{(t)}}{AtExp}
-\\
-\infern{\smle{e_1}\stog\coqe{t_1} & \dots & \smle{e_n}\stog\coqe{t_n}}{\smle{(e_1, ... , e_n)}\stog\coqe{(t_1, ... ,t_n)}}{AtExp}
-\\
-\infern{\smle{e_1}\stog\coqe{t_1} & \dots & \smle{e_n}\stog\coqe{t_n}}{\smle{[e_1, ... , e_n]}\stog\coqe{[t_1; ... ;t_n]}}{AtExp}
-\end{array}
-\]
-\laila{op VId, Records, and Units have not yet been translated}
-\giselle{Definitions in let expressions are translated as external definitions?}
-\subsection*{Type Constructors}
-\[
-\arraycolsep=15pt\def\arraystretch{2.2}
-\begin{array}{cc}
-\infer[\mathsf{TyCon}_{\smles{unit}}]{\smle{unit} \stog \coqe{??}}{}
+\infer[\mathsf{TyCon}_{\smles{unit}}]{\smle{unit} \stog \coqe{unit}}{}
 &
 \infer[\mathsf{TyCon}_{\smles{bool}}]{\smle{bool} \stog \coqe{bool}}{}
 \\
@@ -311,7 +312,109 @@ $S \stog G$, where $S$ and $G$ are SML and Gallina ASTs respectively.
 \\
 \end{array}
 \]
-\subsection*{Type Expressions}
+
+\subsection{Names and identifiers}
+
+TODO: In this section we mention which names need modification. From what I
+remember, these are:
+
+\begin{itemize}
+  \item Type variables (which start with \_ in Coq and ' in SML)
+  
+  \item Identifiers that clash with Coq keywords\giselle{Still needs to be
+  implemented}
+  
+  \item ... something else?
+
+\end{itemize}
+
+\subsection{Atomic Expressions}
+
+\setlength{\jot}{0.5pt} 
+\[
+\arraycolsep=15pt\def\arraystretch{2.2}
+\begin{array}{cc}
+\infern{\texttt{e is SCon}}{\smle{e} \stog \coqe{e}}{AtExp}
+\qquad
+\infern{\texttt{e is VId}}{\smle{e} \stog \coqe{e}}{AtExp}
+\\
+\infern{\smle{e} \stog \coqe{t}\quad \smle{d}\stog \coqe{Definition d'}}{
+  \smle{let d in e end} \stog \coqe{let d' in t}
+}{AtExp}
+\\
+\infern{
+  \begin{gathered}
+  \smle{e} \stog \coqe{t}\quad \smle{d}\stog \coqe{sentence}_1 ... \coqe{sentence}_n \\ 
+  \coqe{sentence}_1 \equiv \coqe{Definition d}_1 \quad ... \quad \coqe{sentence}_n \equiv \coqe{Definition d}_n 
+  \end{gathered}
+}{
+  \smle{let d in e end} \stog \coqe!let d$_1$ in ... in let d$_n$ in t!
+}{\mathsf{AtExp}}
+\\
+\infern{\smle{e} \stog \coqe{t}}{\smle{(e)}\stog\coqe{(t)}}{AtExp}
+\\
+\infern{\smle{e_1}\stog\coqe{t_1} & \dots & \smle{e_n}\stog\coqe{t_n}}{
+  \smle{(e_1, ... , e_n)}\stog\coqe{(t_1, ... ,t_n)}
+}{AtExp}
+\\
+\infern{\smle{e_1}\stog\coqe{t_1} & \dots & \smle{e_n}\stog\coqe{t_n}}{
+  \smle{[e_1, ... , e_n]}\stog\coqe{[t_1; ... ;t_n]}
+}{AtExp}
+\end{array}
+\]
+\laila{op VId, Records, and Units have not yet been translated}
+
+Obs: the declarations \texttt{d} inside let-expressions are translated as
+``top-level'' Coq declarations (that is why the \coqe{Definition} keyword is
+there). The translation \texttt{d'} or \texttt{d}$_i$ is extracted from this
+definition.
+
+\subsection{Expressions}
+
+TODO
+
+\subsection{Pattern Matching}
+
+TODO
+
+\subsection{Declarations}
+
+TODO
+
+\subsection{Value Bindings}
+
+TODO
+
+\subsection{Type Bindings}
+
+TODO
+
+\subsection{Data Bindings}
+
+TODO
+
+\subsection{Constructor Bindings}
+
+TODO
+
+\subsection{Exception Bindings}
+
+TODO
+
+\subsection{Atomic Patterns}
+
+TODO
+
+\subsection{Record Patterns}
+
+TODO
+
+\subsection{Patterns}
+
+TODO
+
+\subsection{Type Expressions}
+
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{cc}
@@ -342,14 +445,24 @@ $S \stog G$, where $S$ and $G$ are SML and Gallina ASTs respectively.
 \\
 \end{array}
 \]
+
 OBS:
 \begin{itemize}
   \item It is likely that the translation is still full of mistakes.
+  
   \item In \textsf{TyRow}, $s$ is a sequence of labels and types separated by
   commas.
+  
   \item In \textsf{TyCon}$_p$, $s$ is a sequence of types separated by commas. I
-  am not sure if the type parameters are translated into Coq... \laila{type parameters are indeed translated, but the type constructor comes in the beginning so 'a list become list \_a}
+  am not sure if the type parameters are translated into Coq... \laila{type
+  parameters are indeed translated, but the type constructor comes in the
+  beginning so 'a list become list \_a} 
 \end{itemize}
+
+\subsection{Record Types}
+
+TODO: This is currently encompassed in the section above, but I am not happy
+with the notation.
 
 \section{Simulation}
 
@@ -478,7 +591,7 @@ Pat ::= AtPat
       | Pat : Ty
       | !$\langle$!op!$\rangle$! VId !$\langle$!: Ty!$\rangle$! as pat
 
-/* Types */
+/* Type Expressions */
 Ty ::= TyVar
      | { TyRow }
      | !$\langle$!Ty!$\rangle^*$! TyCon /* e.g. 'a, 'b Tree */
