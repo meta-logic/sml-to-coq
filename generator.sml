@@ -6,14 +6,6 @@ struct
 
 
   fun concatListWith (p, f, l) = (S.concatWith p (List.map f l))
-  val stringLib = ref false
-  val asciiLib  = ref false
-  val intLib    = ref false
-  val realLib   = ref false
-  val hexLib    = ref false
-  val listLib   = ref false
-  val boolLib   = ref false
-  val pFailure  = ref false
 
   (* generate: string -> string
    * ENSURES: generate(source) = code, where code is the string that represents 
@@ -26,41 +18,9 @@ struct
       val codeList   = sentenceG(ast)
       val codeList   = "\n" :: codeList
       
-      val pFailureL  = if !pFailure = true
-      then "Local Axiom patternFailure: forall{a}, a."::codeList
-      else codeList
-
-      val realLibL   = if !realLib = true
-      then "Require Import Floats.\nOpen Scope float_scope."::pFailureL
-      else pFailureL
-      
-      val intLibL    = if !intLib = true
-      then "Require Import ZArith.\nOpen Scope Z_scope."::realLibL
-      else realLibL
-      
-      val listLibL   = if !listLib = true
-      then "Require Import List.\nImport ListNotations."::intLibL
-      else intLibL
-      
-      val boolLibL   = if !boolLib = true
-      then "Require Import Bool."::listLibL
-      else listLibL
-      
-      val hexLibL    = if !hexLib = true
-      then "Require Import String HexString.\nOpen Scope string_scope."::boolLibL
-      else boolLibL
-      
-      val asciiLibL = if !asciiLib = true 
-      then "Require Import Ascii.\nOpen Scope ascii_scope."::hexLibL
-      else hexLibL
-      
-      val stringLibL = if !stringLib = true 
-      then "Require Import String.\nOpen Scope string_scope."::asciiLibL
-      else asciiLibL
-      
-      val () = print((S.concatWith ("\n") stringLibL)^ "\n" ) (*To see the result*)
+      val () = print((S.concatWith ("\n") codeList)^ "\n" ) (*To see the result*)
     in
-      (S.concatWith ("\n") stringLibL)^ "\n" 
+      (S.concatWith ("\n") codeList)^ "\n" 
     end
 
   and termG (term: G.term): string =
@@ -99,34 +59,31 @@ struct
       "match " ^ (concatListWith (", ", matchItemG, mL)) ^ " with" ^ "\n  " ^
       (S.concatWith ("  \n  | ") (List.map equationG eL)) ^ " end"
     
-    | G.IdentTerm(v)        => v before boolLib := true
+    | G.IdentTerm(v)        => v
     | G.SortTerm(v)         => sortG(v) 
     | G.NumTerm(v)          => 
       (case (S.isPrefix "~" v) of true => "(-" ^ S.substring(v, 1, S.size(v)-1) ^ ")"
-                                | false => v)  before intLib:= true       
+                                | false => v)
       
     | G.WildcardTerm        => "_"
     | G.ParensTerm(v)       => "(" ^ termG(v) ^ ")" 
     (*Additional terms to match sml built-in types. (!) *)  
     | G.WordTerm(v)         => v
-    | G.RealTerm(v)         => v ^ "%" ^ "float" before realLib := true 
-    | G.StringTerm(v)       => "\"" ^ v ^ "\"" before stringLib := true 
-    | G.CharTerm(v)         => (convertChar v) before  asciiLib := true
+    | G.RealTerm(v)         => v ^ "%" ^ "float" 
+    | G.StringTerm(v)       => "\"" ^ v ^ "\"" 
+    | G.CharTerm(v)         => (convertChar v) 
     | G.HexTerm(v)          => "\"" ^ "0x"^ S.map Char.toLower v ^ "\""
-                               before hexLib := true
     (* extra : denotes tuple types e.g. int * int. (!) *)
     | G.TupleTerm(tL)       => "(" ^ (concatListWith (", ", termG, tL)) ^ ")"
     | G.ProductTerm (tL)    => "(" ^ (concatListWith (" * ", termG, tL)) ^ ")"
     | G.ListTerm(tL)        => "[" ^ (concatListWith ("; ", termG, tL)) ^ "]" 
-                               before listLib := true
-    | G.OrTerm(v1, v2)      => termG(v1) ^ " || "  ^ termG(v2) before boolLib := true
-    | G.AndTerm(v1, v2)     => termG(v1) ^ " && "  ^ termG(v2) before boolLib := true
-    | G.Axiom(a)            => "patternFailure" before pFailure := true
+    | G.OrTerm(v1, v2)      => termG(v1) ^ " || "  ^ termG(v2) 
+    | G.AndTerm(v1, v2)     => termG(v1) ^ " && "  ^ termG(v2) 
+    | G.Axiom(a)            => "patternFailure"
     (*Datatypes with multiple constructors is not considered since it's not implemented yet*)
     | G.MatchNotationTerm{matchItem=mI, body=e, exhaustive=b} => 
       "match " ^ matchItemG(mI) ^ " with" ^ "\n  " ^ equationG(e) ^
-      (case b of  true => ""
-         | false => "\n  | _ => patternFailure" before pFailure := true)^" end"
+      (case b of  true => "" | false => "\n  | _ => patternFailure" )^" end"
 
 
   and argG (G.Arg(t))        = termG(t)
@@ -198,19 +155,16 @@ struct
     | G.WildcardPat      => "_"
     | G.NumPat(s)        => 
     (if S.isPrefix "~" s then "-"^S.substring(s, 1, S.size(s)-1) else s) 
-    before intLib:= true  
   (*| omitting pattern OrPat(oL) => "(" ^o rPatternG(oL) ^ ")"*)
     (*Additional Patternss*)
     | G.WordPat(s)       => s
-    | G.RealPat(s)       => s before realLib := true 
-    | G.StringPat(s)     => "\"" ^ s ^ "\"" before stringLib := true 
-    | G.CharPat(s)       => "\"" ^ s ^ "\"" before stringLib := true
+    | G.RealPat(s)       => s
+    | G.StringPat(s)     => "\"" ^ s ^ "\""
+    | G.CharPat(s)       => "\"" ^ s ^ "\""
     | G.HexPat(s)        => "\"" ^ "0x"^ S.map Char.toLower s ^ "\"" 
-                            before hexLib := true
       (* extra *)  
     | G.TuplePat(pL)     => "(" ^ concatListWith (", ", patternG, pL) ^ ")"
     | G.ListPat(pL)      => "[" ^ concatListWith (", ", patternG, pL) ^ "]" 
-                            before listLib := true
     | G.ParPat(p)        => patternG(p)
 
 

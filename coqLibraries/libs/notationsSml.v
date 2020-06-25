@@ -61,7 +61,7 @@ Instance compInfixesReal : compInfixes float :=
 Class eqInfixes A : Type :=
 {
   eqb : A -> A -> bool;
-  neq : A -> A -> bool.
+  neq : A -> A -> bool
 }.
 Infix "="  := eqb (at level 70).
 Notation "op=( x , y )" := (eqb x y) (at level 70).
