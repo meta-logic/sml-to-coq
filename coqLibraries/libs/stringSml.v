@@ -32,7 +32,7 @@ Module String.
       SubscriptException
   *)
   Definition sub '((s, n):string * Z):ascii:=
-    if (Z.ltb n 0) || (Z.ltb (size s) n) then SubscriptException else
+    if (Z.ltb n 0) || (Z.leb (size s) n) then SubscriptException else
     match (String.get (Z.to_nat n) s) with
     | None => "0"%char
     | Some x => x
@@ -50,16 +50,15 @@ Module String.
     match no with
     |None   => String.substring (Z.to_nat n) ((String.length s)-(Z.to_nat n)) s
     |Some m =>
-     if (Z.ltb m 0) || (Z.ltb (m+n) (size s)) then SubscriptException else
+     if (Z.ltb m 0) || (Z.ltb (size s) (m+n)) then SubscriptException else
      String.substring (Z.to_nat n) (Z.to_nat m) s end.
 
   (*
     Sml: string * int * int -> string
     Coq: string * Z * Z -> string
   *)
-  Definition substring '((s, n, m):string * Z * Z):string := 
-    String.substring (Z.to_nat n) (Z.to_nat m) s.
-
+  Definition substring '((s, n, m):string * Z * Z):string :=  
+    extract(s, n, Some m).
   (*
     Sml: string * string -> string
     Coq: string * string -> string
@@ -167,20 +166,13 @@ Module String.
      | Some x => true
      | None   => false
      end.
-
+Compute isSubstring "ab" "abcd".
   (*
     Sml: string -> string -> bool
     Coq: string -> string -> bool
   *)
   Definition isSuffix (s1 s2:string): bool := 
     String.prefix (implode(List.rev (explode s1))) (implode(List.rev (explode s2))).
-
-  (*
-    Sml: string * string -> order
-    Coq: string * string -> comparison
-  *)
-  Definition compare '((s1, s2):string * string):comparison :=
-    Z.compare (size s1) (size s2).
 
   Fixpoint collate' (f:ascii * ascii -> comparison) (l1 l2:list ascii): comparison:=
     match l1, l2 with
@@ -200,6 +192,26 @@ Module String.
   Definition collate (f:ascii * ascii -> comparison)
              '((s1, s2):string * string): comparison := 
               collate' f (explode s1) (explode s2).
+
+  (* 
+    Sml: char -> int
+    Coq: ascii -> Z
+  *)
+  Definition ord (c:ascii):Z := Z.of_nat(Ascii.nat_of_ascii(c)).
+
+  (* 
+    Sml: char * char -> order
+    Coq: ascii * ascii -> comparison
+  *)
+  Definition compareChar '((c, d):ascii * ascii):comparison := 
+    Z.compare (ord c) (ord d).
+
+  (*
+    Sml: string * string -> order
+    Coq: string * string -> comparison
+  *)
+  Definition compare '((s1, s2):string * string):comparison :=
+    collate compareChar (s1, s2).
 
   (*
     Sml: string * string -> bool
