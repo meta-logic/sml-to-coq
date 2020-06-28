@@ -1,13 +1,18 @@
 structure ConvertorUtil =
 struct
+
     structure G = Gallina
+    structure Sort = Quicksort
+    structure Key = ListOrdered(StringOrdered)
+    structure LT = SplayDict (structure Key = Key) (* LabelsTracker *)
+
     open Annotation;
 
     local
         open SyntaxCore
     in
-
         infix @@;
+        val rid_ctr = ref 0 (* record id counter *)
     	(* Sml symbol to Gallina ident. If ident starts with ' it converts it to _
         	Doesn't take care of Gallina reserved words *)
         fun checkLegal (s : string) : G.ident = 
@@ -71,8 +76,18 @@ struct
                 List.map term2binder terms
             end
 
+        fun extractTyp (G.SingleBinder {name = G.Name id, ...} : G.binder) : G.term = G.IdentTerm id
+          | extractTyp _ = raise Fail "Unexpected binder \n"
 
+        fun genIdent () = (rid_ctr := !rid_ctr + 1; "rid_" ^ (Int.toString (!rid_ctr)))
 
+        fun gentyps (n : int) = let 
+            fun mkSingleBinder i =
+                G.SingleBinder {name = G.Name ("_ty"^ (Int.toString i)),
+                                 typ = SOME (G.IdentTerm "Type"), inferred = true}
+        in
+            List.tabulate (n, mkSingleBinder)
+        end
 
         (*fun idFromFixbody (Fixbody (fixbody) : G.fixbody) : G.ident = #id fixbody*)
 

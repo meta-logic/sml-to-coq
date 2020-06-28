@@ -44,6 +44,7 @@ struct
   | NumTerm of string 
   | WildcardTerm
   | ParensTerm of term
+  | RecordTerm of fieldDef list
   (* Additional terms to match sml built-in types *)
   | WordTerm of string
   | RealTerm of string
@@ -58,6 +59,7 @@ struct
   | AndTerm of term * term
   | Axiom of axiom
   | MatchNotationTerm of {matchItem : matchItem, body : equation, exhaustive: bool}
+  | UnitTerm
 
 and arg = Arg of term | NamedArg of ident * term
 
@@ -69,7 +71,9 @@ and binder =
 and name = Name of ident | WildcardName
 
 and sort = Prop | Set | Type
- 
+
+and fieldDef = FieldDef of {id : ident, binders : binder list, term : term}
+
 and fixbodies = Fixbodies of fixbody list * ident
 
 and cofixbodies = CoFixbodies of cofixbody list * ident
@@ -99,6 +103,7 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
               | QualidPat of ident
               | WildcardPat
               | NumPat of string
+              | RecPat of fieldPat list
               (* Eliminating orpat *)
               (*| OrPat of orPattern list*)
               (* Additional Patternss *)
@@ -111,10 +116,11 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
               | TuplePat of pattern list
               | ListPat of pattern list 
               | ParPat of pattern
+              | UnitPat
 
-and orPattern = OrPattern of pattern list
+  and orPattern = OrPattern of pattern list
 
-
+  and fieldPat = FieldPat of {id : ident, binders : binder list, pat : pattern}
 
 (* The vernacular - the language of commands of Gallina *)		 
   and sentence = DefinitionSentence of definition

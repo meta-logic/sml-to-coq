@@ -24,6 +24,9 @@ struct
     in
         exception WildCard
 
+        val recordContext = ref [] : (G.sentence list) ref
+        val recordTracker = ref (LT.empty) : (G.ident LT.dict) ref
+
         (* FROM: Scon.sml: 15 -> 20
          * TO:   Gallina.sml : 16 -> 53 
          * FROM SECTION: -
@@ -50,6 +53,42 @@ struct
             (* Need to check what's a word constant *)
             | scon2pattern (SCon.WORD (b, s)) = G.WordPat s 
 
+
+        and tyrow2body (TyRow(lab, ty, tyrow') @@ _ : TyRow) : (G.ident * Ty') list = (~lab, ~ty) :: ?tyrow2body tyrow'
+
+        and tybody2labs (body : (G.ident * Ty') list) = Sort.sort String.compare (#1(ListPair.unzip body))
+
+        and exprow2body (ExpRow(lab, exp, exprow') @@ _) = (~lab, ~exp) :: ?exprow2body exprow'
+
+        and expbody2labs body = Sort.sort String.compare (#1(ListPair.unzip body))
+
+        and expbody2fields body = let
+            fun expbody2field (lab, exp) = G.FieldDef {id = checkLegal lab, binders = [], term = exp2term exp }
+        in List.map expbody2field body end
+
+        and patrow2body (FIELDPatRow(lab, pat, patrow') @@ _) =
+            let
+                val (lab, pat) = (~lab, pat2pattern (~pat))
+                val body = (lab, pat) :: ?patrow2body patrow'
+                val labs = patbody2labs body
+                val keys = LT.domain (!recordTracker)
+            in
+                case LT.find (!recordTracker) labs of
+                    SOME _ => body
+                  | NONE => case List.find (fn l => List.exists (fn x => x = lab) l) keys of
+                                NONE => raise Fail "Record pattern undefined \n"
+                              | SOME labs' => List.map (fn l => case List.find (fn x => #1(x) = l) body of
+                                                                    SOME res => res
+                                                                 |  _ => (l, G.WildcardPat)) labs'
+            end
+          | patrow2body  _ = []
+
+        and patbody2labs body = Sort.sort String.compare (#1(ListPair.unzip body))
+
+        and patbody2fields body = let
+            fun patbody2field (lab, pat) = G.FieldPat {id = checkLegal lab, binders = [], pat = pat}
+        in List.map patbody2field body end
+
         (* EXAMPLE: type class = (id, name) hashtable :(id, name) forms a tyseq
          * FROM: SyntaxCoreFn.sml: 159 -> 164
          * TO:   Gallina.sml : 55
@@ -57,8 +96,8 @@ struct
          * KEYWORD: tyseq
          * TO SECTION: 4.1.3 page 115
          * KEYWORD: arg
-        *)
-        fun tyseq2args (Seq tys : Ty seq') : G.arg list = % ty2arg tys
+         *)
+        and tyseq2args (Seq tys : Ty seq') : G.arg list = % ty2arg tys
 
         (* EXAMPLE: check tyseq2args
          * FROM: SyntaxCoreFn.sml: 159 -> 164
@@ -80,7 +119,6 @@ struct
          * KEYWORD: ty
          * TO SECTION: 4.1.3 page 115
          * KEYWORD: term
-         * NOTES: skipped RECORDTy
          *)    
         (* VARty is type variable, e.g. 'a list  *)
         and ty2term ((VARTy tyvar) : Ty') : G.term = 
@@ -90,66 +128,44 @@ struct
                 if List.length(tys) > 1 then
                     G.InScopeTerm (G.ProductTerm (% ty2term tys), "type") 
                 else
-                    G.ParensTerm (List.nth ((% ty2term tys), 0))
+                    (* G.ParensTerm *) (List.nth ((% ty2term tys), 0))
             (* CONTy is constructor type, e.g. int  *)            
             | ty2term (CONTy (tyseq, tycon)) = let
-                    val terms = % ty2term ($(~tyseq))
-                    val tycon = ltycon2id (~tycon)
+                val terms = % ty2term ($(~tyseq))
+                val tycon = ltycon2id (~tycon)
             in
-                    (case terms of [] => G.IdentTerm tycon | _ => G.ExplicitTerm(tycon, terms))
+                (case terms of [] => G.IdentTerm tycon | _ => G.ExplicitTerm(tycon, terms))
             end
             (* PARTy is parenthesis type, e.g. (int)  *)
             | ty2term (PARTy ty) = G.ParensTerm (ty2term (~ty))
             (* ARROWTy is arrow type, e.g. int -> int  *)
             | ty2term (ARROWTy(ty1, ty2)) = G.ArrowTerm(ty2term (~ty1), ty2term (~ty2))
-        and  clause2defsent (_ : bool) (G.Clause(_, _, NONE) : G.clause) : G.sentence list = []
-       | clause2defsent exhaustive (G.Clause(ident, _, SOME typ)) = 
-         let
-             val G.ArrowTerm (input, output) = typ
-             val G.ExplicitTerm (_, terms) = output
-             val implicitBinders = mkBinders terms
-             val equation2 = if exhaustive then [] else [G.Equation(G.WildcardPat, G.Axiom G.PatternFailure)]
-             val matchItems = [G.MatchItem (G.IdentTerm "x")]
-             val body = G.Equation(G.ArgsPat(ident, [G.QualidPat "y"]), G.IdentTerm "y") :: equation2
-         in
-             G.DefinitionSentence
-                 (
-                   G.DefinitionDef
-                       {localbool = false, 
-                        id = "_"^ident, 
-                        binders = implicitBinders @ 
-                                    [G.SingleBinder{name = G.Name "x", typ = SOME output, inferred = false}],
-                        body = G.MatchTerm {matchItems = matchItems, body = body},
-                        typ = NONE}
-                 ) :: []
-         end
-            
-      (* Helper function doesn't have corresponding sections, check ???? *)
-        and indBodies2sent (indBodies : G.indBody list) : G.sentence = 
-            let
-                fun indBody2match (indBody as G.IndBody{clauses, ...}) = 
-                    let
-                        val exhaustive = List.length clauses = 1
-                        val matches = List.concat (List.map (clause2defsent exhaustive) clauses)
-                    in
-                        matches
-                    end
-                val matches = List.concat (List.map indBody2match indBodies)
+            | ty2term (RECORDTy recBody) = let
+                val body = ?tyrow2body recBody
+                val labs = tybody2labs body
             in
-                G.SeqSentences (G.InductiveSentence(G.Inductive indBodies)::matches)
+                case LT.find (!recordTracker) labs of
+                    SOME ident => G.IdentTerm (ident)
+                  | _ => let
+                      val id = genIdent ()
+                      val _ = recordTracker := LT.insert (!recordTracker) labs id
+                      val _ = recordContext := tyrow2sent (body, id) :: !recordContext
+                  in
+                      G.IdentTerm (id)
+                  end
             end
 
-      (* FROM: SyntaxCoreFn.sml: 103 -> 104
-       * TO:   Gallina.sml: 95
-       * FROM SECTION: Appendix C.1 page 103
-       * KEYWORD: mrule
-       * TO SECTION: Section 4.1.3 Page 115
-       * KEYWORD: equation
-       *)
+        (* FROM: SyntaxCoreFn.sml: 103 -> 104
+         * TO:   Gallina.sml: 95
+         * FROM SECTION: Appendix C.1 page 103
+         * KEYWORD: mrule
+         * TO SECTION: Section 4.1.3 Page 115
+         * KEYWORD: equation
+         *)
         and mrule2equation (Mrule(pat, exp) : Mrule') : G.equation = 
             let
-                val pattern = pat2pattern (~ pat)
                 val term = exp2term (~ exp)
+                val pattern = pat2pattern (~ pat)
             in
                 G.Equation(pattern, term)
             end
@@ -215,7 +231,21 @@ struct
         and atexp2term (SCONAtExp scon : AtExp') : G.term = scon2term (~scon)
             (* ignoring Op for now *)
             | atexp2term (IDAtExp (_, longvid)) = G.IdentTerm (lvid2id (~longvid))
-            | atexp2term (RECORDAtExp _) = raise Fail "Record expressions not yet impemented!\n"
+            | atexp2term (RECORDAtExp recBody) = let
+                val body = ?exprow2body recBody
+                val labs = expbody2labs body
+            in
+                case LT.find (!recordTracker) labs of
+                    SOME ident => G.RecordTerm (expbody2fields body)
+                  | NONE => let
+                      val id = genIdent ()
+                      val typs = gentyps (List.length labs)
+                      val _ = recordTracker := LT.insert (!recordTracker) labs id
+                      val _ = recordContext := exprow2sent (labs, id, typs) :: !recordContext
+                  in
+                      G.RecordTerm (expbody2fields body)
+                  end
+            end
             | atexp2term (LETAtExp (dec, exp)) = 
                 let
                     val sent = dec2sent dec
@@ -224,7 +254,7 @@ struct
                     sentterm2letTerm (sent, term)
                 end
             | atexp2term (PARAtExp exp) = G.ParensTerm (exp2term (~exp))
-            | atexp2term (UNITAtExpX) = raise Fail "unit expressions are invalid in Coq! \n"
+            | atexp2term (UNITAtExpX) = G.UnitTerm 
             (* in scope term because the operator "*" is overloaded *)
             | atexp2term (TUPLEAtExpX(exps)) = G.TupleTerm(% exp2term exps)
             | atexp2term (LISTAtExpX(exps)) = G.ListTerm(% exp2term exps)
@@ -241,7 +271,9 @@ struct
             | exp2term (APPExp (exp, atexp)) = 
                 G.ApplyTerm(exp2term (~exp), atexp2args (~atexp))
             | exp2term (COLONExp (exp, ty)) = 
-                G.HasTypeTerm(exp2term (~exp), ty2term(~ty))
+              let val typ = ty2term (~ty)
+                  val exp = exp2term (~exp)
+              in G.HasTypeTerm(exp, typ) end
             | exp2term (FNExp match) = raise Fail "Function expressions not yet implemented!\n"
             | exp2term (CASEExpX (exp, match)) = 
             let
@@ -282,9 +314,14 @@ struct
             | atpat2pattern (SCONAtPat scon) = scon2pattern (~scon)
             (* ignoring Op for now *)
             | atpat2pattern (IDAtPat (_, longvid)) = G.QualidPat (lvid2id (~longvid))
-            | atpat2pattern (RECORDAtPat _) = raise Fail "Record patterns not yet implemented!\n"
+            | atpat2pattern (RECORDAtPat recBody) = let
+                val body = ?patrow2body recBody
+            in
+                if List.length body = 0 then G.WildcardPat 
+                else G.RecPat (patbody2fields body)
+            end
             | atpat2pattern (PARAtPat pat) = G.ParPat (pat2pattern (~pat))
-            | atpat2pattern UNITAtPatX = raise Fail "Unit patterns are invalid in Coq!\n"
+            | atpat2pattern UNITAtPatX = G.UnitPat
             | atpat2pattern (TUPLEAtPatX pats) = G.TuplePat (% pat2pattern pats)
             | atpat2pattern (LISTAtPatX pats) = G.ListPat (% pat2pattern pats)
 
@@ -315,39 +352,45 @@ struct
                            {localbool = false, id = ident, binders = [], typ = NONE, body = body})]
       (* As patterns are split into two definitions:
          val x as y = 1 becomes Defintion x := 1; Definition y := 1 *)
-            | patBody2sents (G.AsPat (pat, id), body) exhaustive = 
-                (patBody2sents (G.QualidPat id, body) exhaustive) @ (patBody2sents (pat, body) exhaustive)
-      (* Wildcard patterns are ignored because apart from side effects, they cannot change the context *)
-            | patBody2sents (G.WildcardPat, _) (_) = []
-            (* Parenthesis patterns are ignored (e.g. val (x) = 1) *)
-      | patBody2sents (G.ParPat pat, body) exhaustive = patBody2sents (pat, body) exhaustive
-      (* N-ary Tuple patterms are split into N-ary definitions:
-         val (x, y) = (1, 2) becomes Definition x := 1; Definition y := 2 *)
-      | patBody2sents (pat as G.TuplePat pats, body) exhaustive = List.concat (List.map (patBody2sents' (pat, body, exhaustive)) pats)
-      (* N-ary Tuple patterms are split into N-ary definitions:
-         val (x, y) = (1, 2) becomes Definition x := 1; Definition y := 2 *)
-            | patBody2sents (pat as G.ListPat pats, body) exhaustive = List.concat (List.map (patBody2sents' (pat, body, exhaustive)) pats)
-            | patBody2sents (pat as G.ArgsPat (id, pats), body) exhaustive = List.concat (List.map (patBody2sents' (pat, body, exhaustive)) pats)
-            | patBody2sents _ _ = raise Fail "Invalid pattern! \n"
+          | patBody2sents (G.AsPat (pat, id), body) exhaustive = 
+            (patBody2sents (G.QualidPat id, body) exhaustive) @ (patBody2sents (pat, body) exhaustive)
+          (* Wildcard patterns are ignored because apart from side effects, they cannot change the context *)
+          | patBody2sents (G.WildcardPat, _) (_) = []
+          (* Parenthesis patterns are ignored (e.g. val (x) = 1) *)
+          | patBody2sents (G.ParPat pat, body) exhaustive = patBody2sents (pat, body) exhaustive
+          (* N-ary Tuple patterms are split into N-ary definitions:
+         val (x, y ) = (1, 2) becomes Definition x := 1; Definition y := 2 *)
+          | patBody2sents (pat as G.TuplePat pats, body) exhaustive =
+            List.concat (List.map (patBody2sents' (pat, body, exhaustive)) pats)
+          (* N-ary Tuple patterms are split into N-ary definitions:
+             val (x, y) = (1, 2) becomes Definition x := 1; Definition y := 2 *)
+          | patBody2sents (pat as G.ListPat pats, body) exhaustive =
+            List.concat (List.map (patBody2sents' (pat, body, exhaustive)) pats)
+          | patBody2sents (pat as G.ArgsPat (id, pats), body) exhaustive =
+            List.concat (List.map (patBody2sents' (pat, body, exhaustive)) pats)
+          | patBody2sents (pat as G.RecPat fieldpats, body) exhaustive =
+            List.concat (List.map (patBody2sents' (pat, body, exhaustive))
+                                  (List.map (fn (G.FieldPat {pat = pat, ...}) => pat) fieldpats))
+          | patBody2sents _ _ = raise Fail "Invalid pattern! \n"
 
-    (* Helper function doesn't have corresponding sections, check valBind2sent *)
-    and patBody2sents' (matchees : G.pattern, matcher : G.term, exhaustive : bool) (pat as G.QualidPat ident : G.pattern) : G.sentence list = 
-                patBody2sents(pat, mkMatchNotationTerm (G.MatchItem matcher, matchees) (G.IdentTerm ident, exhaustive)) exhaustive
-            | patBody2sents' (matchees, matcher, exhaustive) (G.AsPat (pat, id)) = 
-                    (patBody2sents' (matchees, matcher, exhaustive) pat) @ 
-                    (patBody2sents (
-                        G.QualidPat id, 
-                        mkMatchNotationTerm (G.MatchItem matcher, matchees) (G.IdentTerm id , exhaustive)) exhaustive)
-            | patBody2sents' (matchees, matcher, exhaustive) (G.ArgsPat(id, pats)) =
-                List.concat (List.map (patBody2sents' (matchees, matcher, exhaustive)) pats)
-            | patBody2sents' (matchees, matcher, exhaustive) (G.TuplePat pats) = 
-                List.concat (List.map (patBody2sents' (matchees, matcher, exhaustive)) pats)
-            | patBody2sents' (matchees, matcher, exhaustive) (G.ListPat pats) = 
-                List.concat (List.map (patBody2sents' (matchees, matcher, exhaustive)) pats)            
-            | patBody2sents' (matchees, matcher, exhaustive) (G.ParPat pat) = 
-                patBody2sents' (matchees, matcher, exhaustive) pat
-            | patBody2sents' _ G.WildcardPat = []
-            | patBody2sents' _ _ = raise Fail "Invalid pattern!\n"
+        (* Helper function doesn't have corresponding sections, check valBind2sent *)
+        and patBody2sents' (matchees : G.pattern, matcher : G.term, exhaustive : bool) (pat as G.QualidPat ident : G.pattern) : G.sentence list = 
+            patBody2sents(pat, mkMatchNotationTerm (G.MatchItem matcher, matchees) (G.IdentTerm ident, exhaustive)) exhaustive
+          | patBody2sents' (matchees, matcher, exhaustive) (G.AsPat (pat, id)) = 
+            (patBody2sents' (matchees, matcher, exhaustive) pat) @ 
+            (patBody2sents (
+                  G.QualidPat id, 
+                  mkMatchNotationTerm (G.MatchItem matcher, matchees) (G.IdentTerm id , exhaustive)) exhaustive)
+          | patBody2sents' (matchees, matcher, exhaustive) (G.ArgsPat(id, pats)) =
+            List.concat (List.map (patBody2sents' (matchees, matcher, exhaustive)) pats)
+          | patBody2sents' (matchees, matcher, exhaustive) (G.TuplePat pats) = 
+            List.concat (List.map (patBody2sents' (matchees, matcher, exhaustive)) pats)
+          | patBody2sents' (matchees, matcher, exhaustive) (G.ListPat pats) = 
+            List.concat (List.map (patBody2sents' (matchees, matcher, exhaustive)) pats)            
+          | patBody2sents' (matchees, matcher, exhaustive) (G.ParPat pat) = 
+            patBody2sents' (matchees, matcher, exhaustive) pat
+          | patBody2sents' _ G.WildcardPat = []
+          | patBody2sents' _ _ = raise Fail "Invalid pattern!\n"
 
         (* EXAMPLE: type ('a, 'b) age = 'a * 'b  (the lhs ('a, 'b))
          * FROM: TyVar.sml: 25 -> 29
@@ -397,6 +440,22 @@ struct
                 clause :: ?conbind2clauses conbind2
             end
 
+        and tyrow2sent (body : (G.ident * Ty') list, ident : G.ident) : G.sentence =
+            G.RecordSentence [G.RecordBody {id = ident, binders = [], typ = NONE,
+                                            consName = NONE, body = [tyrow2field body] }]
+
+        and tyrow2field (body : (G.ident * Ty') list) : G.field =
+            G.Field (List.map (fn (id, ty) => (checkLegal id, ty2term ty)) body)
+
+        and exprow2sent (labs : G.ident list, ident : G.ident, typs : G.binder list) : G.sentence =
+            G.RecordSentence [G.RecordBody { id = ident, binders = typs, typ = NONE,
+                                             consName = NONE, body = [labs2field labs typs]}]
+
+
+        and labs2field (labs : G.ident list) (typs : G.binder list) : G.field =
+            G.Field (ListPair.zip (labs, List.map extractTyp typs))
+
+
         (* EXAMPLE: type age = int
          * FROM: SyntaxCoreFn.sml: 123 -> 124
          * TO:   Gallina.sml : 100 -> 108
@@ -406,11 +465,11 @@ struct
          * TO SECTION: 4.1.4 page 120
          * KEYWORD: definition
          * NOTES:
-         * returns sentence list because one typbind can encode multiple 
+         * returns sentence list because one typbind can encode multiple
          * gallina definitions e.g. type age = int and name = string
-         *)            
-        and typbind2sent(typbind: TypBind) : G.sentence = 
-            let fun typbind2sents (typbind @@ _) = 
+         *)
+        and typbind2sent(typbind: TypBind) : G.sentence =
+            let fun typbind2sents (typbind @@ _) =
                 let
                     val TypBind(tyvars, tycon, ty, typbind2) = typbind
                     val localboolVal = false
@@ -418,15 +477,15 @@ struct
                     val parametersVal = tyvarseq2binder (List.map ~ ($(~tyvars)))
                     val typVal = NONE
                     val bodyVal = ty2term (~ty)
-                    val definition = G.DefinitionDef 
+                    val definition = G.DefinitionDef
                     {localbool = localboolVal, id = idVal, binders = parametersVal, typ = typVal, body = bodyVal}
-                    val  res = G.DefinitionSentence (definition)                
+                    val  res = G.DefinitionSentence (definition)
                 in
                     res :: ?typbind2sents typbind2
                 end
-            in
-                G.SeqSentences (typbind2sents typbind)
-            end
+                val sents = typbind2sents typbind
+                val sent = G.SeqSentences (!recordContext @ (typbind2sents typbind))
+            in (recordContext := []; sent) end
 
 
         (* EXAMPLE: datatype cards = Hearts | Spades | Clubs | Diamonds
@@ -442,7 +501,7 @@ struct
                 let
                     val DatBind(tyvars, tycon, cons, datbind2) = datbind
                     val idVal = tycon2id (~tycon)
-                    val parametersVal = tyvarseq2binder (List.map ~ ($(~tyvars)))                
+                    val parametersVal = tyvarseq2binder (List.map ~ ($(~tyvars)))
                     val typVal = mkSortTerm 1
                     val clauses = conbind2clauses(cons)
                     val clauses = List.map (updateTerm idVal parametersVal) clauses
@@ -450,9 +509,12 @@ struct
                 in 
                     indBody :: (?datbind2indbodies (datbind2))
                 end 
+                val sent = G.InductiveSentence(G.Inductive(datbind2indbodies datbind))
+                val recordC = !recordContext
+                val _ = recordContext := []
             in
-                G.InductiveSentence(G.Inductive(datbind2indbodies datbind))
-            end                    
+                if recordC = [] then sent else G.SeqSentences (recordC @ [sent])
+            end
 
         (* EXAMPLE: 1.  val x = 5
          *          2.  val (x, y) = (1, 2)
@@ -468,14 +530,15 @@ struct
             let fun valbind2sents (PLAINValBind(pat, exp, valbind2) @@ A) = 
                 let
                     val exhaustive = case try (exhaustive A) of SOME S.Exhaustive => true | _ => false                    
-                    val pat = pat2pattern (~pat)
                     val body = exp2term (~exp)
+                    val pat = pat2pattern (~pat)
                     val sents = patBody2sents (pat, body) exhaustive
                 in
-                    sents @ (?(valbind2sents) valbind2)
+                    !recordContext @ sents @ (?(valbind2sents) valbind2)
                 end
                 | valbind2sents _ = raise Fail "Recursive value bindings are not yet implemented \n"    
-            in G.SeqSentences(valbind2sents valbind) end 
+                val sent = G.SeqSentences(valbind2sents valbind)
+            in (recordContext := []; sent) end
 
 
 
@@ -487,11 +550,10 @@ struct
          * KEYWORD: sentence
          * NOTES:
          *)
-          and dec2sent ((TYPEDec(typbind)@@ _) : Dec): G.sentence = typbind2sent typbind
+        and dec2sent ((TYPEDec(typbind)@@ _) : Dec): G.sentence = typbind2sent typbind
             | dec2sent (DATATYPEDec(datbind)@@_) = datbind2sent datbind
             (* ignoring tyvarseq for now (function declarations) *)
-          | dec2sent (VALDec(tyvarseq, valbind)@@_) = 
-                 valbind2sent valbind
-          | dec2sent _ = raise Fail "Unimplemented declaration! \n"
+            | dec2sent (VALDec(tyvarseq, valbind)@@_) = valbind2sent valbind
+            | dec2sent _ = raise Fail "Unimplemented declaration! \n"
     end 
 end
