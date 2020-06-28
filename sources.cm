@@ -21,6 +21,16 @@ Group
  structure PPStaticEnv
  structure PrettyPrint
  structure PPType
+
+
+ structure Quicksort
+ structure StringOrdered
+ functor ListOrdered
+ functor SplayDict
+ structure SplayTree 
+ functor DictFun
+
+
  is
   $/basis.cm
   $/smlnj-lib.cm
@@ -34,3 +44,13 @@ Group
   convertorCore.sml
   convertorModule.sml
   convertorProgram.sml
+
+  cmlib/quicksort.sml
+  cmlib/ordered.sml
+  cmlib/dict.sml
+  cmlib/splay-tree.sml
+  cmlib/dict-splay.sml
+  cmlib/sort.sig
+  cmlib/ordered.sig
+  cmlib/dict.sig
+  cmlib/rdict.sig
