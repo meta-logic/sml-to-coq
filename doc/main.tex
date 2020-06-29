@@ -88,7 +88,23 @@
 \newcommand{\laila}[1]{\todo[linecolor=Green,backgroundcolor=Green!40,bordercolor=Green]{L: #1}}
 
 % Macros for translation
-\newcommand\stog{\Longrightarrow}
+\newcommand\stog{\boldsymbol{\Longrightarrow}}
+\newcommand\stogtycon{\;\stog_\mathtt{TyCon}\;}
+\newcommand\stogatexp{\;\stog_\mathtt{AtExp}\;}
+\newcommand\stogexp{\;\stog_\mathtt{Exp}\;}
+\newcommand\stogmatch{\;\stog_\mathtt{Match}\;}
+\newcommand\stogdec{\;\stog_\mathtt{Dec}\;}
+\newcommand\stogvalbind{\;\stog_\mathtt{ValBind}\;}
+\newcommand\stogtypbind{\;\stog_\mathtt{TypBind}\;}
+\newcommand\stogdatbind{\;\stog_\mathtt{DatBind}\;}
+\newcommand\stogconbind{\;\stog_\mathtt{ConBind}\;}
+\newcommand\stogexbind{\;\stog_\mathtt{ExBind}\;}
+\newcommand\stogatpat{\;\stog_\mathtt{AtPat}\;}
+\newcommand\stogpatrow{\;\stog_\mathtt{PatRow}\;}
+\newcommand\stogpat{\;\stog_\mathtt{Pat}\;}
+\newcommand\stogty{\;\stog_\mathtt{Ty}\;}
+\newcommand\stogtyrow{\;\stog_\mathtt{TyRow}\;}
+
 \newcounter{infercount}
 \setcounter{infercount}{1}
 \newcommand{\infern}[3]{\infer[{\mathsf{#3}}_{\arabic{infercount}}\stepcounter{infercount}]{#2}{#1}}
@@ -167,12 +183,19 @@ straighforward.
 % all modifications are sound.
 
 \section{Changes in HaMLet}
-The following tables are taken from SML's documentation but in our case, we restore the original forms (left column) from their equivalent forms (right column). The reason we do this step is because (while the semantics do not change) the code looks very foreign after derivation (and hence does the translation). \\
-Note that some derivations are not restored because the output doesn't affect the translation (see discussion on $fvalbind$ below). 
+
+The following tables are taken from SML's documentation but in our case, we
+restore the original forms (left column) from their equivalent forms (right
+column). The reason we do this step is because (while the semantics do not
+change) the code looks very foreign after derivation (and hence does the
+translation).
+
+Note that some derivations are not restored because the output doesn't affect
+the translation (see discussion on $fvalbind$ below). 
 
 \newcommand\changedto{\Longrightarrow}
-\noindent
 
+\noindent
 \textbf{Expressions}\\
 \begin{tabularx}{1.0\textwidth} { 
   | >{\raggedright\arraybackslash}X
@@ -197,6 +220,7 @@ Note that some derivations are not restored because the output doesn't affect th
 \hline
 \end{tabularx}\\ \\
 
+\noindent
 \textbf{Patterns}\\
 \begin{tabularx}{1.0\textwidth} { 
   | >{\raggedright\arraybackslash}X
@@ -212,6 +236,7 @@ Note that some derivations are not restored because the output doesn't affect th
  \hline
 \end{tabularx}\\ \\
 
+\noindent
 \textbf{Types}\\
 \begin{tabularx}{1.0\textwidth} { 
   | >{\raggedright\arraybackslash}X
@@ -288,30 +313,32 @@ to mention here:
 \subsection{Type Constructors}
 
 \[
-\arraycolsep=15pt\def\arraystretch{2.2}
+\arraycolsep=15pt\def\arraystretch{3}
 \begin{array}{cc}
-\infer[\mathsf{TyCon}_{\smles{unit}}]{\smle{unit} \stog \coqe{unit}}{}
+\infer[\mathsf{TyCon}_{\smles{unit}}]{\smle{unit} \stogtycon \coqe{unit}}{}
 &
-\infer[\mathsf{TyCon}_{\smles{bool}}]{\smle{bool} \stog \coqe{bool}}{}
+\infer[\mathsf{TyCon}_{\smles{bool}}]{\smle{bool} \stogtycon \coqe{bool}}{}
 \\
-\infer[\mathsf{TyCon}_{\smles{int}}]{\smle{int} \stog \coqe{int}}{}
+\infer[\mathsf{TyCon}_{\smles{int}}]{\smle{int} \stogtycon \coqe{int}}{}
 &
-\infer[\mathsf{TyCon}_{\smles{word}}]{\smle{word} \stog \coqe{word}}{}
+\infer[\mathsf{TyCon}_{\smles{word}}]{\smle{word} \stogtycon \coqe{word}}{}
 \\
-\infer[\mathsf{TyCon}_{\smles{real}}]{\smle{real} \stog \coqe{real}}{}
+\infer[\mathsf{TyCon}_{\smles{real}}]{\smle{real} \stogtycon \coqe{real}}{}
 &
-\infer[\mathsf{TyCon}_{\smles{string}}]{\smle{string} \stog \coqe{string}}{}
+\infer[\mathsf{TyCon}_{\smles{string}}]{\smle{string} \stogtycon \coqe{string}}{}
 \\
-\infer[\mathsf{TyCon}_{\smles{char}}]{\smle{char} \stog \coqe{char}}{}
+\infer[\mathsf{TyCon}_{\smles{char}}]{\smle{char} \stogtycon \coqe{char}}{}
 &
-\infer[\mathsf{TyCon}_{\smles{list}}]{\smle{list} \stog \coqe{list}}{}
+\infer[\mathsf{TyCon}_{\smles{list}}]{\smle{list} \stogtycon \coqe{list}}{}
 \\
-\infer[\mathsf{TyCon}_{\smles{ref}}]{\smle{ref} \stog \coqe{??}}{}
+\infer[\mathsf{TyCon}_{\smles{ref}}]{\smle{ref} \stogtycon \coqe{??}}{}
 &
-\infer[\mathsf{TyCon}_{\smles{exn}}]{\smle{exn} \stog \coqe{??}}{}
+\infer[\mathsf{TyCon}_{\smles{exn}}]{\smle{exn} \stogtycon \coqe{??}}{}
 \\
 \end{array}
 \]
+
+TODO: missing valid names for type constructors (e.g. tree, stream, etc).
 
 \subsection{Names and identifiers}
 
@@ -332,33 +359,33 @@ remember, these are:
 
 \setlength{\jot}{0.5pt} 
 \[
-\arraycolsep=15pt\def\arraystretch{2.2}
+\arraycolsep=15pt\def\arraystretch{3}
 \begin{array}{cc}
-\infern{\texttt{e is SCon}}{\smle{e} \stog \coqe{e}}{AtExp}
+\infern{\texttt{e is SCon}}{\smle{e} \stogatexp \coqe{e}}{AtExp}
 \qquad
-\infern{\texttt{e is VId}}{\smle{e} \stog \coqe{e}}{AtExp}
+\infern{\texttt{e is VId}}{\smle{e} \stogatexp \coqe{e}}{AtExp}
 \\
-\infern{\smle{e} \stog \coqe{t}\quad \smle{d}\stog \coqe{Definition d'}}{
-  \smle{let d in e end} \stog \coqe{let d' in t}
+\infern{\smle{e} \stogexp coqe{t}\quad \smle{d}\stogdec \coqe{Definition d'}}{
+  \smle{let d in e end} \stogatexp \coqe{let d' in t}
 }{AtExp}
 \\
 \infern{
   \begin{gathered}
-  \smle{e} \stog \coqe{t}\quad \smle{d}\stog \coqe{sentence}_1 ... \coqe{sentence}_n \\ 
+  \smle{e} \stogexp \coqe{t} \quad \smle{d}\stogdec \coqe{sentence}_1 ... \coqe{sentence}_n \\ 
   \coqe{sentence}_1 \equiv \coqe{Definition d}_1 \quad ... \quad \coqe{sentence}_n \equiv \coqe{Definition d}_n 
   \end{gathered}
 }{
-  \smle{let d in e end} \stog \coqe!let d$_1$ in ... in let d$_n$ in t!
+  \smle{let d in e end} \stogatexp \coqe!let d$_1$ in ... in let d$_n$ in t!
 }{\mathsf{AtExp}}
 \\
-\infern{\smle{e} \stog \coqe{t}}{\smle{(e)}\stog\coqe{(t)}}{AtExp}
+\infern{\smle{e} \stogexp \coqe{t}}{\smle{(e)} \stogatexp \coqe{(t)}}{AtExp}
 \\
-\infern{\smle{e_1}\stog\coqe{t_1} & \dots & \smle{e_n}\stog\coqe{t_n}}{
-  \smle{(e_1, ... , e_n)}\stog\coqe{(t_1, ... ,t_n)}
+\infern{\smle{e}_1 \stogexp \coqe{t}_1 & \dots & \smle{e}_n \stogexp \coqe{t}_n}{
+  \smle!(e$_1$, ... , e$_n$)! \stogatexp \coqe!(t$_1$, ... ,t$_n$)!
 }{AtExp}
 \\
-\infern{\smle{e_1}\stog\coqe{t_1} & \dots & \smle{e_n}\stog\coqe{t_n}}{
-  \smle{[e_1, ... , e_n]}\stog\coqe{[t_1; ... ;t_n]}
+\infern{\smle{e}_1 \stogexp \coqe{t}_1 & \dots & \smle{e}_n \stogexp \coqe{t}_n}{
+  \smle![e$_1$, ... , e$_n$]! \stogatexp \coqe![t$_1$; ... ;t$_n$]!
 }{AtExp}
 \end{array}
 \]
@@ -375,7 +402,25 @@ TODO
 
 \subsection{Pattern Matching}
 
-TODO
+\[
+\arraycolsep=15pt\def\arraystretch{3}
+\begin{array}{c}
+\infer[\mathsf{Match}_0]{\smle{p => e} \stogmatch \coqe{p' => e'}}{
+  \smle{p} \stogpat \coqe{p'}
+  &
+  \smle{e} \stogexp \coqe{e'}
+}
+\\
+\infer[\mathsf{Match}]{\smle{p => e | M} \stogmatch \coqe{p' => e' | M'}}{
+  \smle{p} \stogpat \coqe{p'}
+  &
+  \smle{e} \stogexp \coqe{e'}
+  &
+  \smle{M} \stogmatch {M'}
+}
+
+\end{array}
+\]
 
 \subsection{Declarations}
 
@@ -418,29 +463,29 @@ TODO
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{cc}
-\infer[\mathsf{TyVar}]{\smle{'X} \stog \coqe{\_X}}{X \text{ is alphanumeric}}
+\infer[\mathsf{TyVar}]{\smle{'X} \stogty \coqe{\_X}}{X \text{ is alphanumeric}}
 &
-\infer[\mathsf{TyRow}]{\smle{\{ s \}} \stog \coqe{\{ g \}}}{s \stog g}
+\infer[\mathsf{TyRow}]{\smle{\{ s \}} \stogty \coqe{\{ g \}}}{s \stog g}
 \\
-\infer[\mathsf{TyCon}_p]{\smle{s t} \stog \coqe{h g}}{
-  s \stog g
+\infer[\mathsf{TyCon}_p]{\smle{s t} \stogty \coqe{h g}}{
+  s \stogty g
   &
-  t \stog h
+  t \stogtycon h
 }
 &
-\infer[\mathsf{Ty}_{\smles{->}}]{t_1 \smle{->} t_2 \stog g_1 \coqe{->} g_2}{
-  t_1 \stog g_1
+\infer[\mathsf{Ty}_{\smles{->}}]{t_1 \smle{->} t_2 \stogty g_1 \coqe{->} g_2}{
+  t_1 \stogty g_1
   &
-  t_2 \stog g_2}
+  t_2 \stogty g_2}
 \\
-\infer[\mathsf{Ty}_{()}]{\smle!( $t$ )! \stog \coqe!( $g$ )!}{
-  t \stog g
+\infer[\mathsf{Ty}_{()}]{\smle!( $t$ )! \stogty \coqe!( $g$ )!}{
+  t \stogty g
 }
 &
-\infer[\mathsf{Ty}_*]{\smle!($t_1$ * $t_2$ * ... * $t_n$)! \stog 
+\infer[\mathsf{Ty}_*]{\smle!($t_1$ * $t_2$ * ... * $t_n$)! \stogty 
                       \coqe!($g_1$ * $g_2$ * ... * $g_n$)\%type!}
 {
-  t_i \stog g_i & \forall i. 1 \leq i \leq n
+  t_i \stogty g_i & \forall i. 1 \leq i \leq n
 }
 \\
 \end{array}
@@ -457,12 +502,14 @@ OBS:
   am not sure if the type parameters are translated into Coq... \laila{type
   parameters are indeed translated, but the type constructor comes in the
   beginning so 'a list become list \_a} 
+  
+  \item Maybe move the translation of type variables to the identifiers part?
+
 \end{itemize}
 
 \subsection{Record Types}
 
-TODO: This is currently encompassed in the section above, but I am not happy
-with the notation.
+TODO
 
 \section{Simulation}
 
@@ -496,7 +543,6 @@ format, where the same datatype names are used, and SML keywords are explicit.
 Elements in $\langle\rangle$ are optional.
 
 % Constructors ending in X are Laila's additions
-\giselle{Unit is the empty tuple. Why do we need it as a separate entity?}
 \begin{grm}
 /* Special Constants */
 SCon ::= /* integer, real, word, strings, 
@@ -605,7 +651,10 @@ TyRow ::= Lab : Ty !$\langle$!, TyRow!$\rangle$!
 \end{grm}
 
 \section{Gallina's abstract syntax tree}
-This AST is slightly different from Gallina's grammar in Coq's reference manual (see section ....). \\
+
+This AST is slightly different from Gallina's grammar in Coq's reference manual
+(see section ....).
+
 An expression enclosed in square brackets [...] means at
 most one occurrence of this expression (this corresponds to an optional
 component). The notation "entry sep ... sep entry" stands for a non empty sequence
