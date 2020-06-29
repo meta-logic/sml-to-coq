@@ -105,6 +105,8 @@
 \newcommand\stogty{\;\stog_\mathtt{Ty}\;}
 \newcommand\stogtyrow{\;\stog_\mathtt{TyRow}\;}
 
+\newcommand{\tbd}{\colorbox{yellow}{\textbf{TBD}}}
+
 \newcounter{infercount}
 \setcounter{infercount}{1}
 \newcommand{\infern}[3]{\infer[{\mathsf{#3}}_{\arabic{infercount}}\stepcounter{infercount}]{#2}{#1}}
@@ -398,7 +400,79 @@ definition.
 
 \subsection{Expressions}
 
-TODO
+\[
+\arraycolsep=15pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{AtExp}_1]{\smle{e} \stogexp \coqe{e'}}{
+  \smle{e} \stogatexp \coqe{e'}
+}
+&
+\infer[\mathsf{App}]{\smle!e$_1$ e$_2$! \stogexp \coqe!e$_1$' e$_2$'!}{
+  \smle!e$_1$! \stogexp \coqe!e$_1$'!
+  &
+  \smle!e$_2$! \stogatexp \coqe!e$_2$'!
+}
+\\
+\infer[\mathsf{ExpTy}]{\smle{e : t} \stogexp \coqe{e' : t'}}{
+  \smle{e} \stogexp \coqe{e'}
+  &
+  \smle{t} \stogty \coqe{t'}
+}
+&
+\infer[\mathsf{Fn}]{\smle{fn m} \stogexp \tbd}{
+  \smle{m} \stogmatch \coqe{m'}
+}
+\\
+\infer[\mathsf{Handle}]{\smle{e handle m} \stogexp \tbd}{
+  \smle{e} \stogexp \coqe{e'}
+  &
+  \smle{m} \stogmatch \coqe{m'}
+}
+&
+\infer[\mathsf{Raise}]{\smle{raise e} \stogexp \tbd}{
+  \smle{e} \stogexp \coqe{e'}
+}
+\end{array}
+\]
+\[
+\arraycolsep=15pt\def\arraystretch{3}
+\begin{array}{c}
+\infer[\mathsf{Case}]{\smle{case e of m} \stogexp \coqe{match e' with m' end}}{
+  \smle{e} \stogexp \coqe{e'}
+  &
+  \smle{m} \stogmatch \coqe{m'}
+}
+\\
+\infer[\mathsf{If}]{\smle!if e$_1$ then e$_2$ else e$_3$! \stogexp 
+                    \coqe!if e$_1$' then e$_2$' else e$_3$'!}{
+  \smle!e$_i$! \stogexp \coqe!e$_i$'!
+  &
+  \forall i \in \{1,2,3\}
+}
+\end{array}
+\]
+\[
+\arraycolsep=15pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{And}]{\smle!e$_1$ andalso e$_2$! \stogexp 
+                     \coqe!e$_1$' \&\& e$_2$'!}{
+  \smle!e$_1$! \stogexp \coqe!e$_1$'!
+  &
+  \smle!e$_2$! \stogexp \coqe!e$_2$'!
+}
+&
+\infer[\mathsf{Or}]{\smle!e$_1$ orelse e$_2$! \stogexp 
+                     \coqe!e$_1$' || e$_2$'!}{
+  \smle!e$_1$! \stogexp \coqe!e$_1$'!
+  &
+  \smle!e$_2$! \stogexp \coqe!e$_2$'!
+}
+\\
+\end{array}
+\]
+
+\giselle{The resulting translations of \smle{andalso} and \smle{orelse} are not
+in the Gallina AST. Why?}
 
 \subsection{Pattern Matching}
 
