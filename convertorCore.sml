@@ -301,6 +301,8 @@ struct
             in
                 G.OrTerm (exp1', exp2')
             end
+            | exp2term (INFIXExpX (exp, atexp)) =
+              G.InfixTerm (exp2term (~exp), atexp2args (~atexp))
 
 
       (* FROM: SyntaxCoreFn.sml: 144 -> 152
@@ -344,6 +346,7 @@ struct
                     val _ = if Option.isSome ty then print "Coq doesn't support type casting in patterns!\n" 
                             else () 
                 in G.AsPat(pat2pattern(~ pat), vid2id (~vid)) end
+            | pat2pattern (INFIXPatX (_, longvid, atpat)) = G.InfixPat (lvid2id (~longvid), [atpat2pattern (~atpat)])
 
       (* Helper function doesn't have corresponding sections, check valBind2sent *)
         and patBody2sents (G.QualidPat ident : G.pattern, body : G.term) (_ : bool): G.sentence list = 
@@ -371,6 +374,8 @@ struct
           | patBody2sents (pat as G.RecPat fieldpats, body) exhaustive =
             List.concat (List.map (patBody2sents' (pat, body, exhaustive))
                                   (List.map (fn (G.FieldPat {pat = pat, ...}) => pat) fieldpats))
+          | patBody2sents (pat as G.InfixPat (id, pats), body) exhaustive =
+            List.concat (List.map (patBody2sents' (pat, body, exhaustive)) pats)
           | patBody2sents _ _ = raise Fail "Invalid pattern! \n"
 
         (* Helper function doesn't have corresponding sections, check valBind2sent *)
@@ -390,6 +395,8 @@ struct
           | patBody2sents' (matchees, matcher, exhaustive) (G.ParPat pat) = 
             patBody2sents' (matchees, matcher, exhaustive) pat
           | patBody2sents' _ G.WildcardPat = []
+          | patBody2sents' (matchees, matcher, exhaustive) (G.InfixPat(id, pats)) =
+            List.concat (List.map (patBody2sents' (matchees, matcher, exhaustive)) pats)
           | patBody2sents' _ _ = raise Fail "Invalid pattern!\n"
 
         (* EXAMPLE: type ('a, 'b) age = 'a * 'b  (the lhs ('a, 'b))

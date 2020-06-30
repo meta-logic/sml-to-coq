@@ -60,6 +60,7 @@ struct
   | Axiom of axiom
   | MatchNotationTerm of {matchItem : matchItem, body : equation, exhaustive: bool}
   | UnitTerm
+  | InfixTerm of term * arg list (* always 2 args *)
 
 and arg = Arg of term | NamedArg of ident * term
 
@@ -117,6 +118,7 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
               | ListPat of pattern list 
               | ParPat of pattern
               | UnitPat
+              | InfixPat of ident * pattern list
 
   and orPattern = OrPattern of pattern list
 
