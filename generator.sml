@@ -62,13 +62,15 @@ struct
     | G.IdentTerm(v)        => v
     | G.SortTerm(v)         => sortG(v) 
     | G.NumTerm(v)          => 
-      (case (S.isPrefix "~" v) of true => "(-" ^ S.substring(v, 1, S.size(v)-1) ^ ")"
-                                | false => v)
+       (if (S.isPrefix "~" v) then "(-"^S.substring(v, 1, S.size(v)-1)^ ")" else v)
       
     | G.WildcardTerm        => "_"
-    | G.ParensTerm(v)       => "(" ^ termG(v) ^ ")" 
+    | G.ParensTerm(v)       => "(" ^ termG(v) ^ ")"
+    | G.RecordTerm(fL)      => "{| "^concatListWith(" ;\n", fieldDefG, fL)^" |}"
     (*Additional terms to match sml built-in types. (!) *)  
-    | G.WordTerm(v, _)         => v
+    | G.WordTerm(v, b)      => (case b of 
+                                  G.Dec => termG(G.NumTerm(v))
+                                | G.Hex => termG(G.HexTerm(v)))
     | G.RealTerm(v)         => v ^ "%" ^ "float" 
     | G.StringTerm(v)       => "\"" ^ v ^ "\"" 
     | G.CharTerm(v)         => (convertChar v) 
@@ -80,10 +82,13 @@ struct
     | G.OrTerm(v1, v2)      => termG(v1) ^ " || "  ^ termG(v2) 
     | G.AndTerm(v1, v2)     => termG(v1) ^ " && "  ^ termG(v2) 
     | G.Axiom(a)            => "patternFailure"
-    (*Datatypes with multiple constructors is not considered since it's not implemented yet*)
     | G.MatchNotationTerm{matchItem=mI, body=e, exhaustive=b} => 
       "match " ^ matchItemG(mI) ^ " with" ^ "\n  " ^ equationG(e) ^
       (case b of  true => "" | false => "\n  | _ => patternFailure" )^" end"
+
+    | G.UnitTerm            => "tt"
+    | G.InfixTerm(t, aL)    => 
+      argG(List.hd(aL)) ^ " " ^ termG(t) ^ " " ^ argG(List.last(aL))
 
 
   and argG (G.Arg(t))        = termG(t)
@@ -109,7 +114,10 @@ struct
     | sortG (G.Set)  = "Set"
     | sortG (G.Type) = "Type"
 
+  and fieldDefG(G.FieldDef{id=i, binders=bL, term=t}) =
+    i^" " ^ concatListWith (" ", binderG, bL) ^ " := " ^ termG(t)
 
+  
   and fixbodiesG (G.Fixbodies(fL, i)) = 
       (concatListWith ("\nwith ", fixbodyG, fL)) ^ " for " ^ i
 
@@ -154,21 +162,30 @@ struct
     | G.QualidPat(i)     => i
     | G.WildcardPat      => "_"
     | G.NumPat(s)        => 
-    (if S.isPrefix "~" s then "-"^S.substring(s, 1, S.size(s)-1) else s) 
+      (if (S.isPrefix "~" s) then "(-"^S.substring(s, 1, S.size(s)-1)^ ")" else s)
+    | G.RecPat(fL)       => "{| "^concatListWith(" ;\n", fieldPatG, fL)^" |}"
   (*| omitting pattern OrPat(oL) => "(" ^o rPatternG(oL) ^ ")"*)
     (*Additional Patternss*)
-    | G.WordPat(s, _)       => s
-    | G.RealPat(s)       => s
+    | G.WordPat(s, b)    => (case b of 
+                               G.Dec => patternG(G.NumPat(s))
+                             | G.Hex => patternG(G.HexPat(s)))
+    | G.RealPat(s)       => s ^ "%" ^ "float" 
     | G.StringPat(s)     => "\"" ^ s ^ "\""
-    | G.CharPat(s)       => "\"" ^ s ^ "\""
+    | G.CharPat(s)       => (convertChar s)
     | G.HexPat(s)        => "\"" ^ "0x"^ S.map Char.toLower s ^ "\"" 
       (* extra *)  
     | G.TuplePat(pL)     => "(" ^ concatListWith (", ", patternG, pL) ^ ")"
     | G.ListPat(pL)      => "[" ^ concatListWith (", ", patternG, pL) ^ "]" 
     | G.ParPat(p)        => patternG(p)
+    | G.UnitPat            => "tt"
+    | G.InfixPat(i, pL)    => concatListWith(i, patternG, pL)
 
 
   and orPatternG (G.OrPattern(pL)) = concatListWith("| ", patternG, pL)
+
+
+  and fieldPatG(G.FieldPat{id=i, binders=bL, pat=p}) =
+    i^" " ^ concatListWith (" ", binderG, bL) ^ " := " ^ patternG(p)
 
 
   and sentenceG (sentence: G.sentence list): string list =
@@ -181,7 +198,6 @@ struct
                 | G.RecordSentence(r)     => recordG(r)::sentenceG(ast)
                 | G.SeqSentences(n)       => sentenceG(n)@sentenceG(ast)
 
-
   and recordG (rL) = "Record " ^ concatListWith("with ", recBodyG, rL)
 
 
@@ -189,7 +205,7 @@ struct
     i ^ " := " ^ concatListWith(" ", binderG, bL) ^ 
     (case sO of NONE => "" | SOME x => sortG(x)) ^ 
     " := " ^ (case iO of NONE => "" | SOME x => x) ^ 
-    "{ " ^ concatListWith(" \n  ; ", fieldG, fL) ^ "}" ^ "." 
+    "{ " ^ concatListWith(" ;\n", fieldG, fL) ^ "}" ^ "." 
 
 
   and fieldG (G.Field(itL)) = 

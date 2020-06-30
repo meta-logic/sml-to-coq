@@ -1,6 +1,6 @@
 (* 
    First got to ./libs then type "make", 
-   then come here and past the converted 
+   then come here and paste the converted 
    code below the imported libraries
 *)
 
@@ -16,3 +16,4 @@ Require Import listSml.
 Require Import listPairSml.
 
 (* put your code here *)
+

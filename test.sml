@@ -11,6 +11,9 @@ datatype 'a evenList = ENil
 and 'a oddList = OCons of 'a * 'a evenList * 'a oddList; 
 
 (*Definition*)
+val q = 1 + 2;
+val p = ();
+val e = {a = "Asd", b = 5};
 val r = 0w5454;
 val r' = 0wx5454;
 (*val r = ("abcd" > "asdsd") andalso (5 > 3);*)

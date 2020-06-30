@@ -41,7 +41,7 @@ HASNATDYNLINK     := $(COQMF_HASNATDYNLINK)
 OCAMLWARN         := $(COQMF_WARN)
 
 CoqMakefile.conf: 
-	coq_makefile -R . '' boolSml.v charSml.v intSml.v listPairSml.v listSml.v notationsSml.v optionSml.v realSml.v stringCvtSml.v stringSml.v
+	coq_makefile -R . '' testFile.v
 
 # This file can be created by the user to hook into double colon rules or
 # add any other Makefile code he may need
