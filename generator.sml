@@ -68,7 +68,7 @@ struct
     | G.WildcardTerm        => "_"
     | G.ParensTerm(v)       => "(" ^ termG(v) ^ ")" 
     (*Additional terms to match sml built-in types. (!) *)  
-    | G.WordTerm(v)         => v
+    | G.WordTerm(v, _)         => v
     | G.RealTerm(v)         => v ^ "%" ^ "float" 
     | G.StringTerm(v)       => "\"" ^ v ^ "\"" 
     | G.CharTerm(v)         => (convertChar v) 
@@ -157,7 +157,7 @@ struct
     (if S.isPrefix "~" s then "-"^S.substring(s, 1, S.size(s)-1) else s) 
   (*| omitting pattern OrPat(oL) => "(" ^o rPatternG(oL) ^ ")"*)
     (*Additional Patternss*)
-    | G.WordPat(s)       => s
+    | G.WordPat(s, _)       => s
     | G.RealPat(s)       => s
     | G.StringPat(s)     => "\"" ^ s ^ "\""
     | G.CharPat(s)       => "\"" ^ s ^ "\""

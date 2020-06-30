@@ -46,7 +46,7 @@ struct
   | ParensTerm of term
   | RecordTerm of fieldDef list
   (* Additional terms to match sml built-in types *)
-  | WordTerm of string
+  | WordTerm of string * base
   | RealTerm of string
   | StringTerm of string
   | CharTerm of string
@@ -72,6 +72,8 @@ and binder =
 and name = Name of ident | WildcardName
 
 and sort = Prop | Set | Type
+
+and base = Dec | Hex
 
 and fieldDef = FieldDef of {id : ident, binders : binder list, term : term}
 
@@ -108,7 +110,7 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
               (* Eliminating orpat *)
               (*| OrPat of orPattern list*)
               (* Additional Patternss *)
-              | WordPat of string
+              | WordPat of string * base
               | RealPat of string
               | StringPat of string
               | CharPat of string

@@ -38,7 +38,7 @@ struct
             | scon2term (SCon.REAL s) = G.RealTerm s
             | scon2term (SCon.INT (b, s)) = if b = SCon.DEC then G.NumTerm s else G.HexTerm s
             (* Need to check what's a word constant *)
-            | scon2term (SCon.WORD (b, s)) = G.WordTerm s 
+            | scon2term (SCon.WORD (b, s)) = if b = SCon.DEC then G.WordTerm (s, G.Dec) else G.WordTerm (s, G.Hex)
 
         (* FROM: Scon.sml: 15 -> 20
          * TO:   Gallina.sml : 97 -> 115
@@ -51,7 +51,7 @@ struct
             | scon2pattern (SCon.REAL s) = G.RealPat s
             | scon2pattern (SCon.INT (b, s)) = if b = SCon.DEC then G.NumPat s else G.HexPat s
             (* Need to check what's a word constant *)
-            | scon2pattern (SCon.WORD (b, s)) = G.WordPat s 
+            | scon2pattern (SCon.WORD (b, s)) = if b = SCon.DEC then G.WordPat (s, G.Dec) else G.WordPat (s, G.Hex)
 
 
         and tyrow2body (TyRow(lab, ty, tyrow') @@ _ : TyRow) : (G.ident * Ty') list = (~lab, ~ty) :: ?tyrow2body tyrow'
