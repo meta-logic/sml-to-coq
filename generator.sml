@@ -87,8 +87,8 @@ struct
       (case b of  true => "" | false => "\n  | _ => patternFailure" )^" end"
 
     | G.UnitTerm            => "tt"
-    | G.InfixTerm(t, aL)    => 
-      argG(List.hd(aL)) ^ " " ^ termG(t) ^ " " ^ argG(List.last(aL))
+    | G.InfixTerm(t, aL)    => concatListWith(termG(t), argG, aL)
+      (*argG(List.hd(aL)) ^ " " ^ termG(t) ^ " " ^ argG(List.last(aL))*)
 
 
   and argG (G.Arg(t))        = termG(t)
@@ -202,7 +202,7 @@ struct
 
 
   and recBodyG (G.RecordBody{id=i, binders=bL, typ=sO, consName=iO, body=fL}) =
-    i ^ " := " ^ concatListWith(" ", binderG, bL) ^ 
+    i ^ " " ^ concatListWith(" ", binderG, bL) ^ 
     (case sO of NONE => "" | SOME x => sortG(x)) ^ 
     " := " ^ (case iO of NONE => "" | SOME x => x) ^ 
     "{ " ^ concatListWith(" ;\n", fieldG, fL) ^ "}" ^ "." 
@@ -259,6 +259,6 @@ struct
                    if (S.size c') = 1 then "00" ^ c' else c' )
                 else c' 
       in
-        "\"" ^ r ^ "\"" ^ "%"^ "char"
+        "#\"" ^ r ^ "\""
       end
 end
