@@ -16,3 +16,8 @@
 **/*.out.make
 **/cmlib/*
 
+# Coq's compilation files
+*.vo
+*.vok
+*.vos
+*.glob
