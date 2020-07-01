@@ -367,7 +367,7 @@ remember, these are:
 \qquad
 \infern{\texttt{e is VId}}{\smle{e} \stogatexp \coqe{e}}{AtExp}
 \\
-\infern{\smle{e} \stogexp coqe{t}\quad \smle{d}\stogdec \coqe{Definition d'}}{
+\infern{\smle{e} \stogexp \coqe{t}\quad \smle{d}\stogdec \coqe{Definition d'}}{
   \smle{let d in e end} \stogatexp \coqe{let d' in t}
 }{AtExp}
 \\
@@ -398,12 +398,27 @@ Obs: the declarations \texttt{d} inside let-expressions are translated as
 there). The translation \texttt{d'} or \texttt{d}$_i$ is extracted from this
 definition.
 
+\begin{paragraph}{\smle{option} expressions}
+In SML, the type \smle{option}, with constructors \smle{SOME} and \smle{NONE},
+is not built-in. Therefore, the keywords \smle{SOME} and \smle{NONE} are
+\lstinline{VId}s and would be translated as is (by rule $\mathsf{AtExp}_2$).
+This is problematic because Coq's option type constructors are \coqe{Some} and
+\coqe{None} (i.e. in a different capitalization). One way to solve this is to
+add special constructors for option types to SML's AST, much like we did for
+tuples and lists. However, unlike tuples and lists, option types are not
+recognized by the parser as special entities. This means we would need deeper
+changes in HaMLet to create dedicated constructors for options. To avoid these
+more intrusive modifications, we instead use rule $\mathsf{AtExp}_2$ with a
+\emph{side condition}: if \smle{e} is \smle{SOME} or \smle{NONE}, then it is
+translated to \coqe{Some} or \coqe{None}, respectively.
+\end{paragraph}
+
 \subsection{Expressions}
 
 \[
 \arraycolsep=15pt\def\arraystretch{3}
 \begin{array}{cc}
-\infer[\mathsf{AtExp}_1]{\smle{e} \stogexp \coqe{e'}}{
+\infer[\mathsf{AtExp}]{\smle{e} \stogexp \coqe{e'}}{
   \smle{e} \stogatexp \coqe{e'}
 }
 &
