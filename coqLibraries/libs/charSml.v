@@ -3,6 +3,7 @@ Require Import String.
 Require Import Ascii.
 Require Import List.
 Require Import ZArith.
+Notation "# x" := (x%char) (at level 0).
 
 Module Char.
 
@@ -12,13 +13,13 @@ Module Char.
     Sml: char
     Coq: ascii
   *)
-  Definition minChar:ascii := "000"%char.
+  Definition minChar:ascii := #"000".
 
   (* 
     Sml: char
     Coq: ascii
   *)
-  Definition maxChar:ascii := "255"%char.
+  Definition maxChar:ascii := #"255".
 
   (* 
     Sml: char
@@ -130,7 +131,7 @@ Module Char.
     Coq: ascii -> bool
   *)
   Definition isUpper (c:ascii):bool := 
-    match ("A"%char <= c), (c <= "Z"%char) with
+    match (#"A" <= c), (c <= #"Z") with
     | true, true => true
     | _   , _    => false
     end.
@@ -140,7 +141,7 @@ Module Char.
     Coq: ascii -> bool
   *)
   Definition isLower (c:ascii):bool := 
-    match ("a"%char <= c), (c <= "z"%char) with
+    match (#"a" <= c), (c <= #"z") with
     | true, true => true
     | _   , _    => false
     end.
@@ -150,7 +151,7 @@ Module Char.
     Coq: ascii -> bool
   *)
   Definition isDigit (c:ascii):bool := 
-    match ("0"%char <= c), (c <= "9"%char) with
+    match (#"0" <= c), (c <= #"9") with
     | true, true => true
     | _   , _    => false
     end.
@@ -180,8 +181,8 @@ Module Char.
     Coq: ascii -> bool
   *)
   Definition isHexDigit (c:ascii):bool := 
-    match (isDigit c), ("a"%char <= c), (c <= "f"%char), 
-    ("A"%char <= c), (c <= "F"%char) with
+    match (isDigit c), (#"a" <= c), (c <= #"f"), 
+    (#"A" <= c), (c <= #"F") with
     | false, false, _, false, _ => false
     | flase, _, false, _, false => false
     | false, _, false, false, _ => false
@@ -194,7 +195,7 @@ Module Char.
     Coq: ascii -> bool
   *)
   Definition isGraph (c:ascii):bool := 
-    match ("!"%char <= c), (c <= "~"%char) with
+    match (#"!" <= c), (c <= #"~") with
     | true, true => true
     | _   , _    => false
     end.
@@ -204,7 +205,7 @@ Module Char.
     Coq: ascii -> bool
   *)
   Definition isPrint (c:ascii):bool := 
-    match (isGraph c), (c = " "%char) with
+    match (isGraph c), (c = #" ") with
     | false, false => false
     | _    , _     => true
     end.
@@ -234,7 +235,7 @@ Module Char.
     Coq: ascii -> bool
   *)
   Definition isSpace (c:ascii):bool := 
-    match  ("009"%char <= c),(c <= "013"%char),(c = " "%char) with
+    match  (#"009" <= c),(c <= #"013"),(c = #" ") with
     | false, _, false => false
     | _, false, false => false
     | _, _, _  => true
@@ -261,17 +262,17 @@ Module Char.
     end.
 
   Definition toControl (c:ascii):string := 
-    "\\^" ++ String (chr(ord c + ord "@"%char)) "".
+    "\\^" ++ String (chr(ord c + ord #"@")) "".
 
   Definition toAscii (c:ascii):string := 
-    "\\" ++ (String (chr(Z.div (ord c) 100 + ord "0"%char)) "")
-         ++ (String (chr(Z.div (Z.modulo (ord c) 100) 10 + ord "0"%char)) "")
-         ++ (String (chr(Z.modulo (ord c) 10 + ord "0"%char)) "").
+    "\\" ++ (String (chr(Z.div (ord c) 100 + ord #"0")) "")
+         ++ (String (chr(Z.div (Z.modulo (ord c) 100) 10 + ord #"0")) "")
+         ++ (String (chr(Z.modulo (ord c) 10 + ord #"0")) "").
 
   Definition toOctAscii (c:ascii):string := 
-    "\\" ++ (String (chr(Z.div (ord c) 64 + ord "0"%char)) "")
-         ++ (String (chr(Z.div (Z.modulo (ord c) 64) 8 + ord "0"%char)) "")
-         ++ (String (chr(Z.modulo (ord c) 8 + ord "0"%char)) "").
+    "\\" ++ (String (chr(Z.div (ord c) 64 + ord #"0")) "")
+         ++ (String (chr(Z.div (Z.modulo (ord c) 64) 8 + ord #"0")) "")
+         ++ (String (chr(Z.modulo (ord c) 8 + ord #"0")) "").
 
   (* 
     Sml: char -> string
@@ -279,15 +280,15 @@ Module Char.
   *)
   Definition toString (c:ascii):string := 
     match c with 
-    | "092"%char => "\\\\"
-    | "034"%char => """"
-    | "007"%char => "\\a"
-    | "008"%char => "\\b"
-    | "009"%char => "\\t"
-    | "010"%char => "\\n"
-    | "011"%char => "\\v"
-    | "012"%char => "\\f"
-    | "013"%char => "\\r"
+    | #"092" => "\\\\"
+    | #"034" => """"
+    | #"007" => "\\a"
+    | #"008" => "\\b"
+    | #"009" => "\\t"
+    | #"010" => "\\n"
+    | #"011" => "\\v"
+    | #"012" => "\\f"
+    | #"013" => "\\r"
     | c     => if Z.ltb (ord c) 32 then toControl c 
                else if Z.ltb 126 (ord c) then toAscii c 
                else String c "" 
@@ -299,23 +300,23 @@ Module Char.
   *)
   Definition toCString (c:ascii):string := 
     match c with 
-    | "092"%char => "\\\\"
-    | "034"%char => """"
-    | "063"%char => "\\?"
-    | "039"%char => "\\'"
-    | "007"%char => "\\a"
-    | "008"%char => "\\b"
-    | "009"%char => "\\t"
-    | "010"%char => "\\n"
-    | "011"%char => "\\v"
-    | "012"%char => "\\f"
-    | "013"%char => "\\r"
+    | #"092" => "\\\\"
+    | #"034" => """"
+    | #"063" => "\\?"
+    | #"039" => "\\'"
+    | #"007" => "\\a"
+    | #"008" => "\\b"
+    | #"009" => "\\t"
+    | #"010" => "\\n"
+    | #"011" => "\\v"
+    | #"012" => "\\f"
+    | #"013" => "\\r"
     | c     => if isPrint c then String c "" else toOctAscii c
     end.
 
   Definition value c := 
     Z.to_nat(ord(toUpper c)) - 
-    (if c < "A"%char then Z.to_nat(ord "0"%char) else Z.to_nat(ord "A"%char) - 10).
+    (if c < #"A" then Z.to_nat(ord #"0") else Z.to_nat(ord #"A") - 10).
 
   Import ListNotations.
 
@@ -360,18 +361,18 @@ Module Char.
     | c::l => if isDigit c then scanAscii cl else 
               if isSpace c then None else
               match c with
-              | "a"%char   => Some("007"%char, String.string_of_list_ascii(l))
-              | "b"%char   => Some("008"%char, String.string_of_list_ascii(l))
-              | "t"%char   => Some("009"%char, String.string_of_list_ascii(l))
-              | "n"%char   => Some("010"%char, String.string_of_list_ascii(l))
-              | "v"%char   => Some("011"%char, String.string_of_list_ascii(l))
-              | "f"%char   => Some("012"%char, String.string_of_list_ascii(l))
-              | "r"%char   => Some("013"%char, String.string_of_list_ascii(l))
-              | "092"%char => Some("092"%char, String.string_of_list_ascii(l))
-              | """"%char  => Some("034"%char, String.string_of_list_ascii(l))
-              | "^"%char   => scanControl cl
-              | "u"%char   => scanUnicode cl
-              | _     => None
+              | #"a"   => Some(#"007", String.string_of_list_ascii(l))
+              | #"b"   => Some(#"008", String.string_of_list_ascii(l))
+              | #"t"   => Some(#"009", String.string_of_list_ascii(l))
+              | #"n"   => Some(#"010", String.string_of_list_ascii(l))
+              | #"v"   => Some(#"011", String.string_of_list_ascii(l))
+              | #"f"   => Some(#"012", String.string_of_list_ascii(l))
+              | #"r"   => Some(#"013", String.string_of_list_ascii(l))
+              | #"092" => Some(#"092", String.string_of_list_ascii(l))
+              | #""""  => Some(#"034", String.string_of_list_ascii(l))
+              | #"^"   => scanControl cl
+              | #"u"   => scanUnicode cl
+              | _      => None
               end
     end.
 
@@ -379,7 +380,7 @@ Module Char.
     match cl with
     | [] => None
     | c::[] => Some(c,""%string)
-    | c1::c2::cl' => match (c1 = "\"%char) && (c2 = "\"%char) with
+    | c1::c2::cl' => match (c1 = #"\") && (c2 = #"\") with
                      | true => scanEscape cl'
                      | flase => if isPrint c1 
                      then Some(c1,String.string_of_list_ascii(c2::cl')) 
@@ -422,5 +423,4 @@ Definition ord (c:ascii):Z := Char.ord c.
   Coq: nat -> ascii
 *)
 Definition chr (n:Z):ascii := Char.chr n.
-
 (* ---------------------------------------------------------------------------*)
