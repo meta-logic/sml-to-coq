@@ -59,10 +59,11 @@ struct
       "match " ^ (concatListWith (", ", matchItemG, mL)) ^ " with" ^ "\n  " ^
       (S.concatWith ("  \n  | ") (List.map equationG eL)) ^ " end"
     
-    | G.IdentTerm(v)        => v
+    | G.IdentTerm(v)        =>  
+      (case v of "SOME" => "Some" | "NONE" => "None" | _ => v)
     | G.SortTerm(v)         => sortG(v) 
     | G.NumTerm(v)          => 
-       (if (S.isPrefix "~" v) then "(-"^S.substring(v, 1, S.size(v)-1)^ ")" else v)
+      (if (S.isPrefix "~" v) then "(-"^S.substring(v, 1, S.size(v)-1)^ ")" else v)
       
     | G.WildcardTerm        => "_"
     | G.ParensTerm(v)       => "(" ^ termG(v) ^ ")"
@@ -87,8 +88,12 @@ struct
       (case b of  true => "" | false => "\n  | _ => patternFailure" )^" end"
 
     | G.UnitTerm            => "tt"
-    | G.InfixTerm(t, aL)    => concatListWith(termG(t), argG, aL)
-      (*argG(List.hd(aL)) ^ " " ^ termG(t) ^ " " ^ argG(List.last(aL))*)
+    | G.InfixTerm(t, aL)    =>  let
+                                  val G.Arg(t') = List.hd aL
+                                  val G.TupleTerm(tL) = t'
+                                in
+                                   concatListWith (termG(t), termG, tL) 
+                                end
 
 
   and argG (G.Arg(t))        = termG(t)
@@ -177,8 +182,8 @@ struct
     | G.TuplePat(pL)     => "(" ^ concatListWith (", ", patternG, pL) ^ ")"
     | G.ListPat(pL)      => "[" ^ concatListWith (", ", patternG, pL) ^ "]" 
     | G.ParPat(p)        => patternG(p)
-    | G.UnitPat            => "tt"
-    | G.InfixPat(i, pL)    => concatListWith(i, patternG, pL)
+    | G.UnitPat          => "tt"
+    | G.InfixPat(i, pL)  => concatListWith(i, patternG, pL)
 
 
   and orPatternG (G.OrPattern(pL)) = concatListWith("| ", patternG, pL)
@@ -251,8 +256,11 @@ struct
       let
         val c = ord(Option.valOf ( Char.fromString(s) ))
         val c' = if c = 34 then "\"\"" else 
-                if c < 32 then Int.toString c else 
-                if c > 126 then Int.toString c else s
+                 if c = 92 then "\\" else
+                 if (S.size s = 6) then Int.toString c else
+                 if (S.size s = 4) then Int.toString c else
+                 if c < 32 then Int.toString c else 
+                 if c > 126 then Int.toString c else s
         val r = if (List.all (Char.isDigit) (S.explode c')) then 
                   (if (S.size c') = 3 then c' else 
                    if (S.size c') = 2 then "0" ^ c' else
