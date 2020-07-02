@@ -9,6 +9,8 @@ Module Char.
 
   Open Scope char_scope.
 
+  Axiom  ChrException : forall{a}, a.
+
   (* 
     Sml: char
     Coq: ascii
@@ -37,7 +39,9 @@ Module Char.
     Sml: int -> char
     Coq: nat -> ascii
   *)
-  Definition chr (n:Z):ascii := Ascii.ascii_of_nat(Z.to_nat(n)).
+  Definition chr (n:Z):ascii := 
+    if (Z.ltb n 0) || (Z.ltb maxOrd n) then ChrException 
+    else Ascii.ascii_of_nat(Z.to_nat(n)).
 
   (* 
     Sml: char -> char
@@ -401,6 +405,18 @@ Module Char.
   *)
 
   Definition fromString (s:string):option ascii := 
+    let c := scan " " s in
+    match c with 
+    | None => None
+    | Some (x, str) => Some x 
+    end.
+
+  (* 
+    Sml: String.string -> char option
+    Coq: string -> option ascii  
+  *)
+
+  Definition fromCString (s:string):option ascii := 
     let c := scan " " s in
     match c with 
     | None => None

@@ -138,7 +138,7 @@ Module Int.
     Sml: int -> int 
     Coq: Z -> Z
   *)
-  Definition abs (i: Z): Z := if (i <=? 0) then i else -1 * i.
+  Definition abs (i: Z): Z := if (i >=? 0) then i else -1 * i.
 
   (* 
     Sml: int * int -> int
@@ -222,7 +222,8 @@ Module Int.
     Sml: string -> int option
     Coq: string -> option Z
   *)
-  Definition fromString (s: string): option Z := readZ s 0.
+  Definition fromString (s: string): option Z := 
+    if (String.eqb "" s) then None else readZ s 0.
 
   Open Scope nat_scope.
   Definition natToDigit (n: nat) : ascii :=
