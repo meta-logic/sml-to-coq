@@ -59,8 +59,12 @@ struct
       "match " ^ (concatListWith (", ", matchItemG, mL)) ^ " with" ^ "\n  " ^
       (S.concatWith ("  \n  | ") (List.map equationG eL)) ^ " end"
     
-    | G.IdentTerm(v)        =>  
-      (case v of "SOME" => "Some" | "NONE" => "None" | _ => v)
+    | G.IdentTerm(v)        => (case v of 
+                                  "SOME" => "Some" 
+                                | "NONE" => "None" 
+                                | "List.exists" => "List.existsb" 
+                                | "ListPair.exists" => "ListPair.existsb" 
+                                | _ => v)
     | G.SortTerm(v)         => sortG(v) 
     | G.NumTerm(v)          => 
       (if (S.isPrefix "~" v) then "(-"^S.substring(v, 1, S.size(v)-1)^ ")" else v)
@@ -72,7 +76,9 @@ struct
     | G.WordTerm(v, b)      => (case b of 
                                   G.Dec => termG(G.NumTerm(v))
                                 | G.Hex => termG(G.HexTerm(v)))
-    | G.RealTerm(v)         => v ^ "%" ^ "float" 
+    | G.RealTerm(v)         =>(if (S.isPrefix "~" v) 
+                               then "(-"^S.substring(v, 1, S.size(v)-1)^ ")%float" 
+                               else v ^ "%float")
     | G.StringTerm(v)       => "\"" ^ v ^ "\"" 
     | G.CharTerm(v)         => (convertChar v) 
     | G.HexTerm(v)          => "\"" ^ "0x"^ S.map Char.toLower v ^ "\""
@@ -174,7 +180,9 @@ struct
     | G.WordPat(s, b)    => (case b of 
                                G.Dec => patternG(G.NumPat(s))
                              | G.Hex => patternG(G.HexPat(s)))
-    | G.RealPat(s)       => s ^ "%" ^ "float" 
+    | G.RealPat(s)       => (if (S.isPrefix "~" s) 
+                             then "(-"^S.substring(s, 1, S.size(s)-1)^ ")%float" 
+                             else s ^ "%float")
     | G.StringPat(s)     => "\"" ^ s ^ "\""
     | G.CharPat(s)       => (convertChar s)
     | G.HexPat(s)        => "\"" ^ "0x"^ S.map Char.toLower s ^ "\"" 
@@ -183,7 +191,11 @@ struct
     | G.ListPat(pL)      => "[" ^ concatListWith (", ", patternG, pL) ^ "]" 
     | G.ParPat(p)        => patternG(p)
     | G.UnitPat          => "tt"
-    | G.InfixPat(i, pL)  => concatListWith(i, patternG, pL)
+    | G.InfixPat(i, pL)  => let
+                              val G.TuplePat(pL') = List.hd pL
+                            in
+                              concatListWith (i, patternG, pL') 
+                            end
 
 
   and orPatternG (G.OrPattern(pL)) = concatListWith("| ", patternG, pL)
@@ -269,4 +281,5 @@ struct
       in
         "#\"" ^ r ^ "\""
       end
+
 end
