@@ -5,6 +5,9 @@ Require Import Floats.
 Require Import List.
 Import ListNotations.
 
+Axiom patternFailure: forall{a}, a.
+Notation "# X" := (X % char) (at level 0).
+
 (* < , <= , > , >= *)
 Class compInfixes A : Type :=
 {
@@ -53,7 +56,6 @@ Instance compInfixesReal : compInfixes float :=
   gtb := fun a b => PrimFloat.ltb b a;
   geb := fun a b => PrimFloat.leb b a 
 }.
-
 
 (*---------------------------------------------------------------------------*)
 
