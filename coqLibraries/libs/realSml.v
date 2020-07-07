@@ -78,8 +78,8 @@ Module Real.
     Sml: real * real * real -> real
     Coq: float * float * float -> float
   *)
-  Definition mm (a b c:float):float := a*b-c.
-  Notation "*-( x , y , z )" := (mm x y z) (at level 40, left associativity).
+  Definition ms (a b c:float):float := a*b-c.
+  Notation "*-( x , y , z )" := (ms x y z) (at level 40, left associativity).
 
   (*
     Sml: real -> real
@@ -207,7 +207,7 @@ Module Real.
   *)
   Definition opne' x y:bool := (x == nan) || (y == nan) ||
                                Bool.eqb false (eqb y x). 
-  Infix "?=" := opne' (at level 70) : float_scope.
+(*   Infix "?=" := opne' (at level 70) : float_scope. *)
 
   (*
     Sml: real * real -> bool

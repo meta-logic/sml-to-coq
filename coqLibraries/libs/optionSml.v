@@ -1,8 +1,6 @@
 
 Module Option.
 
-  Variable (A:Type) (B:Type) (C:Type).
-
   Axiom OptionException : forall{a}, a.
 
   (*

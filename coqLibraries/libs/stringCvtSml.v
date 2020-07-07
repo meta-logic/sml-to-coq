@@ -2,7 +2,7 @@ Require Import ZArith.
 
 Module StringCvt.
 
-  Variable (A:Type) (B:Type).
+ (*  Variable (A:Type) (B:Type). *)
 
   Inductive radix :=
     | BIN

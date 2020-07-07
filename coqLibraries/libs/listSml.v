@@ -5,7 +5,6 @@ Import ListNotations.
 
 Module List.
 
-  Variables (A : Type) (B : Type).
 
   Axiom  EmptyException : forall{a}, a.
 
@@ -32,7 +31,7 @@ Module List.
     Coq: list A * list A -> list A
   *)
   Definition append {A: Type} (l1:list A) (l2:list A):list A := List.app l1 l2.
-  Infix "@" := append (right associativity, at level 60).
+(*   Infix "@" := append (right associativity, at level 60). *)
 
   (*
     Sml: 'a list -> 'a
@@ -240,7 +239,7 @@ Module List.
     Sml:  ('a * 'a -> order) -> 'a list * 'a list -> order
     Coq:  (A * A -> order) -> list A * list A -> comparison
   *)
-  Definition collate (f:A * A -> comparison) 
+  Definition collate {A} (f:A * A -> comparison) 
              '((l1, l2):list A * list A):comparison := collate' f l1 l2 .
 
 End List.
@@ -289,7 +288,7 @@ Definition rev {A: Type} (l:list A):list A := List.rev l.
   Coq: list A * list A -> list A
 *)
 Definition append {A: Type} (l1:list A) (l2:list A):list A:= List.append l1 l2.
-Infix "@" := append (right associativity, at level 60).
+(* Infix "@" := append (right associativity, at level 60). *)
 
 (*
   Sml: ('a -> unit) -> 'a list -> unit

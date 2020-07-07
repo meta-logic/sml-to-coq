@@ -60,8 +60,8 @@ Module Int.
     Coq: Z * Z -> Z
   *)
   Definition div '((i1, i2): Z * Z):Z := i1 / i2.
-  Definition div' (i1 i2: Z):Z := i1 / i2.
-  Infix "div" := (div') (at level 40, left associativity).
+  (*Definition div' (i1 i2: Z):Z := i1 / i2.
+  Infix "div" := (div') (at level 40, left associativity). *)
 
   (* 
     Sml: int * int -> int
@@ -74,7 +74,7 @@ Module Int.
     Coq: Z * Z -> Z
   *)
   Definition rem '((i1, i2): Z * Z):Z := i1 mod i2.
-  Infix "rem" := rem (at level 40, no associativity).
+(*   Infix "rem" := rem (at level 40, no associativity). *)
 
   (* 
     Sml: int * int -> order
@@ -98,41 +98,41 @@ Module Int.
     Sml: int * int -> bool
     Coq: Z * Z -> bool
   *)
-  Definition opeq i1 i2:bool := i1 =? i2.
+  (* Definition opeq i1 i2:bool := i1 =? i2.
   Notation "op=( x , y )" := (Z.eqb x y) (at level 70, no associativity) : Z_scope.
-  Infix "=" := opeq : Z_scope.
+  Infix "=" := opeq : Z_scope. *)
 
   (* 
     Sml: int * int -> bool
     Coq: Z * Z -> bool
   *)
-  Definition oplt i1 i2:bool := i1 <? i2.
+(*   Definition oplt i1 i2:bool := i1 <? i2.
   Notation "op<( x , y )" := (Z.ltb x y) (at level 70, no associativity) : Z_scope.
-  Infix "<" := oplt : Z_scope.
+  Infix "<" := oplt : Z_scope. *)
 
   (* 
     Sml: int * int -> bool
     Coq: Z * Z -> bool
   *)
-  Definition ople i1 i2:bool := i1 <=? i2.
+(*   Definition ople i1 i2:bool := i1 <=? i2.
   Notation "op<=( x , y )" := (Z.leb x y) (at level 70, no associativity) : Z_scope.
-  Infix "<=" := ople : Z_scope.
+  Infix "<=" := ople : Z_scope. *)
 
   (* 
     Sml: int * int -> bool
     Coq: Z * Z -> bool
   *)
-  Definition opgt i1 i2:bool := i1 >? i2.
+(*   Definition opgt i1 i2:bool := i1 >? i2.
   Notation "op>( x , y )" := (Z.gtb x y) (at level 70, no associativity) : Z_scope.
-  Infix ">" := opgt : Z_scope.
+  Infix ">" := opgt : Z_scope. *)
 
   (* 
     Sml: int * int -> bool
     Coq: Z * Z -> bool
   *)
-  Definition opge i1 i2:bool := i1 >=? i2.
+(*   Definition opge i1 i2:bool := i1 >=? i2.
   Notation "op>=( x , y )" := (Z.geb x y) (at level 70, no associativity) : Z_scope.
-  Infix ">=" := opge : Z_scope.
+  Infix ">=" := opge : Z_scope. *)
 
   (* 
     Sml: int -> int 

@@ -3,8 +3,6 @@ Import ListNotations.
 
 Module ListPair.
 
-  Variable (A:Type) (B:Type) (C:Type).
-
   Axiom  UnequalLengthsException : forall{a}, a.
 
   Fixpoint zip' {A B:Type} (l1:list A) (l2:list B):list(A * B) :=
@@ -33,7 +31,7 @@ Module ListPair.
     | true  => zip' l1 l2
     | false => UnequalLengthsException
     end.
-Compute zipEq([1;2;3],[4;5]).
+
   (*
     Sml: ('a * 'b) list -> 'a list * 'b list
     Coq: list (A * B) -> list A * list A

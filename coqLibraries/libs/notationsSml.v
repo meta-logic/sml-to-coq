@@ -14,7 +14,7 @@ Class compInfixes A : Type :=
   ltb : A -> A -> bool;
   leb : A -> A -> bool;
   gtb : A -> A -> bool;
-  geb : A -> A -> bool
+  geb : A -> A -> bool    
 }.
 Infix "<"  := ltb (at level 70).
 Notation "op<( x , y )" := (ltb x y) (at level 70).
@@ -59,7 +59,7 @@ Instance compInfixesReal : compInfixes float :=
 
 (*---------------------------------------------------------------------------*)
 
-(* = , <> *)
+(* = , <>*)
 Class eqInfixes A : Type :=
 {
   eqb : A -> A -> bool;
@@ -219,12 +219,31 @@ Instance powAppInfixNat : powAppInfix nat :=
 (*---------------------------------------------------------------------------*)
 
 (* Other Notations *)
-(* div , @ , :: *)
+(* div, rem, @, ::, *+, *-, !=, ?=*)
 
 Definition div' (i1 i2: Z):Z := i1 / i2.
 Infix "div" := (div') (at level 40, left associativity).
+
+Definition rem' '((i1, i2): Z * Z):Z := Z.modulo i1 i2.
+Infix "rem" := rem' (at level 40, no associativity).
 
 Definition append {A: Type} (l1:list A) (l2:list A):list A := List.app l1 l2.
 Infix "@" := append (right associativity, at level 60).
 
 Notation "op::( x , y )" := (x::y).
+
+Definition mp (a b c:float):float := PrimFloat.add (PrimFloat.mul a b) c.
+Notation "*+( x , y , z )" := (mp x y z) (at level 40, left associativity).
+
+Definition ms (a b c:float):float := PrimFloat.sub (PrimFloat.mul a b) c.
+Notation "*-( x , y , z )" := (ms x y z) (at level 40, left associativity).
+
+Definition opne x y:bool := Bool.eqb false (PrimFloat.eqb y x). 
+Infix "!=" := opne (at level 70).
+
+Definition ope x y:bool := (PrimFloat.eqb x y) && (x != nan) && (y != nan) . 
+Infix "==" := ope (at level 70).
+
+Definition opne' x y:bool := (x == nan) || (y == nan) ||
+                               Bool.eqb false (PrimFloat.eqb y x). 
+Infix "?=" := opne' (at level 70).
