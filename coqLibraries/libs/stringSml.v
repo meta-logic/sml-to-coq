@@ -68,8 +68,8 @@ Module String.
   Definition append (s1 s2:string):string := 
     if Z.ltb maxSize (size s1 + size s2) 
     then SizeException else String.append s1 s2.
-  Notation "op^( x , y )" := (append x y) (at level 70, no associativity) : Z_scope.
-  Infix "^" := append :string_scope.
+(*   Notation "op^( x , y )" := (append x y) (at level 70, no associativity) : Z_scope.
+  Infix "^" := append :string_scope. *)
 
   (*
     Sml: string -> string list -> string
@@ -166,7 +166,7 @@ Module String.
      | Some x => true
      | None   => false
      end.
-Compute isSubstring "ab" "abcd".
+
   (*
     Sml: string -> string -> bool
     Coq: string -> string -> bool
@@ -226,32 +226,32 @@ Compute isSubstring "ab" "abcd".
     Coq: string * string -> bool
   *)
   Definition oplt s1 s2:bool := Z.ltb (size s1) (size s2). 
-  Notation "op<( x , y )" := (oplt x y) (at level 70) : nat_scope.
-  Infix "<" := oplt (at level 70) : string_scope.
+(*   Notation "op<( x , y )" := (oplt x y) (at level 70) : nat_scope.
+  Infix "<" := oplt (at level 70) : string_scope. *)
 
   (*
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
   Definition ople s1 s2:bool := Z.leb (size s1) (size s2). 
-  Notation "op<=( x , y )" := (ople x y) (at level 70) : nat_scope.
-  Infix "<=" := ople (at level 70) : string_scope.
+(*   Notation "op<=( x , y )" := (ople x y) (at level 70) : nat_scope.
+  Infix "<=" := ople (at level 70) : string_scope. *)
 
   (*
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
   Definition opgt s1 s2:bool := Z.ltb (size s2) (size s1). 
-  Notation "op>( x , y )" := (opgt x y) (at level 70) : nat_scope.
-  Infix ">" := opgt (at level 70) : string_scope.
+(*   Notation "op>( x , y )" := (opgt x y) (at level 70) : nat_scope.
+  Infix ">" := opgt (at level 70) : string_scope. *)
 
   (*
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
   Definition opge s1 s2:bool := Z.leb (size s2) (size s1). 
-  Notation "op>=( x , y )" := (opge x y) (at level 70) : nat_scope.
-  Infix ">=" := opge (at level 70) : string_scope.
+(*   Notation "op>=( x , y )" := (opge x y) (at level 70) : nat_scope.
+  Infix ">=" := opge (at level 70) : string_scope. *)
 
   (* SML spacific *)
 
