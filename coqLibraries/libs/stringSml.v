@@ -1,9 +1,9 @@
 Require Import Bool.
-Require Import String.
 Require Import Ascii.
 Require Import ZArith.
 Require Import List.
 Import ListNotations.
+Require Export String.
 Open Scope string_scope.
 
 Module String.
