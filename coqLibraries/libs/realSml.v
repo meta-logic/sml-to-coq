@@ -423,7 +423,7 @@ Module Real.
       OverflowException, and DivException
     *)
   Definition toInt (m:rounding_mode) (f:float) (nd:nat):Z :=
-    if (f != infinity) then OverflowException else
+    if (f == infinity) then OverflowException else
     if (isNan f) then DivException else
     match m with 
     | TO_NEAREST => if (f < 0) then -1 * (toInt'' (toInt' (abs(realRound f)) nd 0) nd 0)
