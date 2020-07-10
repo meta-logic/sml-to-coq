@@ -1,8 +1,8 @@
 Require Import Bool.
 Require Import String.
-Require Import Ascii.
 Require Import List.
 Require Import ZArith.
+Require Export Ascii.
 Notation "# x" := (x%char) (at level 0).
 
 Module Char.

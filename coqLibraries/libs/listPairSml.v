@@ -1,5 +1,5 @@
-Require Import List.
-Import ListNotations.
+Require Export List.
+Export ListNotations.
 
 Module ListPair.
 

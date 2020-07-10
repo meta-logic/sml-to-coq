@@ -1,6 +1,6 @@
-Require Import ZArith.
-Require Import Ascii.
-Require Import String.
+Require Export Ascii.
+Require Export String.
+Require Export ZArith.
 Open Scope Z_scope.
 
 Module Int.

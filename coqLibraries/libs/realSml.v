@@ -1,6 +1,6 @@
 Require Import Bool.
 Require Import ZArith.
-Require Import Floats.
+Require Export Floats.
 
 Module Real.
 

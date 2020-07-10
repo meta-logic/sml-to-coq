@@ -1,6 +1,7 @@
-Require Import Bool.
 Require Import String.
 Require Import Ascii.
+Require Export Bool.
+Open Scope bool_scope.
 
 Module Bool.
 

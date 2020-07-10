@@ -1,7 +1,7 @@
 Require Import Bool.
-Require Import List.
 Require Import ZArith.
-Import ListNotations.
+Require Export List.
+Export ListNotations.
 
 Module List.
 
@@ -82,6 +82,7 @@ Module List.
       SubscriptException
   *)
   Definition nth {A: Type} '((l, n):list A * Z):A := 
+    if Z.ltb n 0 then SubscriptException else
     List.nth (Z.to_nat n) l SubscriptException.
 
   (*
