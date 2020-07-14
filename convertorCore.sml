@@ -17,6 +17,7 @@ struct
     open AnnotationCore
     structure S = StaticObjectsCore
     structure D = DynamicObjectsCore
+    structure F = FunctionChecker
     local 
         structure G = Gallina
         infix @@
@@ -462,6 +463,28 @@ struct
         and labs2field (labs : G.ident list) (typs : G.binder list) : G.field =
             G.Field (ListPair.zip (labs, List.map extractTyp typs))
 
+        and fnexp2funbody (FNExp(Match(Mrule(ATPat(IDAtPat(_, longvid)@@_)@@_, exp)@@_,_)@@_)) : G.binder list * G.term =
+            let val (binders, body) = fnexp2funbody (~exp)
+                val name = mkName (lvid2id(~longvid))
+                val binder = G.SingleBinder {name = name, typ = NONE, inferred = false}
+            in
+                (binder :: binders, body)
+            end
+          | fnexp2funbody (exp) = ([], exp2term exp)
+
+        and valbind2fixbodies (PLAINValBind(
+                                    ATPat(IDAtPat(_, longvid)@@_)@@_,
+                                    exp@@_,
+                                    valbind2)@@_) : G.fixbody list =
+            let val ident = lvid2id (~longvid)
+                val (binders, body) = fnexp2funbody exp
+                val typ = NONE
+                val decArg = NONE
+                val fixBody = G.Fixbody {id = ident, typ = typ, decArg = decArg, binders = binders, body = body }
+            in
+                fixBody :: (?valbind2fixbodies valbind2)
+            end
+
 
         (* EXAMPLE: type age = int
          * FROM: SyntaxCoreFn.sml: 123 -> 124
@@ -535,19 +558,36 @@ struct
          *)
         and valbind2sent(valbind: ValBind): G.sentence = 
             let fun valbind2sents (PLAINValBind(pat, exp, valbind2) @@ A) = 
-                let
-                    val exhaustive = case try (exhaustive A) of SOME S.Exhaustive => true | _ => false                    
-                    val body = exp2term (~exp)
-                    val pat = pat2pattern (~pat)
-                    val sents = patBody2sents (pat, body) exhaustive
-                in
-                    !recordContext @ sents @ (?(valbind2sents) valbind2)
-                end
-                | valbind2sents _ = raise Fail "Recursive value bindings are not yet implemented \n"    
+                    let
+                        val exhaustive = case try (exhaustive A) of SOME S.Exhaustive => true | _ => false
+                        val body = exp2term (~exp)
+                        val pat = pat2pattern (~pat)
+                        val sents = patBody2sents (pat, body) exhaustive
+                        val sents' = ?valbind2sents valbind2
+                    in
+                        !recordContext @ sents @ sents'
+                    end
+                  | valbind2sents (RECValBind(PLAINValBind(
+                                                   ATPat(IDAtPat(_, longvid)@@_)@@_,
+                                                   exp@@_,
+                                                   valbind2)@@_)@@_) =
+                    let
+                        val recursive = isSome(valbind2) orelse F.checkExp(lvid2id (~longvid)) exp
+                        val (binders, body) = fnexp2funbody (exp)
+                        val ident = lvid2id (~longvid)
+                        val typ = NONE
+                        val decArg = NONE
+                        val sent = if recursive
+                                    then G.FixpointSentence (G.Fixpoint(G.Fixbody
+                                    {id = ident, typ = typ, decArg = decArg, binders = binders, body = body}
+                                    :: (?(valbind2fixbodies) valbind2)))
+                                    else G.DefinitionSentence (G.DefinitionDef
+                                    {id = ident, localbool = false, binders = binders, typ = typ, body = body})
+                    in
+                        !recordContext @ [sent]
+                    end
                 val sent = G.SeqSentences(valbind2sents valbind)
             in (recordContext := []; sent) end
-
-
 
         (* FROM: SyntaxCoreFn.sml: 104 -> 114
          * TO:   Gallina.sml : 100 -> 108
