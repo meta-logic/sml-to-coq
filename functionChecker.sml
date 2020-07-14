@@ -5,7 +5,7 @@ local
     open ConvertorUtil
 in
 
-datatype state = RECURSIVE 
+datatype state = RECURSIVE
                 | NONRECURSIVE
                 | MAYBE
 
@@ -13,7 +13,7 @@ fun orelseState (s1, s2) =
     case s1 of NONRECURSIVE => s2
              | RECURSIVE => s1
              | MAYBE => if s2 = RECURSIVE then s2 else s1
-                                                           
+
 fun checkExp (id : string) (ATExp atexp : Exp'): bool =
     checkAtExp id (~atexp)
   | checkExp id (APPExp(exp, atexp)) =
@@ -29,6 +29,8 @@ fun checkExp (id : string) (ATExp atexp : Exp'): bool =
     checkExp id (~exp1) orelse checkExp id (~exp2)
   | checkExp id (ORELSEExpX (exp1, exp2)) =
     checkExp id (~exp1) orelse checkExp id (~exp2)
+  | checkExp id (INFIXExpX(exp, atexp)) =
+    checkExp id (~exp) orelse checkAtExp id (~atexp)
 
 and checkAtExp (id : string) (SCONAtExp _ : AtExp') : bool = false
   | checkAtExp id (IDAtExp (_, lvid)) = id = lvid2id (~lvid)
@@ -64,17 +66,31 @@ and checkPat (id : string) (ATPat atpat : Pat') : state =
   | checkPat id (ASPat (_, vid, _, pat)) =
     if vid2id (~vid) = id then NONRECURSIVE else
     checkPat id (~pat)
+  | checkPat id (INFIXPatX(_, longvid, atpat)) =
+    if lvid2id (~longvid) = id then NONRECURSIVE else
+    checkAtPat id (~atpat)
 
 and checkAtPat (id : string) (WILDCARDAtPat : AtPat') : state = MAYBE
   | checkAtPat id (SCONAtPat _) = MAYBE
   | checkAtPat id (IDAtPat (_, lvid)) =
     if lvid2id (~lvid) = id then NONRECURSIVE else MAYBE
+  | checkAtPat id (RECORDAtPat(SOME patrow)) = checkPatrow id (~patrow)
+  | checkAtPat id (RECORDAtPat(_)) = MAYBE
   | checkAtPat id (PARAtPat pat) = checkPat id (~pat)
   | checkAtPat id UNITAtPatX = MAYBE
   | checkAtPat id (TUPLEAtPatX patList) =
     List.foldl orelseState MAYBE (% (checkPat id) patList)
   | checkAtPat id (LISTAtPatX patList) =
     List.foldl orelseState MAYBE (% (checkPat id) patList)
+
+and checkPatrow id (DOTSPatRow) = MAYBE
+  | checkPatrow id (FIELDPatRow(lab, pat, patrow2)) =
+    case patrow2 of
+        NONE => checkPat id (~pat)
+      | SOME patrow' => 
+        (case checkPatrow id (~patrow') of
+             MAYBE => checkPat id (~pat)
+           | res => res)
 
 and checkDec (id : string) (VALDec (_, valbind)) : state = checkValBind id (~valbind)
   | checkDec id (TYPEDec _) = MAYBE
@@ -99,14 +115,12 @@ and checkDec (id : string) (VALDec (_, valbind)) : state = checkValBind id (~val
 
 and checkValBind (id : string) (PLAINValBind (pat, exp, valbind2)) : state =
     if checkExp id (~exp) then RECURSIVE
-    else case valbind2 of
+    else (case valbind2 of
              NONE => checkPat id (~pat)
            | SOME valbind' =>
              (case checkValBind id (~valbind') of
                   MAYBE => checkPat id (~pat)
-               |  res => res)
-
-                
+               |  res => res))
+  | checkValBind id (RECValBind(valbind)) = checkValBind id (~valbind)
 end
 end
-    
