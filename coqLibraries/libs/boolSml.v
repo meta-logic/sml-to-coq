@@ -5,7 +5,7 @@ Open Scope bool_scope.
 
 Module Bool.
 
-  Open Scope string_scope.
+  Local Open Scope string_scope.
 
   (* 
     Sml: bool -> bool 

@@ -71,15 +71,15 @@ Module Real.
     Sml: real * real * real -> real
     Coq: float * float * float -> float
   *)
-  Definition mp (a b c:float):float := a*b+c.
-  Notation "*+( x , y , z )" := (mp x y z) (at level 40, left associativity).
+  Local Definition mp (a b c:float):float := a*b+c.
+  Local Notation "*+( x , y , z )" := (mp x y z) (at level 40, left associativity).
 
   (*
     Sml: real * real * real -> real
     Coq: float * float * float -> float
   *)
-  Definition ms (a b c:float):float := a*b-c.
-  Notation "*-( x , y , z )" := (ms x y z) (at level 40, left associativity).
+  Local Definition ms (a b c:float):float := a*b-c.
+  Local Notation "*-( x , y , z )" := (ms x y z) (at level 40, left associativity).
 
   (*
     Sml: real -> real
@@ -170,42 +170,42 @@ Module Real.
     Sml: real * real -> bool
     Coq: float * float -> bool
   *)
-  Notation "op<( x , y )" := (ltb x y) (at level 70, no associativity) : float_scope.
+  Local Notation "op<( x , y )" := (ltb x y) (at level 70, no associativity) : float_scope.
 
   (*
     Sml: real * real -> bool
     Coq: float * float -> bool
   *)
-  Notation "op<=( x , y )" := (leb x y) (at level 70, no associativity) : float_scope.
+  Local Notation "op<=( x , y )" := (leb x y) (at level 70, no associativity) : float_scope.
 
   (*
     Sml: real * real -> bool
     Coq: float * float -> bool
   *)
-  Definition opgt x y:bool := ltb y x. 
-  Notation "op>( x , y )" := (opgt x y) (at level 70, no associativity) : float_scope.
-  Infix ">" := opgt (at level 70) : float_scope.
+  Local Definition opgt x y:bool := ltb y x. 
+  Local Notation "op>( x , y )" := (opgt x y) (at level 70, no associativity) : float_scope.
+  Local Infix ">" := opgt (at level 70) : float_scope.
 
   (*
     Sml: real * real -> bool
     Coq: float * float -> bool
   *)
-  Definition opge x y:bool := leb y x. 
-  Notation "op>=( x , y )" := (opge x y) (at level 70, no associativity) : float_scope.
-  Infix ">=" := opge (at level 70) : float_scope.
+  Local Definition opge x y:bool := leb y x. 
+  Local Notation "op>=( x , y )" := (opge x y) (at level 70, no associativity) : float_scope.
+  Local Infix ">=" := opge (at level 70) : float_scope.
 
   (*
     Sml: real * real -> bool
     Coq: float * float -> bool
   *)
-  Definition opne x y:bool := Bool.eqb false (eqb y x). 
-  Infix "!=" := opne (at level 70) : float_scope.
+  Local Definition opne x y:bool := Bool.eqb false (eqb y x). 
+  Local Infix "!=" := opne (at level 70) : float_scope.
 
   (*
     Sml: real * real -> bool
     Coq: float * float -> bool
   *)
-  Definition opne' x y:bool := (x == nan) || (y == nan) ||
+  Local Definition opne' x y:bool := (x == nan) || (y == nan) ||
                                Bool.eqb false (eqb y x). 
 (*   Infix "?=" := opne' (at level 70) : float_scope. *)
 
@@ -261,7 +261,7 @@ Module Real.
 
   Definition maxInt := 4503599627370496.0.
 
-  Definition whole' (x:float):float := 
+  Local Definition whole' (x:float):float := 
     match (x > 0.0) with
     | true  => x-0.5+maxInt-maxInt
     | false => match (x < 0.0) with
@@ -271,7 +271,7 @@ Module Real.
 
   (* It returns x-1 if x is positive whole number 
      or x+1 is negative whole number *)
-  Definition exWhole' (x:float):float := 
+  Local Definition exWhole' (x:float):float := 
     match (x > 0.0) with
     | true  => match (x > 0.5) with
                | true  => x-0.5+maxInt-maxInt
@@ -308,7 +308,7 @@ Module Real.
     | false => f
     end.
 
-  Definition exWhole (x:float) := if (realMod x) == 0 then x else exWhole' x.
+  Local Definition exWhole (x:float) := if (realMod x) == 0 then x else exWhole' x.
 
   (*
     Sml: real * real -> real
@@ -378,7 +378,7 @@ Module Real.
     | flase => if (r - ((exWhole r)) >= 0.5) then realCeil r else realFloor r
     end.
 
-  Definition f2zDigit (f:float):Z :=
+  Local Definition f2zDigit (f:float):Z :=
     if (f == zero) then 0%Z else
     if (f == one) then 1%Z else
     if (f == two) then 2%Z else
@@ -396,14 +396,14 @@ Module Real.
     | TO_POSINF
     | TO_ZERO.
 
-  Fixpoint toInt' (f:float) (time:nat) (acc:float) :float :=
+  Local Fixpoint toInt' (f:float) (time:nat) (acc:float) :float :=
     match time with
     | 0       => acc
     | S time' => let m := f - (10 * realTrunc(f / 10)) in 
                  toInt' (realTrunc(f / 10)) time' ( 10 * acc +  m)
     end.
 
-  Fixpoint toInt'' (f:float) (time:nat) (acc:Z) :Z :=
+  Local Fixpoint toInt'' (f:float) (time:nat) (acc:Z) :Z :=
     match time with
     | 0       => acc
     | S time' => let m := f - (10 * realTrunc(f / 10)) in 

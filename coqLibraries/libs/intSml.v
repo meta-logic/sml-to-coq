@@ -185,9 +185,9 @@ Module Int.
     scan
   *)
 
-  Open Scope char_scope.
+  Local Open Scope char_scope.
 
-  Definition digitToZ (c: ascii) : option Z :=
+  Local Definition digitToZ (c: ascii) : option Z :=
     match c with
     | "-" => Some 10
     | "0" => Some 0
@@ -203,9 +203,9 @@ Module Int.
     | _ => None
     end.
 
-  Open Scope string_scope. 
+  Local Open Scope string_scope. 
 
-  Fixpoint readZ (s: string) (acc: Z) : option Z :=
+  Local Fixpoint readZ (s: string) (acc: Z) : option Z :=
   match s with
   | "" => Some acc
   | String c s' => match digitToZ c with
@@ -225,8 +225,9 @@ Module Int.
   Definition fromString (s: string): option Z := 
     if (String.eqb "" s) then None else readZ s 0.
 
-  Open Scope nat_scope.
-  Definition natToDigit (n: nat) : ascii :=
+  Local Open Scope nat_scope.
+
+  Local Definition natToDigit (n: nat) : ascii :=
     match n with
     | 0 => "0"
     | 1 => "1"
@@ -240,7 +241,7 @@ Module Int.
     | _ => "9"
     end.
 
-  Fixpoint writeNat (time n : nat) (acc : string) : string :=
+  Local Fixpoint writeNat (time n : nat) (acc : string) : string :=
   let acc' := String (natToDigit (n mod 10)) acc in
   match time with
     | 0 => acc'
@@ -251,9 +252,9 @@ Module Int.
       end
   end.
 
-  Definition toString' (n : nat) : string := writeNat n n "".
+  Local Definition toString' (n : nat) : string := writeNat n n "".
 
-  Open Scope Z_scope.
+  Local Open Scope Z_scope.
 
   (* 
     Sml: int -> string

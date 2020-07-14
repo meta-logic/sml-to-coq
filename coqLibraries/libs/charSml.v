@@ -7,7 +7,7 @@ Notation "# x" := (x%char) (at level 0).
 
 Module Char.
 
-  Open Scope char_scope.
+  Local Open Scope char_scope.
 
   Axiom  ChrException : forall{a}, a.
 
@@ -66,41 +66,41 @@ Module Char.
     Sml: char * char -> bool
     Coq: ascii * ascii -> bool
   *)
-  Definition opeq s1 s2:bool := Ascii.eqb s1 s2. 
-  Notation "op=( x , y )" := (opeq x y) (at level 70) : nat_scope.
-  Infix "=" := opeq  : char_scope.
+  Local Definition opeq s1 s2:bool := Ascii.eqb s1 s2. 
+  Local Notation "op=( x , y )" := (opeq x y) (at level 70) : nat_scope.
+  Local Infix "=" := opeq  : char_scope.
 
   (* 
     Sml: char * char -> bool
     Coq: ascii * ascii -> bool
   *)
-  Definition oplt s1 s2:bool := Z.ltb (ord s1) (ord s2). 
-  Notation "op<( x , y )" := (oplt x y) (at level 70) : nat_scope.
-  Infix "<" := oplt (at level 70) : char_scope.
+  Local Definition oplt s1 s2:bool := Z.ltb (ord s1) (ord s2). 
+  Local Notation "op<( x , y )" := (oplt x y) (at level 70) : nat_scope.
+  Local Infix "<" := oplt (at level 70) : char_scope.
 
   (* 
     Sml: char * char -> bool
     Coq: ascii * ascii -> bool
   *)
-  Definition ople s1 s2:bool := Z.leb (ord s1) (ord s2). 
-  Notation "op<=( x , y )" := (ople x y) (at level 70) : nat_scope.
-  Infix "<=" := ople (at level 70) : char_scope.
+  Local Definition ople s1 s2:bool := Z.leb (ord s1) (ord s2). 
+  Local Notation "op<=( x , y )" := (ople x y) (at level 70) : nat_scope.
+  Local Infix "<=" := ople (at level 70) : char_scope.
 
   (* 
     Sml: char * char -> bool
     Coq: ascii * ascii -> bool
   *)
-  Definition opgt s1 s2:bool := Z.ltb (ord s2) (ord s1). 
-  Notation "op>( x , y )" := (opgt x y) (at level 70) : nat_scope.
-  Infix ">" := opgt (at level 70) : char_scope.
+  Local Definition opgt s1 s2:bool := Z.ltb (ord s2) (ord s1). 
+  Local Notation "op>( x , y )" := (opgt x y) (at level 70) : nat_scope.
+  Local Infix ">" := opgt (at level 70) : char_scope.
 
   (* 
     Sml: char * char -> bool
     Coq: ascii * ascii -> bool
   *)
-  Definition opge s1 s2:bool := Z.leb (ord s2) (ord s1). 
-  Notation "op>=( x , y )" := (opge x y) (at level 70) : nat_scope.
-  Infix ">=" := opge (at level 70) : char_scope.
+  Local Definition opge s1 s2:bool := Z.leb (ord s2) (ord s1). 
+  Local Notation "op>=( x , y )" := (opge x y) (at level 70) : nat_scope.
+  Local Infix ">=" := opge (at level 70) : char_scope.
 
   (*
     Sml: string -> char -> bool
@@ -265,15 +265,15 @@ Module Char.
     | false => c
     end.
 
-  Definition toControl (c:ascii):string := 
+  Local Definition toControl (c:ascii):string := 
     "\\^" ++ String (chr(ord c + ord #"@")) "".
 
-  Definition toAscii (c:ascii):string := 
+  Local Definition toAscii (c:ascii):string := 
     "\\" ++ (String (chr(Z.div (ord c) 100 + ord #"0")) "")
          ++ (String (chr(Z.div (Z.modulo (ord c) 100) 10 + ord #"0")) "")
          ++ (String (chr(Z.modulo (ord c) 10 + ord #"0")) "").
 
-  Definition toOctAscii (c:ascii):string := 
+  Local Definition toOctAscii (c:ascii):string := 
     "\\" ++ (String (chr(Z.div (ord c) 64 + ord #"0")) "")
          ++ (String (chr(Z.div (Z.modulo (ord c) 64) 8 + ord #"0")) "")
          ++ (String (chr(Z.modulo (ord c) 8 + ord #"0")) "").
@@ -318,13 +318,13 @@ Module Char.
     | c     => if isPrint c then String c "" else toOctAscii c
     end.
 
-  Definition value c := 
+  Local Definition value c := 
     Z.to_nat(ord(toUpper c)) - 
     (if c < #"A" then Z.to_nat(ord #"0") else Z.to_nat(ord #"A") - 10).
 
   Import ListNotations.
 
-  Definition scanAscii (cl:list ascii):option (ascii * string) :=
+  Local Definition scanAscii (cl:list ascii):option (ascii * string) :=
     match cl with
     | [] => None 
     | c1::[] => None
@@ -336,7 +336,7 @@ Module Char.
         else None ) else None
     end.
 
-  Definition scanUnicode (cl:list ascii):option (ascii * string) :=
+  Local Definition scanUnicode (cl:list ascii):option (ascii * string) :=
     match cl with
     | [] => None 
     | c1::[] => None
@@ -349,7 +349,7 @@ Module Char.
         else None ) else None
     end.
 
-  Definition scanControl (cl:list ascii):option (ascii * string) :=
+  Local Definition scanControl (cl:list ascii):option (ascii * string) :=
     match cl with
     | [] => None
     | c::cl' => 
@@ -359,7 +359,7 @@ Module Char.
     end.
 
 
-  Definition scanEscape (cl:list ascii):option (ascii * string) :=
+  Local Definition scanEscape (cl:list ascii):option (ascii * string) :=
     match cl with
     | [] => None 
     | c::l => if isDigit c then scanAscii cl else 
@@ -380,7 +380,7 @@ Module Char.
               end
     end.
 
-  Definition scan' (cl:list ascii):option (ascii * string) :=
+  Local Definition scan' (cl:list ascii):option (ascii * string) :=
     match cl with
     | [] => None
     | c::[] => Some(c,""%string)
