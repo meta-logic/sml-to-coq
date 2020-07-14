@@ -213,11 +213,14 @@ Module String.
   Definition compare '((s1, s2):string * string):comparison :=
     collate compareChar (s1, s2).
 
+Compute match compare("sdfsdf", "sdfsd") with 
+        | Gt => true
+        | _ => false end.
   (*
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
-  Definition opeq s1 s2:bool := Z.eqb (size s1) (size s2). 
+  Definition opeq s1 s2:bool := String.eqb s1 s2. 
   Notation "op=( x , y )" := (opeq x y) (at level 70) : nat_scope.
   Infix "=" := opeq (at level 70) : string_scope.
 
@@ -225,7 +228,9 @@ Module String.
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
-  Definition oplt s1 s2:bool := Z.ltb (size s1) (size s2). 
+  Definition oplt s1 s2:bool := match compare(s1, s2) with 
+                                | Lt => true 
+                                | _  => false end. 
 (*   Notation "op<( x , y )" := (oplt x y) (at level 70) : nat_scope.
   Infix "<" := oplt (at level 70) : string_scope. *)
 
@@ -233,7 +238,9 @@ Module String.
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
-  Definition ople s1 s2:bool := Z.leb (size s1) (size s2). 
+  Definition ople s1 s2:bool := match compare(s1, s2) with 
+                                | Gt => false 
+                                | _  => true end. 
 (*   Notation "op<=( x , y )" := (ople x y) (at level 70) : nat_scope.
   Infix "<=" := ople (at level 70) : string_scope. *)
 
@@ -241,7 +248,9 @@ Module String.
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
-  Definition opgt s1 s2:bool := Z.ltb (size s2) (size s1). 
+  Definition opgt s1 s2:bool := match compare(s1, s2) with 
+                                | Gt => true 
+                                | _ => false end.  
 (*   Notation "op>( x , y )" := (opgt x y) (at level 70) : nat_scope.
   Infix ">" := opgt (at level 70) : string_scope. *)
 
@@ -249,7 +258,9 @@ Module String.
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
-  Definition opge s1 s2:bool := Z.leb (size s2) (size s1). 
+  Definition opge s1 s2:bool := match compare(s1, s2) with 
+                                | Lt => false 
+                                | _  => true end.  
 (*   Notation "op>=( x , y )" := (opge x y) (at level 70) : nat_scope.
   Infix ">=" := opge (at level 70) : string_scope. *)
 

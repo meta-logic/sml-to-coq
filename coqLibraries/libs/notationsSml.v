@@ -1,7 +1,9 @@
+Require Import Floats.
 Require Import String.
 Require Import Ascii.
+Require Import Bool.
 Require Import ZArith.
-Require Import Floats.
+
 Require Import List.
 Import ListNotations.
 
@@ -25,12 +27,63 @@ Notation "op>( x , y )" := (gtb x y) (at level 70).
 Infix ">=" := geb (at level 70).
 Notation "op>=( x , y )" := (geb x y) (at level 70).
 
+
+(* These functions used in imolementing comparing two strings lexicographically,
+ using the underlying ordering on the char type.*)
+(*---------------------------------------------------------------------------*)
+
+(*
+  Sml: string -> char list
+  Coq: string -> list ascii
+*)
+Local Definition explode (s:string): list ascii:= (String.list_ascii_of_string s).
+
+Local Fixpoint collate' (f:ascii * ascii -> comparison) (l1 l2:list ascii): comparison:=
+  match l1, l2 with
+  | [],[] => Eq
+  | [],_  => Lt
+  | _ ,[] => Gt
+  | x1::l1',x2::l2' => match f(x1,x2) with
+                       | Eq     => collate' f l1' l2'
+                       | other  => other
+                       end
+  end.
+
+(*
+  Sml: (char * char -> order) -> string * string -> order
+  Coq: (ascii * ascii -> comparison) -> string * string -> comparison
+*)
+Local Definition collate (f:ascii * ascii -> comparison)
+           '((s1, s2):string * string): comparison := 
+            collate' f (explode s1) (explode s2).
+(* 
+  Sml: char -> int
+  Coq: ascii -> Z
+*)
+Local Definition ord (c:ascii):Z := Z.of_nat(Ascii.nat_of_ascii(c)).
+
+(* 
+  Sml: char * char -> order
+  Coq: ascii * ascii -> comparison
+*)
+Local Definition compareChar '((c, d):ascii * ascii):comparison := 
+  Z.compare (ord c) (ord d).
+
+(*
+  Sml: string * string -> order
+  Coq: string * string -> comparison
+*)
+Local Definition compare '((s1, s2):string * string):comparison :=
+  collate compareChar (s1, s2).
+(*---------------------------------------------------------------------------*)
+
+
 Instance compInfixesString : compInfixes string :=
 {
-  ltb := fun a b => Nat.ltb (String.length a) (String.length b);
-  leb := fun a b => Nat.leb (String.length a) (String.length b);
-  gtb := fun a b => Nat.ltb (String.length b) (String.length a);
-  geb := fun a b => Nat.leb (String.length b) (String.length a)
+  ltb := fun a b => match compare(a, b) with | Lt => true | _  => false end;
+  leb := fun a b => match compare(a, b) with | Gt => false | _  => true end;
+  gtb := fun a b => match compare(a, b) with | Gt => true | _  => false end;
+  geb := fun a b => match compare(a, b) with | Lt => false | _  => true end;
 }.
 
 Instance compInfixesChar : compInfixes ascii :=
@@ -67,7 +120,7 @@ Class eqInfixes A : Type :=
 }.
 Infix "="  := eqb (at level 70).
 Notation "op=( x , y )" := (eqb x y) (at level 70).
-Infix "<>"  := eqb (at level 70).
+Infix "<>"  := neq (at level 70).
 Notation "op<>( x , y )" := (neq x y) (at level 70).
 
 Instance eqInfixesBool : eqInfixes bool :=
@@ -78,16 +131,14 @@ Instance eqInfixesBool : eqInfixes bool :=
 
 Instance eqInfixesString : eqInfixes string :=
 {
-  eqb := fun a b => Nat.eqb (String.length a) (String.length b);
-  neq := fun a b => if (Nat.eqb (String.length a) (String.length b))
-                    then false else true
+  eqb := String.eqb;
+  neq := fun a b => if String.eqb a b then false else true
 }.
 
 Instance eqInfixesChar : eqInfixes ascii :=
 {
-  eqb := fun a b => Nat.eqb (Ascii.nat_of_ascii(a)) (Ascii.nat_of_ascii(b));
-  neq := fun a b => if (Nat.eqb (Ascii.nat_of_ascii(a)) (Ascii.nat_of_ascii(b)))
-                    then false else true
+  eqb := Ascii.eqb;
+  neq := fun a b => if Ascii.eqb a b then false else true
 }.
 
 Instance eqInfixesInt : eqInfixes Z :=
@@ -104,7 +155,6 @@ Class arithInfixes A : Type :=
   add : A -> A -> A;
   mul : A -> A -> A;
   sub  : A -> A -> A;
-  (* abs  : A -> A *)
 }.
 Infix "+"  := add.
 Notation "op+( x , y )" := (add x y).
@@ -118,7 +168,6 @@ Instance arithInfixesInt : arithInfixes Z :=
   add  := Z.add;
   mul  := Z.mul;
   sub  := Z.sub;
-  (* abs  := fun x => Z.max x (-x) *)
 }.
 
 Instance arithInfixesReal : arithInfixes float :=
@@ -126,7 +175,6 @@ Instance arithInfixesReal : arithInfixes float :=
   add  := PrimFloat.add;
   mul  := PrimFloat.mul;
   sub  := PrimFloat.sub;
-  (* abs  := PrimFloat.abs *)
 }.
 
 Instance arithInfixesNat : arithInfixes nat :=
@@ -134,7 +182,6 @@ Instance arithInfixesNat : arithInfixes nat :=
   add  := Nat.add;
   mul  := Nat.mul;
   sub  := Nat.sub;
-  (* abs  := PrimFloat.abs *)
 }.
 
 (*---------------------------------------------------------------------------*)

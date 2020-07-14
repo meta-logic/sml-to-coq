@@ -66,7 +66,7 @@ Module Char.
     Sml: char * char -> bool
     Coq: ascii * ascii -> bool
   *)
-  Definition opeq s1 s2:bool := Z.eqb (ord s1) (ord s2). 
+  Definition opeq s1 s2:bool := Ascii.eqb s1 s2. 
   Notation "op=( x , y )" := (opeq x y) (at level 70) : nat_scope.
   Infix "=" := opeq  : char_scope.
 

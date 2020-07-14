@@ -59,12 +59,7 @@ struct
       "match " ^ (concatListWith (", ", matchItemG, mL)) ^ " with" ^ "\n  " ^
       (S.concatWith ("  \n  | ") (List.map equationG eL)) ^ " end"
     
-    | G.IdentTerm(v)        => (case v of 
-                                  "SOME" => "Some" 
-                                | "NONE" => "None" 
-                                | "List.exists" => "List.existsb" 
-                                | "ListPair.exists" => "ListPair.existsb" 
-                                | _ => v)
+    | G.IdentTerm(v)        => convertIdent(v)
     | G.SortTerm(v)         => sortG(v) 
     | G.NumTerm(v)          => 
       (if (S.isPrefix "~" v) then "(-"^S.substring(v, 1, S.size(v)-1)^ ")" else v)
@@ -170,7 +165,7 @@ struct
     | G.AtArgsPat(i, pL) => "@" ^ i ^ " " ^ concatListWith (" ", patternG, pL)
     | G.AsPat(p, i)      => patternG(p) ^ " as " ^ i
     | G.ScopePat(p, i)   => patternG(p) ^ " % " ^ i 
-    | G.QualidPat(i)     => i
+    | G.QualidPat(i)     => convertIdent(i)
     | G.WildcardPat      => "_"
     | G.NumPat(s)        => 
       (if (S.isPrefix "~" s) then "(-"^S.substring(s, 1, S.size(s)-1)^ ")" else s)
@@ -265,21 +260,36 @@ struct
       | G.CoFixpoint(fL) => "CoFixpoint  " ^ concatListWith("\nwith ", fixbodyG, fL)^"."  
 
   and convertChar (s: string): string = 
-      let
-        val c = ord(Option.valOf ( Char.fromString(s) ))
-        val c' = if c = 34 then "\"\"" else 
-                 if c = 92 then "\\" else
-                 if (S.size s = 6) then Int.toString c else
-                 if (S.size s = 4) then Int.toString c else
-                 if c < 32 then Int.toString c else 
-                 if c > 126 then Int.toString c else s
-        val r = if (List.all (Char.isDigit) (S.explode c')) then 
-                  (if (S.size c') = 3 then c' else 
-                   if (S.size c') = 2 then "0" ^ c' else
-                   if (S.size c') = 1 then "00" ^ c' else c' )
-                else c' 
-      in
-        "#\"" ^ r ^ "\""
-      end
+    let
+      val c = ord(Option.valOf ( Char.fromString(s) ))
+      val c' = if c = 34 then "\"\"" else 
+               if c = 92 then "\\" else
+               if (S.size s = 6) then Int.toString c else
+               if (S.size s = 4) then Int.toString c else
+               if c < 32 then Int.toString c else 
+               if c > 126 then Int.toString c else s
+      val r = if (List.all (Char.isDigit) (S.explode c')) then 
+                (if (S.size c') = 3 then c' else 
+                 if (S.size c') = 2 then "0" ^ c' else
+                 if (S.size c') = 1 then "00" ^ c' else c' )
+              else c' 
+    in
+      "#\"" ^ r ^ "\""
+    end
+
+  and convertIdent (i: G.ident): string = 
+    case i of 
+      "int" => "Z"
+    | "char" => "ascii"
+    | "real" => "float"
+    | "order" => "comparison"
+    | "LESS" => "Lt"
+    | "EQUAL" => "Eq" 
+    | "GREATER" => "Gt" 
+    | "SOME" => "Some" 
+    | "NONE" => "None" 
+    | "List.exists" => "List.existsb" 
+    | "ListPair.exists" => "ListPair.existsb" 
+    | _ => i
 
 end
