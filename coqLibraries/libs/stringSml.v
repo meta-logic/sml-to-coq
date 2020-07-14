@@ -128,7 +128,7 @@ Module String.
   Definition translate (f:ascii->string) (s:string): string := 
     concat(List.map f (explode s)).
 
-  Fixpoint fields' (f:ascii->bool) (s:string) (i j:Z) (time:nat): list string := 
+  Local Fixpoint fields' (f:ascii->bool) (s:string) (i j:Z) (time:nat): list string := 
     match time with
     | 0       => (substring(s, i, (Z.sub j 1)))::[]
     | S time' => match (f (sub(s, j))) with
@@ -174,7 +174,7 @@ Module String.
   Definition isSuffix (s1 s2:string): bool := 
     String.prefix (implode(List.rev (explode s1))) (implode(List.rev (explode s2))).
 
-  Fixpoint collate' (f:ascii * ascii -> comparison) (l1 l2:list ascii): comparison:=
+  Local Fixpoint collate' (f:ascii * ascii -> comparison) (l1 l2:list ascii): comparison:=
     match l1, l2 with
     | [],[] => Eq
     | [],_  => Lt
@@ -213,22 +213,19 @@ Module String.
   Definition compare '((s1, s2):string * string):comparison :=
     collate compareChar (s1, s2).
 
-Compute match compare("sdfsdf", "sdfsd") with 
-        | Gt => true
-        | _ => false end.
   (*
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
-  Definition opeq s1 s2:bool := String.eqb s1 s2. 
-  Notation "op=( x , y )" := (opeq x y) (at level 70) : nat_scope.
-  Infix "=" := opeq (at level 70) : string_scope.
+  Local Definition opeq s1 s2:bool := String.eqb s1 s2. 
+  Local Notation "op=( x , y )" := (opeq x y) (at level 70) : nat_scope.
+  Local Infix "=" := opeq (at level 70) : string_scope.
 
   (*
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
-  Definition oplt s1 s2:bool := match compare(s1, s2) with 
+  Local Definition oplt s1 s2:bool := match compare(s1, s2) with 
                                 | Lt => true 
                                 | _  => false end. 
 (*   Notation "op<( x , y )" := (oplt x y) (at level 70) : nat_scope.
@@ -248,7 +245,7 @@ Compute match compare("sdfsdf", "sdfsd") with
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
-  Definition opgt s1 s2:bool := match compare(s1, s2) with 
+  Local Definition opgt s1 s2:bool := match compare(s1, s2) with 
                                 | Gt => true 
                                 | _ => false end.  
 (*   Notation "op>( x , y )" := (opgt x y) (at level 70) : nat_scope.
@@ -258,7 +255,7 @@ Compute match compare("sdfsdf", "sdfsd") with
     Sml: string * string -> bool
     Coq: string * string -> bool
   *)
-  Definition opge s1 s2:bool := match compare(s1, s2) with 
+  Local Definition opge s1 s2:bool := match compare(s1, s2) with 
                                 | Lt => false 
                                 | _  => true end.  
 (*   Notation "op>=( x , y )" := (opge x y) (at level 70) : nat_scope.
@@ -288,7 +285,7 @@ Compute match compare("sdfsdf", "sdfsd") with
     Sml: String.string -> string option
     Coq: string -> soption tring
   *)
-  Definition fromCString (s:string):option string := Some s. 
+  Local Definition fromCString (s:string):option string := Some s. 
   (* Definition scan := . *) 
 
 End String.

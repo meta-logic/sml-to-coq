@@ -5,7 +5,7 @@ Module ListPair.
 
   Axiom  UnequalLengthsException : forall{a}, a.
 
-  Fixpoint zip' {A B:Type} (l1:list A) (l2:list B):list(A * B) :=
+  Local Fixpoint zip' {A B:Type} (l1:list A) (l2:list B):list(A * B) :=
     match l1,l2 with
     | [], _  => []
     | _ , [] => []
@@ -42,7 +42,7 @@ Module ListPair.
     | (x,y)::l' => let (l1,l2) := unzip l' in (x::l1,y::l2)
      end.
 
-  Fixpoint app' {A B:Type} (f:A*B->unit) (l1:list A) (l2:list B):unit :=
+  Local Fixpoint app' {A B:Type} (f:A*B->unit) (l1:list A) (l2:list B):unit :=
     match l1, l2 with
     | [], _  => tt
     | _ , [] => tt
@@ -89,13 +89,13 @@ Module ListPair.
     | false => UnequalLengthsException
     end.
 
-  Fixpoint foldl' {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
+  Local Fixpoint foldl' {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
     match l with
     | nil => b0
     | cons a t => foldl' f (f(a,b0)) t
     end.
 
-  Fixpoint foldr' {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
+  Local Fixpoint foldr' {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
     match l with
     | nil => b0
     | cons a t => f(a, foldr' f b0 t)

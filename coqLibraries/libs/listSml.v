@@ -30,7 +30,7 @@ Module List.
     Sml: 'a list * 'a list -> 'a list
     Coq: list A * list A -> list A
   *)
-  Definition append {A: Type} (l1:list A) (l2:list A):list A := List.app l1 l2.
+  Local Definition append {A: Type} (l1:list A) (l2:list A):list A := List.app l1 l2.
 (*   Infix "@" := append (right associativity, at level 60). *)
 
   (*
@@ -211,7 +211,7 @@ Module List.
   *)
   Definition all {A: Type} (f:A->bool) (l:list A):bool     := List.forallb f l.
 
-  Fixpoint tabulate' {A: Type} (time:nat) (n:Z)(f:Z->A) (l:list A) :=
+  Local Fixpoint tabulate' {A: Type} (time:nat) (n:Z)(f:Z->A) (l:list A) :=
     match time with  
     | 0 => l
     | S time' => if (Z.eqb n 0) then (f (0%Z)::l) 
@@ -225,7 +225,7 @@ Module List.
   Definition tabulate {A: Type} '((n, f):Z * (Z->A)):list A :=
     tabulate' (Z.to_nat n) n f [].
 
-  Fixpoint collate' {A: Type} (f:A * A -> comparison) (l1 l2:list A) :=
+  Local Fixpoint collate' {A: Type} (f:A * A -> comparison) (l1 l2:list A) :=
     match l1, l2 with
     | [],[] => Eq
     | [],_  => Lt
