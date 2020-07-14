@@ -89,6 +89,9 @@ struct
             List.tabulate (n, mkSingleBinder)
         end
 
+        fun opetize (SOME Op : Op option) (id : G.ident) : G.ident = "op" ^ id
+          | opetize _ id = id
+
         (*fun idFromFixbody (Fixbody (fixbody) : G.fixbody) : G.ident = #id fixbody*)
 
     end    	

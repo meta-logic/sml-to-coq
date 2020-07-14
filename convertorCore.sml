@@ -231,7 +231,7 @@ struct
        *)
         and atexp2term (SCONAtExp scon : AtExp') : G.term = scon2term (~scon)
             (* ignoring Op for now *)
-            | atexp2term (IDAtExp (_, longvid)) = G.IdentTerm (lvid2id (~longvid))
+            | atexp2term (IDAtExp (opVal, longvid)) = G.IdentTerm (opetize opVal (lvid2id (~longvid)))
             | atexp2term (RECORDAtExp recBody) = let
                 val body = ?exprow2body recBody
                 val labs = expbody2labs body
@@ -336,17 +336,17 @@ struct
        * KEYWORD: pattern
        *)
         and pat2pattern (ATPat atpat  : Pat') : G.pattern = atpat2pattern (~ atpat)
-            (* ignoring Op for now *)
-            | pat2pattern (CONPat (_, longvid, atpat)) = G.ArgsPat (lvid2id (~longvid), [atpat2pattern (~ atpat)])
+            | pat2pattern (CONPat (opVal, longvid, atpat)) = G.ArgsPat (opetize opVal (lvid2id (~longvid)), [atpat2pattern (~ atpat)])
             | pat2pattern (COLONPat (pat, ty)) = let 
                 val _ = print "Coq doesn't support type casting in patterns!\n" 
                 in pat2pattern(~pat) end
-            (* ignoring Op for now *)
+            (* Can ASPat ever has a non-empty Op? *)
             | pat2pattern (ASPat(_, vid, ty, pat)) = 
                 let 
                     val _ = if Option.isSome ty then print "Coq doesn't support type casting in patterns!\n" 
                             else () 
                 in G.AsPat(pat2pattern(~ pat), vid2id (~vid)) end
+            (* Can INFIXPatX ever has a non-empty Op? *)
             | pat2pattern (INFIXPatX (_, longvid, atpat)) = G.InfixPat (lvid2id (~longvid), [atpat2pattern (~atpat)])
 
       (* Helper function doesn't have corresponding sections, check valBind2sent *)
