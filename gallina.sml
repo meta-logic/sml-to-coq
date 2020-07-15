@@ -36,7 +36,7 @@ struct
   | HasTypeTerm of term * term
   | ArrowTerm of term * term
   | ApplyTerm of term * arg list (* CANNOT be empty *)
-  | ExplicitTerm of ident* term list
+  | ExplicitTerm of ident * term list
   | InScopeTerm of term * ident
   | MatchTerm of {matchItems : matchItem list, body : equation list}
   | IdentTerm of ident
@@ -65,7 +65,8 @@ struct
 and arg = Arg of term | NamedArg of ident * term
 
 and binder = 
-  SingleBinder of {name : name, typ : term option, inferred : bool}   
+    SingleBinder of {name : name, typ : term option, inferred : bool}   
+  | MultipleBinders of {names : name list, typ : term, inferred : bool }
   | LetBinder of {names : name list, typ : term option, body : term}
   | PatternBinder of pattern
   
@@ -170,13 +171,5 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
   and clause = Clause of ident * binder list * term option
 
   and fixpoint = Fixpoint of fixbody list | CoFixpoint of fixbody list
-
-  (* category is the category of the definition, where: 
-  One : Simple declarations with one definition and no pattern-matching
-  Two : Declarations with more than one definition that donot require the 
-        patternFailure axiom because the datatype being matched on has only 
-        one constructor
-  Three : Declarations with more than one definition that require the patternFailure axiom
-  *)
 
 end   

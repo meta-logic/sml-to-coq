@@ -22,7 +22,10 @@ Group
  structure PrettyPrint
  structure PPType
  structure FunctionChecker
-
+ structure TyvarResolver
+ structure TyName
+ structure Type
+ structure TyVar
 
  structure Quicksort
  structure StringOrdered
@@ -30,6 +33,7 @@ Group
  functor SplayDict
  structure SplayTree 
  functor DictFun
+ functor SplaySet
 
 
  is
@@ -46,16 +50,19 @@ Group
   convertorModule.sml
   convertorProgram.sml
   functionChecker.sml
+  tyvarResolver.sml 
 
   cmlib/quicksort.sml
   cmlib/ordered.sml
   cmlib/dict.sml
   cmlib/splay-tree.sml
+  cmlib/set-splay.sml
   cmlib/dict-splay.sml
   cmlib/sort.sig
   cmlib/ordered.sig
   cmlib/dict.sig
   cmlib/rdict.sig
+  cmlib/set.sig
 
 
 
