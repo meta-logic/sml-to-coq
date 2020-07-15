@@ -18,6 +18,7 @@ struct
     structure S = StaticObjectsCore
     structure D = DynamicObjectsCore
     structure F = FunctionChecker
+    structure T = TyvarResolver
     local 
         structure G = Gallina
         infix @@
@@ -27,6 +28,7 @@ struct
 
         val recordContext = ref [] : (G.sentence list) ref
         val recordTracker = ref (LT.empty) : (G.ident LT.dict) ref
+        val tyvarCtx = ref (TT.empty)
 
         (* FROM: Scon.sml: 15 -> 20
          * TO:   Gallina.sml : 16 -> 53 
@@ -206,7 +208,7 @@ struct
        * TO SECTION: Section 4.1.3 Page 115
        * KEYWORD: arg
        *)
-        and atexp2args (atexp : AtExp') : G.arg list = [G.Arg (atexp2term atexp)]
+        and atexp2args (atexp : AtExp) : G.arg list = [G.Arg (atexp2term atexp)]
 
       (* Helper function doesn't have corresponding sections, check atexp2term *)
         and sentterm2letTerm ((G.DefinitionSentence (G.DefinitionDef sent)) : G.sentence, term : G.term) = 
@@ -229,10 +231,13 @@ struct
        * TO SECTION: Section 4.1.3 Page 115
        * KEYWORD: term
        *)
-        and atexp2term (SCONAtExp scon : AtExp') : G.term = scon2term (~scon)
+        and atexp2term (SCONAtExp(scon)@@_ : AtExp) : G.term = scon2term (~scon)
             (* ignoring Op for now *)
-            | atexp2term (IDAtExp (opVal, longvid)) = G.IdentTerm (opetize opVal (lvid2id (~longvid)))
-            | atexp2term (RECORDAtExp recBody) = let
+            | atexp2term (IDAtExp(opVal, longvid)@@A) = 
+              (case T.resolveTyvars tyvarCtx (!(elab A)) of
+                  NONE => G.IdentTerm (opetize opVal (lvid2id (~longvid)))
+                | SOME typ => G.HasTypeTerm(G.IdentTerm (opetize opVal (lvid2id (~longvid))), typ))
+            | atexp2term (RECORDAtExp(recBody)@@_) = let
                 val body = ?exprow2body recBody
                 val labs = expbody2labs body
             in
@@ -247,18 +252,23 @@ struct
                       G.RecordTerm (expbody2fields body)
                   end
             end
-            | atexp2term (LETAtExp (dec, exp)) = 
+            | atexp2term (LETAtExp(dec, exp)@@_) = 
                 let
                     val sent = dec2sent dec
                     val term = exp2term (~exp)
                 in
                     sentterm2letTerm (sent, term)
                 end
-            | atexp2term (PARAtExp exp) = G.ParensTerm (exp2term (~exp))
-            | atexp2term (UNITAtExpX) = G.UnitTerm 
+            | atexp2term (PARAtExp(exp)@@_) = G.ParensTerm (exp2term (~exp))
+            | atexp2term (UNITAtExpX@@ _) = G.UnitTerm 
             (* in scope term because the operator "*" is overloaded *)
-            | atexp2term (TUPLEAtExpX(exps)) = G.TupleTerm(% exp2term exps)
-            | atexp2term (LISTAtExpX(exps)) = G.ListTerm(% exp2term exps)
+            | atexp2term (TUPLEAtExpX(exps)@@_) = G.TupleTerm(% exp2term exps)
+            | atexp2term (LISTAtExpX(exps)@@A) =
+              if length exps > 0 then G.ListTerm(% exp2term exps)
+              else (* For empty lists with undetermined types, we need to add an explicit type in Gallina *)
+                  case T.resolveTyvars tyvarCtx (!(elab A)) of
+                      NONE => G.ListTerm(% exp2term exps)
+                    | SOME typ => G.HasTypeTerm(G.ListTerm(% exp2term exps), typ)
 
 
       (* FROM: SyntaxCoreFn.sml: 84 -> 94
@@ -268,9 +278,9 @@ struct
        * TO SECTION: Section 4.1.3 Page 115
        * KEYWORD: term
        *)
-        and exp2term (ATExp atexp : Exp') : G.term = atexp2term (~atexp)
+        and exp2term (ATExp atexp : Exp') : G.term = atexp2term (atexp)
             | exp2term (APPExp (exp, atexp)) = 
-                G.ApplyTerm(exp2term (~exp), atexp2args (~atexp))
+                G.ApplyTerm(exp2term (~exp), atexp2args (atexp))
             | exp2term (COLONExp (exp, ty)) = 
               let val typ = ty2term (~ty)
                   val exp = exp2term (~exp)
@@ -303,7 +313,7 @@ struct
                 G.OrTerm (exp1', exp2')
             end
             | exp2term (INFIXExpX (exp, atexp)) =
-              G.InfixTerm (exp2term (~exp), atexp2args (~atexp))
+              G.InfixTerm (exp2term (~exp), atexp2args (atexp))
 
 
       (* FROM: SyntaxCoreFn.sml: 144 -> 152
@@ -353,7 +363,7 @@ struct
         and patBody2sents (G.QualidPat ident : G.pattern, body : G.term) (_ : bool): G.sentence list = 
                 [G.DefinitionSentence
                     (G.DefinitionDef
-                           {localbool = false, id = ident, binders = [], typ = NONE, body = body})]
+                           {localbool = false, id = ident, binders = T.clearTyvars tyvarCtx, typ = NONE, body = body})]
       (* As patterns are split into two definitions:
          val x as y = 1 becomes Defintion x := 1; Definition y := 1 *)
           | patBody2sents (G.AsPat (pat, id), body) exhaustive = 
@@ -465,6 +475,7 @@ struct
 
         and fnexp2funbody (FNExp(Match(Mrule(ATPat(IDAtPat(_, longvid)@@_)@@_, exp)@@_,_)@@_)) : G.binder list * G.term =
             let val (binders, body) = fnexp2funbody (~exp)
+                val binders = binders @ (T.clearTyvars tyvarCtx)
                 val name = mkName (lvid2id(~longvid))
                 val binder = G.SingleBinder {name = name, typ = NONE, inferred = false}
             in
@@ -574,15 +585,18 @@ struct
                     let
                         val recursive = isSome(valbind2) orelse F.checkExp(lvid2id (~longvid)) exp
                         val (binders, body) = fnexp2funbody (exp)
+                        val binders = binders @ (T.clearTyvars tyvarCtx)
                         val ident = lvid2id (~longvid)
                         val typ = NONE
                         val decArg = NONE
                         val sent = if recursive
                                     then G.FixpointSentence (G.Fixpoint(G.Fixbody
-                                    {id = ident, typ = typ, decArg = decArg, binders = binders, body = body}
+                                    {id = ident, typ = typ, decArg = decArg, 
+                                     binders = binders @ T.clearTyvars tyvarCtx, body = body}
                                     :: (?(valbind2fixbodies) valbind2)))
                                     else G.DefinitionSentence (G.DefinitionDef
-                                    {id = ident, localbool = false, binders = binders, typ = typ, body = body})
+                                    {id = ident, localbool = false, binders = binders @ T.clearTyvars tyvarCtx, 
+                                     typ = typ, body = body})
                     in
                         !recordContext @ [sent]
                     end
