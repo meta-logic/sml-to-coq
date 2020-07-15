@@ -19,13 +19,13 @@ Class compInfixes A : Type :=
   geb : A -> A -> bool    
 }.
 Infix "<"  := ltb (at level 70).
-Notation "op<( x , y )" := (ltb x y) (at level 70).
+Notation "op< ( x , y )" := (ltb x y) (at level 70).
 Infix "<=" := leb (at level 70).
-Notation "op<=( x , y )" := (leb x y) (at level 70).
+Notation "op<= ( x , y )" := (leb x y) (at level 70).
 Infix ">"  := gtb (at level 70).
-Notation "op>( x , y )" := (gtb x y) (at level 70).
+Notation "op> ( x , y )" := (gtb x y) (at level 70).
 Infix ">=" := geb (at level 70).
-Notation "op>=( x , y )" := (geb x y) (at level 70).
+Notation "op>= ( x , y )" := (geb x y) (at level 70).
 
 
 (* These functions used in imolementing comparing two strings lexicographically,
@@ -119,9 +119,9 @@ Class eqInfixes A : Type :=
   neq : A -> A -> bool
 }.
 Infix "="  := eqb (at level 70).
-Notation "op=( x , y )" := (eqb x y) (at level 70).
+Notation "op= ( x , y )" := (eqb x y) (at level 70).
 Infix "<>"  := neq (at level 70).
-Notation "op<>( x , y )" := (neq x y) (at level 70).
+Notation "op<> ( x , y )" := (neq x y) (at level 70).
 
 Instance eqInfixesBool : eqInfixes bool :=
 {
@@ -157,11 +157,11 @@ Class arithInfixes A : Type :=
   sub  : A -> A -> A;
 }.
 Infix "+"  := add.
-Notation "op+( x , y )" := (add x y).
+Notation "op+ ( x , y )" := (add x y).
 Infix "*"  := mul.
-Notation "op*( x , y )" := (mul x y).
+Notation "op* ( x , y )" := (mul x y).
 Infix "-"  := sub.
-Notation "op-( x , y )" := (sub x y).
+Notation "op- ( x , y )" := (sub x y).
 
 Instance arithInfixesInt : arithInfixes Z :=
 {
@@ -231,6 +231,7 @@ Class divInfix A : Type :=
   dv : A -> A -> A
 }.
 Infix "/" := dv.
+Notation "op/ ( x , y )" := (dv x y).
 
 Instance divInfixReal : divInfix float :=
 {
@@ -251,7 +252,7 @@ Class powAppInfix A : Type :=
   powApp : A -> A -> A
 }.
 Infix "^" := powApp.
-Notation "op^( x , y )" := (powApp x y).
+Notation "op^ ( x , y )" := (powApp x y).
 
 Instance powAppInfixReal : powAppInfix string :=
 {
@@ -276,8 +277,9 @@ Infix "rem" := rem' (at level 40, no associativity).
 
 Definition append {A: Type} (l1:list A) (l2:list A):list A := List.app l1 l2.
 Infix "@" := append (right associativity, at level 60).
+Notation "op@ ( x , y )" := (append x y).
 
-Notation "op::( x , y )" := (x::y).
+Notation "op:: ( x , y )" := (x::y).
 
 Definition mp (a b c:float):float := PrimFloat.add (PrimFloat.mul a b) c.
 Notation "*+( x , y , z )" := (mp x y z) (at level 40, left associativity).

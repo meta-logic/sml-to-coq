@@ -26,9 +26,9 @@ struct
   and termG (term: G.term): string =
     case term of                              
       G.ForallTerm(bL,t) => "forall "^(concatListWith (" ", binderG, bL))^" , " ^termG(t)
-    | G.FunTerm(bL,t)    => "fun"^(concatListWith (" ", binderG, bL))^" => "^termG(t)
-    | G.FixTerm(fb)      => "fix " ^ fixbodiesG(fb)
-    | G.CofixTerm(fb)    => "cofix " ^ cofixbodiesG(fb)
+    | G.FunTerm(bL,t)    => "fun "^(concatListWith (" ", binderG, bL))^" => "^termG(t)
+    | G.FixTerm(fb)      => "fix "^ fixbodiesG(fb)
+    | G.CofixTerm(fb)    => "cofix "^ cofixbodiesG(fb)
     | G.LetTerm{id=i, binders=bL, typ=tO, body=bT, inBody=inT} =>
       "\n" ^ "  let " ^ i ^ (concatListWith (" ", binderG, bL)) ^
       (case tO of NONE => "" | SOME t => " : "^termG(t))^
@@ -49,10 +49,8 @@ struct
       "if "^termG(tes)^" then "^termG(the)^" else "^termG(els)
     
     | G.HasTypeTerm(v1,v2)  => termG(v1) ^ " : " ^ termG(v2) 
-  (*| omitting check type <: *) 
-  (*| omitting tu support type :> *) 
     | G.ArrowTerm(v1,v2)    => termG(v1) ^ " -> " ^ termG(v2) 
-    | G.ApplyTerm(v1,aL)    => termG(v1) ^ (concatListWith (" ", argG, aL)) 
+    | G.ApplyTerm(v1,aL)    => termG(v1) ^" "^(concatListWith (" ", argG, aL)) 
     | G.ExplicitTerm(v1,tL) => "@ " ^ v1 ^" "^(concatListWith (" ", termG, tL)) 
     | G.InScopeTerm(v1,v2)  => termG(v1) ^ " % " ^ v2 
     | G.MatchTerm{matchItems=mL, body=eL} => 
@@ -103,9 +101,9 @@ struct
 
   and binderG (G.SingleBinder{name=n, typ=tO, inferred=inf}) = 
       (case inf of false => 
-      "(" ^ nameG(n) ^ (case tO of NONE => "" | SOME x =>" : "^termG(x))^")"
+      " " ^ nameG(n) ^ (case tO of NONE => "" | SOME x =>" : "^termG(x))
       | true => 
-      "{" ^ nameG(n) ^(case tO of NONE => "" | SOME x =>" : "^termG(x))^ "}")   
+      " {" ^ nameG(n) ^(case tO of NONE => "" | SOME x =>" : "^termG(x))^ "}")   
     | binderG (G.LetBinder{names=nL, typ=tO, body=bT})       = 
       "(" ^ (concatListWith (" ", nameG, nL)) ^ 
       (case tO of NONE => "" | SOME x =>" : "^termG(x))^" : " ^ termG(bT) ^ ")"
@@ -238,7 +236,7 @@ struct
        " := " ^ termG(term) ^ "."
 
 
-  and inductiveG (ind: G.inductive): string  = (* I think there is somthing wrong with the AST*)
+  and inductiveG (ind: G.inductive): string  = 
     case ind of
         G.Inductive(inbL)   => "Inductive "   ^ concatListWith("\nwith ", indBodyG, inbL)^"."
       | G.CoInductive(inbL) => "CoInductive " ^ concatListWith("\nwith ", indBodyG, inbL)^"."
