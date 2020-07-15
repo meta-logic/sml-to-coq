@@ -21,6 +21,7 @@ Group
  structure PPStaticEnv
  structure PrettyPrint
  structure PPType
+ structure FunctionChecker
 
 
  structure Quicksort
@@ -44,6 +45,7 @@ Group
   convertorCore.sml
   convertorModule.sml
   convertorProgram.sml
+  functionChecker.sml
 
   cmlib/quicksort.sml
   cmlib/ordered.sml
