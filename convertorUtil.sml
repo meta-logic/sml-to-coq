@@ -5,7 +5,7 @@ struct
     structure Sort = Quicksort
     structure Key = ListOrdered(StringOrdered)
     structure LT = SplayDict (structure Key = Key) (* LabelsTracker *)
-
+    structure TT = SplaySet(structure Elem = StringOrdered) (* Tyvar tracker *)
     open Annotation;
 
     local
