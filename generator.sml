@@ -48,7 +48,12 @@ struct
     | G.IfTerm{test=tes, thenTerm=the,  elseTerm=els} => 
       "if "^termG(tes)^" then "^termG(the)^" else "^termG(els)
     
-    | G.HasTypeTerm(v1,v2)  => termG(v1) ^ " : " ^ termG(v2) 
+    | G.HasTypeTerm(v1,v2)  => let
+                                  val G.IdentTerm(v) = v2
+                                in
+                                  termG(v1) ^ " : " ^ convertType(v)
+                                end
+
     | G.ArrowTerm(v1,v2)    => termG(v1) ^ " -> " ^ termG(v2) 
     | G.ApplyTerm(v1,aL)    => termG(v1) ^" "^(concatListWith (" ", argG, aL)) 
     | G.ExplicitTerm(v1,tL) => "@ " ^ v1 ^" "^(concatListWith (" ", termG, tL)) 
@@ -103,10 +108,18 @@ struct
       (case inf of false => 
       " " ^ nameG(n) ^ (case tO of NONE => "" | SOME x =>" : "^termG(x))
       | true => 
-      " {" ^ nameG(n) ^(case tO of NONE => "" | SOME x =>" : "^termG(x))^ "}")   
+      " {" ^ nameG(n) ^(case tO of NONE => "" | SOME x =>" : "^termG(x))^ "}")  
+    
+    | binderG (G.MultipleBinders{names=nL, typ=t, inferred=inf}) = 
+      (case inf of false => 
+      " (" ^ (concatListWith (" ", nameG, nL)) ^ " : " ^ termG(t) ^ ")"
+      | true => 
+      " {" ^ (concatListWith (" ", nameG, nL)) ^ " : " ^ termG(t) ^ "}") 
+
     | binderG (G.LetBinder{names=nL, typ=tO, body=bT})       = 
       "(" ^ (concatListWith (" ", nameG, nL)) ^ 
-      (case tO of NONE => "" | SOME x =>" : "^termG(x))^" : " ^ termG(bT) ^ ")"
+      (case tO of NONE => "" | SOME x =>" : "^termG(x))^" := " ^ termG(bT) ^ ")"
+    
     | binderG (G.PatternBinder(p)) ="' " ^ patternG(p)         
 
 
@@ -131,13 +144,13 @@ struct
 
 
   and fixbodyG (G.Fixbody{id=i, binders=bL, decArg=aO, typ=tO, body=t}) = 
-      i ^ " " ^(concatListWith (" ", binderG, bL)) ^ " " ^ 
+      convertIdent(i) ^ " " ^(concatListWith (" ", binderG, bL)) ^ " " ^ 
       (case aO of NONE => "" | SOME a => annotationG(a)^" ") ^ 
       (case tO of NONE => "" | SOME t => " : " ^ termG(t)^" ") ^ ":= " ^ termG(t)
 
 
   and coFixbodyG (G.Cofixbody {id=i, binders=bL, typ=tO, body=t}) = 
-      i ^ " " ^(concatListWith (" ", binderG, bL)) ^ " " ^
+      convertIdent(i) ^ " " ^(concatListWith (" ", binderG, bL)) ^ " " ^
       (case tO of NONE => "" | SOME x => termG(x)^" ") ^ ":= " ^ termG(t)      
 
 
@@ -165,11 +178,9 @@ struct
     | G.ScopePat(p, i)   => patternG(p) ^ " % " ^ i 
     | G.QualidPat(i)     => convertIdent(i)
     | G.WildcardPat      => "_"
-    | G.NumPat(s)        => 
-      (if (S.isPrefix "~" s) then "(-"^S.substring(s, 1, S.size(s)-1)^ ")" else s)
+    | G.NumPat(s)        => (if (S.isPrefix "~" s) then 
+                            "(-"^S.substring(s, 1, S.size(s)-1)^ ")" else s)
     | G.RecPat(fL)       => "{| "^concatListWith(" ;\n", fieldPatG, fL)^" |}"
-  (*| omitting pattern OrPat(oL) => "(" ^o rPatternG(oL) ^ ")"*)
-    (*Additional Patternss*)
     | G.WordPat(s, b)    => (case b of 
                                G.Dec => patternG(G.NumPat(s))
                              | G.Hex => patternG(G.HexPat(s)))
@@ -195,7 +206,7 @@ struct
 
 
   and fieldPatG(G.FieldPat{id=i, binders=bL, pat=p}) =
-    i^" " ^ concatListWith (" ", binderG, bL) ^ " := " ^ patternG(p)
+    convertIdent(i)^" " ^ concatListWith(" ", binderG, bL) ^" := " ^ patternG(p)
 
 
   and sentenceG (sentence: G.sentence list): string list =
@@ -208,11 +219,12 @@ struct
                 | G.RecordSentence(r)     => recordG(r)::sentenceG(ast)
                 | G.SeqSentences(n)       => sentenceG(n)@sentenceG(ast)
 
+
   and recordG (rL) = "Record " ^ concatListWith("with ", recBodyG, rL)
 
 
   and recBodyG (G.RecordBody{id=i, binders=bL, typ=sO, consName=iO, body=fL}) =
-    i ^ " " ^ concatListWith(" ", binderG, bL) ^ 
+    convertIdent(i) ^ " " ^ concatListWith(" ", binderG, bL) ^ 
     (case sO of NONE => "" | SOME x => sortG(x)) ^ 
     " := " ^ (case iO of NONE => "" | SOME x => x) ^ 
     "{ " ^ concatListWith(" ;\n", fieldG, fL) ^ "}" ^ "." 
@@ -226,12 +238,12 @@ struct
     case def of
       G.DefinitionDef{binders=bL, body=term ,id=i, localbool=loc ,typ=ty}    =>
       (if loc then "Local" else "") ^ "Definition " ^ 
-      i ^ concatListWith(" ", binderG, bL) ^ 
+      convertIdent(i) ^ concatListWith(" ", binderG, bL) ^ 
       (case ty of NONE => "" | SOME x => " : " ^ termG(x)) ^
        " := " ^ termG(term) ^ "."
 
     | G.LetDefinitionDef{binders=bL, body=term ,id=i, typ=ty} =>
-      "Let " ^ i ^ concatListWith(" ", binderG, bL) ^ 
+      "Let " ^ convertIdent(i) ^ concatListWith(" ", binderG, bL) ^ 
       (case ty of NONE => "" | SOME x => " : " ^ termG(x)) ^
        " := " ^ termG(term) ^ "."
 
@@ -243,7 +255,7 @@ struct
   
 
   and indBodyG (G.IndBody{id=i, bind=bL, typ=t, clauses=cL}) =
-      i ^" "^concatListWith(" ", binderG, bL) ^ " : " ^ termG(t) ^
+      convertIdent(i) ^" "^concatListWith(" ", binderG, bL) ^ " : " ^ termG(t) ^
       " := " ^ "\n  " ^ concatListWith("  \n  | ", clauseG, cL)
 
 
@@ -254,8 +266,9 @@ struct
 
   and fixpointG (fp: G.fixpoint): string =
     case fp of
-        G.Fixpoint(fL)   => "Fixpoint "    ^ concatListWith("\nwith ", fixbodyG, fL)^"."
-      | G.CoFixpoint(fL) => "CoFixpoint  " ^ concatListWith("\nwith ", fixbodyG, fL)^"."  
+        G.Fixpoint(fL)   => "Fixpoint "   ^ concatListWith("\nwith ", fixbodyG, fL)^"."
+      | G.CoFixpoint(fL) => "CoFixpoint " ^ concatListWith("\nwith ", fixbodyG, fL)^"."  
+
 
   and convertChar (s: string): string = 
     let
@@ -275,13 +288,19 @@ struct
       "#\"" ^ r ^ "\""
     end
 
-  and convertIdent (i: G.ident): string = 
-    case i of 
+
+  and convertType (t: G.ident): string =
+    case t of 
       "int" => "Z"
     | "char" => "ascii"
     | "real" => "float"
     | "order" => "comparison"
-    | "LESS" => "Lt"
+    | _ => t
+
+
+  and convertIdent (i: G.ident): string =  
+    case i of 
+      "LESS" => "Lt"
     | "EQUAL" => "Eq" 
     | "GREATER" => "Gt" 
     | "SOME" => "Some" 
