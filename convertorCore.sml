@@ -285,7 +285,42 @@ struct
               let val typ = ty2term (~ty)
                   val exp = exp2term (~exp)
               in G.HasTypeTerm(exp, typ) end
-            | exp2term (FNExp match) = raise Fail "Function expressions not yet implemented!\n"
+            | exp2term (FNExp(match as Match(Mrule(pat, exp)@@_, _)@@A)) = 
+              let
+                  val expand = (case (try (exhaustive A)) of SOME S.Exhaustive => false | _ => true)
+                  val ty = extractTypFromPat (~pat)
+                  val binders = pat2binders (~pat)
+              in
+                  (case (expand, ty) of
+                       (false, NONE) =>
+                       let val binders = pat2binders (~pat)
+                           val body = exp2term (~exp)
+                       in G.FunTerm (binders, body) end
+                     | (false , SOME typ) =>
+                       (case binders of
+                            [G.SingleBinder {name = name, ... }] =>
+                            let val binders = G.SingleBinder {name = name, typ = SOME typ, inferred = false}
+                                val body = exp2term (~exp)
+                            in G.FunTerm ([binders], body) end
+                          | _ => 
+                            let val id= vid2id (VId.invent())
+                                val binders = G.SingleBinder {name = G.Name id, typ = NONE, inferred= false}
+                                val equations = match2equations match
+                                val body = G.MatchTerm { matchItems = [G.MatchItem (G.HasTypeTerm (G.IdentTerm (id), typ))], body = equations}
+                            in G.FunTerm ([binders], body) end)
+                     | (_, SOME typ) => 
+                       let val id= vid2id (VId.invent())
+                           val binders = G.SingleBinder {name = G.Name id, typ = NONE, inferred= false}
+                           val equations = match2equations match
+                           val body = G.MatchTerm { matchItems = [G.MatchItem(G.HasTypeTerm (G.IdentTerm (id), typ))], body = equations}
+                       in G.FunTerm ([binders], body) end
+                     | (_, NONE) => 
+                       let val id= vid2id (VId.invent())
+                           val binders = G.SingleBinder {name = G.Name id, typ = NONE, inferred= false}
+                           val equations = match2equations match
+                           val body = G.MatchTerm { matchItems = [G.MatchItem(G.IdentTerm (id))], body = equations}
+                       in G.FunTerm ([binders], body) end)
+              end
             | exp2term (CASEExpX (exp, match)) = 
             let
                 val matchItems = [exp2matchitem (~exp)]
@@ -315,6 +350,52 @@ struct
             | exp2term (INFIXExpX (exp, atexp)) =
               G.InfixTerm (exp2term (~exp), atexp2args (atexp))
 
+        and extractTypFromAtPat (RECORDAtPat(NONE)) : G.term option = NONE
+          | extractTypFromAtPat (RECORDAtPat(SOME patrow)) =  raise Fail "Constructor Pattern shouldn't have interior types\n"
+          | extractTypFromAtPat (PARAtPat pat) = extractTypFromPat (~pat)
+          | extractTypFromAtPat (TUPLEAtPatX pats) =
+            let
+                val typs = % extractTypFromPat pats
+            in
+                if List.exists (Option.isSome) typs then
+                    SOME (G.ProductTerm (List.map (fn x => case x of NONE => G.WildcardTerm 
+                                                                   | SOME ty => ty) typs))
+                else NONE
+            end
+          | extractTypFromAtPat (LISTAtPatX pats) = 
+            let
+                val typs = % extractTypFromPat pats
+            in
+                (case List.find (Option.isSome) typs of
+                     NONE => NONE
+                   | SOME (SOME typ) => SOME (G.ExplicitTerm ("list", [typ])))
+            end
+          | extractTypFromAtPat _ = NONE
+
+        and extractTypFromPat (ATPat atpat) = extractTypFromAtPat (~atpat)
+          | extractTypFromPat (CONPat(_, longvid, atpat)) =
+            (case extractTypFromAtPat(~atpat) of
+                NONE => NONE
+              | SOME _ => raise Fail "Constructor Pattern shouldn't have interior types\n")
+          | extractTypFromPat (COLONPat (pat, ty)) = SOME (ty2term(~ty))
+          | extractTypFromPat (ASPat (_, _, SOME ty, _)) = SOME (ty2term(~ty))
+          | extractTypFromPat (ASPat (_, _, NONE, pat)) = extractTypFromPat (~pat)
+          | extractTypFromPat (INFIXPatX(_, _, atpat)) = extractTypFromAtPat (~atpat)
+
+
+        and atpat2binders (WILDCARDAtPat : AtPat') : G.binder list =
+            [G.SingleBinder {name = G.WildcardName, typ = NONE, inferred = false}]
+          | atpat2binders (SCONAtPat scon) = raise Fail "Invalid Pattern!\n"
+          | atpat2binders (IDAtPat(_, longvid)) =
+            [G.SingleBinder {name = mkName (lvid2id (~longvid)), typ = NONE, inferred = false}]
+          | atpat2binders (PARAtPat pat) = pat2binders (~pat)
+          | atpat2binders p = [G.PatternBinder (atpat2pattern p)]
+
+
+        and pat2binders (ATPat(atpat) : Pat') : G.binder list =
+            atpat2binders (~atpat)
+          | pat2binders (COLONPat (pat, ty)) = pat2binders(~pat)
+          | pat2binders (p) = [G.PatternBinder (pat2pattern p)]
 
       (* FROM: SyntaxCoreFn.sml: 144 -> 152
        * TO:   Gallina.sml : 96 -> 114
@@ -347,15 +428,14 @@ struct
        *)
         and pat2pattern (ATPat atpat  : Pat') : G.pattern = atpat2pattern (~ atpat)
             | pat2pattern (CONPat (opVal, longvid, atpat)) = G.ArgsPat (opetize opVal (lvid2id (~longvid)), [atpat2pattern (~ atpat)])
-            | pat2pattern (COLONPat (pat, ty)) = let 
-                val _ = print "Coq doesn't support type casting in patterns!\n" 
-                in pat2pattern(~pat) end
+            | pat2pattern (COLONPat (pat, ty)) = 
+              let val _ = print "Coq doesn't support type casting in patterns!\n" 
+              in pat2pattern(~pat) end
             (* Can ASPat ever has a non-empty Op? *)
             | pat2pattern (ASPat(_, vid, ty, pat)) = 
-                let 
-                    val _ = if Option.isSome ty then print "Coq doesn't support type casting in patterns!\n" 
-                            else () 
-                in G.AsPat(pat2pattern(~ pat), vid2id (~vid)) end
+              let val _ = if Option.isSome ty then print "Coq doesn't support type casting in patterns!\n" 
+                          else () 
+              in G.AsPat(pat2pattern(~ pat), vid2id (~vid)) end
             (* Can INFIXPatX ever has a non-empty Op? *)
             | pat2pattern (INFIXPatX (_, longvid, atpat)) = G.InfixPat (lvid2id (~longvid), [atpat2pattern (~atpat)])
 
