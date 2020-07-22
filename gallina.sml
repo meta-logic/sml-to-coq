@@ -18,6 +18,7 @@ struct
 
   datatype axiom = PatternFailure
 
+
   datatype term =
     ForallTerm of binder list * term (* forall *)
   | FunTerm of binder list * term (* fun *)
@@ -39,7 +40,8 @@ struct
   | ExplicitTerm of ident * term list
   | InScopeTerm of term * ident
   | MatchTerm of {matchItems : matchItem list, body : equation list}
-  | IdentTerm of ident
+  | IdentTerm of ident (* Non-types *)
+  | IdentTypTerm of ident (* types *)
   | SortTerm of sort 
   | NumTerm of string 
   | WildcardTerm
