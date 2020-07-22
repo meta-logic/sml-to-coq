@@ -125,7 +125,7 @@ struct
          *)    
         (* VARty is type variable, e.g. 'a list  *)
         and ty2term ((VARTy tyvar) : Ty') : G.term = 
-                G.IdentTerm (checkLegal(TyVar.toString (~tyvar)))
+                G.IdentTypTerm (checkLegal(TyVar.toString (~tyvar)))
             (* in scope term because the operator "*" is overloaded *)
             | ty2term (TUPLETyX (tys)) = 
                 if List.length(tys) > 1 then
@@ -137,7 +137,7 @@ struct
                 val terms = % ty2term ($(~tyseq))
                 val tycon = ltycon2id (~tycon)
             in
-                (case terms of [] => G.IdentTerm tycon | _ => G.ExplicitTerm(tycon, terms))
+                (case terms of [] => G.IdentTypTerm tycon | _ => G.ExplicitTerm(tycon, terms))
             end
             (* PARTy is parenthesis type, e.g. (int)  *)
             | ty2term (PARTy ty) = G.ParensTerm (ty2term (~ty))
@@ -148,13 +148,13 @@ struct
                 val labs = tybody2labs body
             in
                 case LT.find (!recordTracker) labs of
-                    SOME ident => G.IdentTerm (ident)
+                    SOME ident => G.IdentTypTerm (ident)
                   | _ => let
                       val id = genIdent ()
                       val _ = recordTracker := LT.insert (!recordTracker) labs id
                       val _ = recordContext := tyrow2sent (body, id) :: !recordContext
                   in
-                      G.IdentTerm (id)
+                      G.IdentTypTerm (id)
                   end
             end
 
