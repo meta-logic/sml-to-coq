@@ -48,12 +48,7 @@ struct
     | G.IfTerm{test=tes, thenTerm=the,  elseTerm=els} => 
       "if "^termG(tes)^" then "^termG(the)^" else "^termG(els)
     
-    | G.HasTypeTerm(v1,v2)  => let
-                                  val G.IdentTerm(v) = v2
-                                in
-                                  termG(v1) ^ " : " ^ convertType(v)
-                                end
-
+    | G.HasTypeTerm(v1,v2)  => termG(v1) ^ " : " ^ termG(v2)
     | G.ArrowTerm(v1,v2)    => termG(v1) ^ " -> " ^ termG(v2) 
     | G.ApplyTerm(v1,aL)    => termG(v1) ^" "^(concatListWith (" ", argG, aL)) 
     | G.ExplicitTerm(v1,tL) => "@ " ^ v1 ^" "^(concatListWith (" ", termG, tL)) 
@@ -63,6 +58,7 @@ struct
       (S.concatWith ("  \n  | ") (List.map equationG eL)) ^ " end"
     
     | G.IdentTerm(v)        => convertIdent(v)
+    | G.IdentTypTerm(v)     => convertType(v)
     | G.SortTerm(v)         => sortG(v) 
     | G.NumTerm(v)          => 
       (if (S.isPrefix "~" v) then "(-"^S.substring(v, 1, S.size(v)-1)^ ")" else v)
