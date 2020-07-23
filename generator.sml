@@ -263,7 +263,7 @@ struct
   and fixpointG (fp: G.fixpoint): string =
     case fp of
         G.Fixpoint(fL)   => "Fixpoint "   ^ concatListWith("\nwith ", fixbodyG, fL)^"."
-      | G.CoFixpoint(fL) => "CoFixpoint " ^ concatListWith("\nwith ", fixbodyG, fL)^"."  
+      | G.CoFixpoint(fL) => "CoFixpoint " ^ concatListWith("\nwith ", coFixbodyG, fL)^"."  
 
 
   and convertChar (s: string): string = 
