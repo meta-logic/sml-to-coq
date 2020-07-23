@@ -172,6 +172,6 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
       the term option would be nat * intlist -> intlist *)
   and clause = Clause of ident * binder list * term option
 
-  and fixpoint = Fixpoint of fixbody list | CoFixpoint of fixbody list
+  and fixpoint = Fixpoint of fixbody list | CoFixpoint of cofixbody list
 
 end   
