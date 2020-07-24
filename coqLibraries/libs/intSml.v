@@ -1,5 +1,6 @@
-Require Export Ascii.
-Require Export String.
+Require Import Ascii.
+Require Import String.
+Require Import stringCvtSml.
 Require Export ZArith.
 Open Scope Z_scope.
 
@@ -185,34 +186,29 @@ Module Int.
     scan
   *)
 
-  Local Open Scope char_scope.
+(*   Local Open Scope char_scope. *)
 
   Local Definition digitToZ (c: ascii) : option Z :=
     match c with
-    | "-" => Some 10
-    | "0" => Some 0
-    | "1" => Some 1
-    | "2" => Some 2
-    | "3" => Some 3
-    | "4" => Some 4
-    | "5" => Some 5
-    | "6" => Some 6
-    | "7" => Some 7
-    | "8" => Some 8
-    | "9" => Some 9
+    | "0"%char => Some 0
+    | "1"%char => Some 1
+    | "2"%char => Some 2
+    | "3"%char => Some 3
+    | "4"%char => Some 4
+    | "5"%char => Some 5
+    | "6"%char => Some 6
+    | "7"%char => Some 7
+    | "8"%char => Some 8
+    | "9"%char => Some 9
     | _ => None
     end.
 
-  Local Open Scope string_scope. 
+  (* Local Open Scope string_scope.  *)
 
   Local Fixpoint readZ (s: string) (acc: Z) : option Z :=
   match s with
-  | "" => Some acc
+  | ""%string => Some acc
   | String c s' => match digitToZ c with
-                   | Some 10 => match (readZ s' acc) with
-                               | Some n => Some (-n)
-                               | None => None
-                               end
                    | Some n => readZ s' (10 * acc + n)
                    | None => None
                    end
@@ -223,7 +219,16 @@ Module Int.
     Coq: string -> option Z
   *)
   Definition fromString (s: string): option Z := 
-    if (String.eqb "" s) then None else readZ s 0.
+    match s with
+    | ""%string => None
+    | String c s' => match Ascii.eqb c "-" with
+                     | true  => match (readZ s' 0) with
+                                | Some n => Some (-n)
+                                | None   => None
+                                end
+                     | false => readZ s 0
+                     end
+    end.
 
   Local Open Scope nat_scope.
 
@@ -254,7 +259,7 @@ Module Int.
 
   Local Definition toString' (n : nat) : string := writeNat n n "".
 
-  Local Open Scope Z_scope.
+  Local Close Scope nat_scope.
 
   (* 
     Sml: int -> string
@@ -266,5 +271,15 @@ Module Int.
     | true  => "-" ++ (toString' n')
     | false => (toString' n')
     end.
+
+  (*
+    Sml: StringCvt.radix -> int -> string
+    Coq: StringCvt.radix -> Z -> string
+
+    - Since Z in Coq can only represent Decimal numbers, then the parameter 
+      radix should always be StringCvt.DEC and the function fmt expected to
+      convert only decimal numbers.
+  *)
+  Definition fmt (radix:StringCvt.radix) (i:Z): string := toString i.
 
 End Int.
