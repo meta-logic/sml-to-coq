@@ -1,6 +1,9 @@
 Require Import Bool.
 Require Import ZArith.
+Require Import Ascii.
+Require Import String.
 Require Export Floats.
+Require Import stringCvtSml.
 
 Module Real.
 
@@ -417,7 +420,7 @@ Module Real.
     Sml: IEEEReal.rounding_mode -> real -> int
     Coq: rounding_mode -> float -> nat -> Z
     - For now The user should give me how many digits, until we fix numdigits,
-      It's also so inefficient.
+      It's also kind of inefficient.
     - It should also raise an exception for infinity and nan but since Coq 
       doesn't support exceptions then it will return the axioms
       OverflowException, and DivException
@@ -440,7 +443,7 @@ Module Real.
     Sml: rounding_mode -> real -> LargeInt.int
     Coq: rounding_mode -> float -> nat -> Z
     - For now The user should give me how many digits, until we fix numdigits,
-      It's also so inefficient.
+      It's also kind of inefficient.
     - It should also raise an exception for infinity and nan but since Coq 
       doesn't support exceptions then it will return the axioms
       OverflowException, and DivException
@@ -451,7 +454,7 @@ Module Real.
     Sml: real -> int
     Coq: float -> nat -> Z
     - For now The user should give me how many digits, until we fix numdigits,
-      It's also so inefficient.
+      It's also kind of inefficient.
     - It should also raise an exception for infinity and nan but since Coq 
       doesn't support exceptions then it will return the axioms
       OverflowException, and DivException
@@ -462,7 +465,7 @@ Module Real.
     Sml: real -> int
     Coq: float -> nat -> Z
     - For now The user should give me how many digits, until we fix numdigits,
-      It's also so inefficient.
+      It's also kind of inefficient.
     - It should also raise an exception for infinity and nan but since Coq 
       doesn't support exceptions then it will return the axioms
       OverflowException, and DivException
@@ -473,7 +476,7 @@ Module Real.
     Sml: real -> int
     Coq: float -> nat -> Z
     - For now The user should give me how many digits, until we fix numdigits,
-      It's also so inefficient.
+      It's also kind of inefficient.
     - It should also raise an exception for infinity and nan but since Coq 
       doesn't support exceptions then it will return the axioms
       OverflowException, and DivException
@@ -484,7 +487,7 @@ Module Real.
     Sml: real -> int
     Coq: float -> nat -> Z
     - For now The user should give me how many digits, until we fix numdigits,
-      It's also so inefficient.
+      It's also kind of inefficient.
     - It should also raise an exception for infinity and nan but since Coq 
       doesn't support exceptions then it will return the axioms
       OverflowException, and DivException
@@ -515,14 +518,139 @@ Module Real.
   *)
   Definition fromLarge (m:rounding_mode) (f:float):float := f.
 
-(* Not implemented yet, and Sml spacific
-   fmt
-   toString
+
+  Local Definition FToDigit (f: float) : string :=
+    if PrimFloat.eqb f 0 then "0" else
+    if PrimFloat.eqb f 1 then "1" else
+    if PrimFloat.eqb f 2 then "2" else
+    if PrimFloat.eqb f 3 then "3" else
+    if PrimFloat.eqb f 4 then "4" else
+    if PrimFloat.eqb f 5 then "5" else
+    if PrimFloat.eqb f 6 then "6" else
+    if PrimFloat.eqb f 7 then "7" else
+    if PrimFloat.eqb f 8 then "8" else "9".
+
+
+  Local Fixpoint writeFloat (time: nat) (n: float) (acc :string) :string :=
+    let acc' := String.append (FToDigit (rem(n, 10))) acc in
+    match time with
+    | 0 => acc'
+    | S time' =>
+      if PrimFloat.eqb (exWhole(n / 10)) 0 then acc' else
+      writeFloat time' (exWhole(n / 10)) acc'
+    end.
+
+
+  Local Fixpoint writeFloat_dec (time: nat) (n: float) (acc :string) :string :=
+    let acc' :=  String.append acc (FToDigit (exWhole(n*10))) in
+    match time with
+      | 0 => acc'
+      | S time' =>
+        if PrimFloat.eqb (realMod(n*10)) 0 then acc' else
+        writeFloat_dec time' (realMod(n*10)) acc'
+    end.
+
+  (* 
+    Sml: real -> string
+    Coq: float -> string
+    - For now The user should give me how many digits, until we fix numdigits.
+  *)
+  Definition toString (r: float) (nd: nat): string:= 
+    let r' := split r in 
+    match r' with 
+    | {| whole := w; frac := f|} => 
+      let s' := (writeFloat nd (abs w) "") in
+      match (sameSign(r, (-1)))  with
+      | true  => "-" ++ s' ++ "." ++
+                 (writeFloat_dec (Nat.sub nd (String.length s')) (abs f) "")
+      | false => s' ++ "." ++ 
+                 (writeFloat_dec (Nat.sub nd (String.length s')) (abs f) "")
+      end
+   end.
+
+  (*
+    Sml: StringCvt.radix -> real -> string
+    Coq: StringCvt.radix -> float -> nat -> string
+
+    - For now The user should give me how many digits, until we fix numdigits.
+
+    - Since Z in Coq can only represent Decimal numbers, then the parameter 
+      radix should always be StringCvt.DEC and the function fmt expected to
+      convert only decimal numbers.
+  *)
+  Definition fmt (radix: StringCvt.radix) (i: float) (nd: nat): string:=
+    toString i nd.
+
+
+  Local Definition digitToF (c: ascii) : option float :=
+    match c with
+    | "0"%char => Some 0
+    | "1"%char => Some 1
+    | "2"%char => Some 2
+    | "3"%char => Some 3
+    | "4"%char => Some 4
+    | "5"%char => Some 5
+    | "6"%char => Some 6
+    | "7"%char => Some 7
+    | "8"%char => Some 8
+    | "9"%char => Some 9
+    | _ => None
+    end.
+
+  Local Fixpoint readF_dec (s: string) (acc: float) : option float :=
+    match s with
+    | ""%string => Some acc
+    | String c s' => match digitToF c with
+                     | Some n => readF_dec s' (10 * acc + n)
+                     | None => None
+                     end
+    end.
+
+  Local Fixpoint readF (s: string) (acc: float) : option float :=
+  match s with
+  | ""%string => Some acc
+  | String c s' => 
+    match c with
+    | "."%char => 
+      let n' := readF_dec s' 0 in
+      match n' with
+      | Some n'' => 
+          Some (acc + (n'' / fromInt(Z.pow 10%Z (Z.of_nat(String.length s')))))
+      | None => None
+      end
+    | _ => 
+      match digitToF c with
+      | Some n => readF s' (10 * acc + n)
+      | None => None
+      end
+    end
+  end.
+
+  (* 
+    Sml: string -> real option
+    Coq: string -> option float
+  *)
+  Fixpoint fromString (s: string): option float :=  
+    match s with
+    | ""%string => None
+    | String c s' => match Ascii.eqb c "-" with
+                     | true  => match (readF s' 0) with
+                                | Some n => Some (-n)
+                                | None   => None
+                                end
+                     | false => readF s 0
+                     end
+    end.
+
+(* Not implemented yet
    scan
-   fromString
+*)
+
+(*
+   There is no type representation for Decimals such as in Sml.
    toDecimal
    fromDecimal
- *)
+*)
 
 End Real.
 
