@@ -342,6 +342,10 @@ to mention here:
 
 TODO: missing valid names for type constructors (e.g. tree, stream, etc).
 
+Or: I believe TyCon is simply a string which is translated as is into Coq. If
+so, we do not need these rules...
+
+
 \subsection{Names and identifiers}
 
 TODO: In this section we mention which names need modification. From what I
@@ -356,6 +360,7 @@ remember, these are:
   \item ... something else?
 
 \end{itemize}
+
 
 \subsection{Atomic Expressions}
 
@@ -412,6 +417,7 @@ more intrusive modifications, we instead use rule $\mathsf{AtExp}_2$ with a
 \emph{side condition}: if \smle{e} is \smle{SOME} or \smle{NONE}, then it is
 translated to \coqe{Some} or \coqe{None}, respectively.
 \end{paragraph}
+
 
 \subsection{Expressions}
 
@@ -486,8 +492,11 @@ translated to \coqe{Some} or \coqe{None}, respectively.
 \end{array}
 \]
 
-\giselle{The resulting translations of \smle{andalso} and \smle{orelse} are not
-in the Gallina AST. Why?}
+\begin{paragraph}{SML booleans}
+The translation of \smle{andalso} and \smle{orelse} requires notations defined
+in Coq's \coqe{Bool} library.
+\end{paragraph}
+
 
 \subsection{Pattern Matching}
 
@@ -514,6 +523,41 @@ in the Gallina AST. Why?}
 \subsection{Declarations}
 
 TODO
+
+\[
+\arraycolsep=15pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{Val}]{\smle{} \stogdec \coqe{}}{
+}
+&
+\infer[\mathsf{Type}]{}{
+}
+\\
+\infer[\mathsf{DaTyp}]{\smle{} \stogdec \coqe{}}{
+}
+&
+\infer[\mathsf{DaTypAlias}]{}{
+}
+\\
+\infer[\mathsf{AbsType}]{\smle{} \stogdec \coqe{}}{
+}
+&
+\infer[\mathsf{ExnDec}]{}{
+}
+\\
+\infer[\mathsf{Local}]{\smle{} \stogdec \coqe{}}{
+}
+&
+\infer[\mathsf{Open}]{}{
+}
+\\
+\infer[\mathsf{EmpDec}]{\smle{} \stogdec \coqe{}}{
+}
+&
+\infer[\mathsf{SeqDec}]{}{
+}
+\end{array}
+\]
 
 \subsection{Value Bindings}
 
