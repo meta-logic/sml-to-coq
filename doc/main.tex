@@ -104,7 +104,6 @@
 \newcommand\stogpatrow{\;\stog_\mathtt{PatRow}\;}
 \newcommand\stogpat{\;\stog_\mathtt{Pat}\;}
 \newcommand\stogty{\;\stog_\mathtt{Ty}\;}
-\newcommand\stogtyrow{\;\stog_\mathtt{TyRow}\;}
 \newcommand\stoglab{\;\stog_\mathtt{Lab}\;}
 \newcommand\stogscon{\;\stog_\mathtt{SCon}\;}
 \newcommand\stogvid{\;\stog_\mathtt{VId}\;}
@@ -348,41 +347,19 @@ Coq. Therefore, we prefix type variables in Coq by \coqe{_}.
 }
 \]
 
-\subsection{Record Types}
-
-Record type entries in SMl are separated by a comma, while in Coq they 
-are separated by a semi-colon.
-
-\[
-\arraycolsep=15pt\def\arraystretch{3}
-\begin{array}{c}
-\infer[\mathsf{TyRow}_0]{\smle{l : t} \stogtyrow \coqe{l' : t'}}{
-  \smle{l} \stoglab \coqe{l'}
-  &
-  \smle{t} \stogty \coqe{t'}
-}
-\\
-\infer[\mathsf{TyRow}]{\smle{lt, R} \stogtyrow \coqe{lt' ; R'}}{
-  \smle{lt} \stogtyrow \coqe{lt'}
-  &
-  \smle{R} \stogtyrow \coqe{R'}
-}
-\end{array}
-\]
-
 \subsection{Type Expressions}
 
 \[
 \arraycolsep=10pt\def\arraystretch{3}
-\begin{array}{cc}
+\begin{array}{c}
 \infer[\mathsf{TyExp}_{\smles{TyVar}}]{\smle{t} \stogty \coqe{t'}}{
   \smle{t} \stogtyvar \coqe{t'}
 }
-&
-\infer[\mathsf{TyExp}_{\smles{TyRow}}]{\smle{\{ t \}} \stogty \coqe{\{ t' \}}}{
-  \smle{t} \stogtyrow \coqe{t'}
-}
-\\
+\end{array}
+\]
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{cc}
 \infer[\mathsf{TyExp}_{()}]{\smle!( t )! \stogty \coqe!( t' )!}{
   \smle{t} \stogty \coqe{t'}
 }
@@ -406,6 +383,14 @@ are separated by a semi-colon.
                       \coqe!($t'_1$ * $t'_2$ * ... * $t'_n$)\%type!}
 {
   t_i \stogty t'_i & \forall i. 1 \leq i \leq n, n \geq 1
+}
+\\
+\infer[\mathsf{TyExp}_{rec}]{\smle!\{ $l_1 : t_1, \dots, l_n : t_n$ \}! \stogty \smle!\{ $l'_1 : t'_1; \dots; l'_n : t'_n$ \}!}{
+  l_i \stoglab l'_i
+  &
+  t_i \stogty t'_i
+  &
+  \forall i. 1 \leq i \leq n, n \geq 1
 }
 \end{array}
 \]
@@ -856,26 +841,23 @@ TyVar ::= /* allowed type variable names */
 
 /* Type Expressions */
 Ty ::= TyVar
-     | { TyRow }
+     | { Lab : Ty, Lab : Ty, ..., Lab : Ty }
      | !$\langle$!Ty!$\rangle^*$! TyCon /* e.g. 'a, 'b Tree */
      | Ty -> Ty
      | (Ty)
      /* Added types */
-     | (Ty * Ty * ...)
-
-/* Record Types */
-TyRow ::= Lab : Ty !$\langle$!, TyRow!$\rangle$!
+     | (Ty * Ty * ... * Ty)
 
 /* Atomic Expressions */
 AtExp ::= SCon 
         | !$\langle$!op!$\rangle$! VId 
-        | {Lab: Exp, Lab: Exp, ...} 
+        | {Lab: Exp, Lab: Exp, ..., Lab: Exp} 
         | let Dec in Exp end 
         | (Exp) 
         /* Added expressions (records in hamlet) */
         | () 
-        | (Exp, Exp, ...) 
-        | [Exp, Exp, ...]
+        | (Exp, Exp, ..., Exp) 
+        | [Exp, Exp, ..., Exp]
 
 /* Expressions */
 Exp ::= AtExp 
