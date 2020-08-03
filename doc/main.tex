@@ -585,7 +585,7 @@ What do we do with Coq keywords? Are identifiers using dot considered as VId?}
   \forall i. 1 \leq i \leq n, n \geq 0
 }
 \\
-\infer[\mathsf{AtExp}_{\smles{op}}]{\smle{op VId} \stogatexp \tbd}{}
+\infer[\mathsf{AtExp}_{\smles{op}}]{\smle{op id} \stogatexp \tbd}{}
 \\
 \infer[\mathsf{AtExp}_{rec}]{\smle!\{$l_1 : t_1, \dots, l_n : t_n$\}! \stogatexp \tbd}{}
 \end{array}
@@ -699,6 +699,60 @@ in Coq's \coqe{Bool} library.
 \end{array}
 \]
 
+\subsection{Atomic Patterns}
+
+\[
+\arraycolsep=15pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{AtPat}_{\_}]{\smle{_} \stogatpat \coqe{_}}{}
+&
+\infer[\mathsf{AtPat}_{\smles{SCon}}]{\smle{c} \stogatpat \coqe{c'}}{
+  \smle{c} \stogscon \coqe{c'}
+}
+\\
+\infer[\mathsf{AtPat}_{\smles{VId}}]{\smle{id} \stogatpat \coqe{id'}}{
+  \smle{id} \stogvid \coqe{id'}
+}
+&
+\infer[\mathsf{AtPat}_{\smles{op}}]{\smle{op id} \stogatpat \tbd}{}
+\\
+\infer[\mathsf{AtPat}_{\smles{(p)}}]{\smle{(p)} \stogatpat \coqe{(p')}}{
+  \smle{p} \stogpat \coqe{p'}
+}
+&
+\infer[\mathsf{AtPat}_{\smles{()}}]{\smle{()} \stogatpat \coqe{()}}{}
+\end{array}
+\]
+\[
+\arraycolsep=15pt\def\arraystretch{3}
+\begin{array}{c}
+\infer[\mathsf{AtPat}_{tpl}]{\smle!($p_1, \dots, p_n$)! \stogatpat \coqe!($p'_1, \dots,p'_n$)!}{
+  p_i \stogpat p'_i 
+  & 
+  \forall i. 1 \leq i \leq n, n \geq 1
+}
+\\
+\infer[\mathsf{AtPat}_{lst}]{\smle![$p_1, \dots, p_n$]! \stogatpat \coqe![$p'_1; \dots;p'_n$]!}{
+  p_i \stogpat p'_i 
+  & 
+  \forall i. 1 \leq i \leq n, n \geq 0
+}
+\\
+\infer[\mathsf{AtPat}_{rec}]{\smle{\{ recpat \}} \stogatpat \coqe{\{ recpat' \}}}{
+  \smle{recpat} \stogpatrow \coqe{recpat'}
+}
+\end{array}
+\]
+
+\subsection{Record Patterns}
+
+TODO
+
+\subsection{Patterns}
+
+TODO
+
+
 \subsection{Declarations}
 
 TODO
@@ -751,18 +805,6 @@ TODO
 TODO
 
 \subsection{Exception Bindings}
-
-TODO
-
-\subsection{Atomic Patterns}
-
-TODO
-
-\subsection{Record Patterns}
-
-TODO
-
-\subsection{Patterns}
 
 TODO
 
@@ -826,8 +868,7 @@ TyRow ::= Lab : Ty !$\langle$!, TyRow!$\rangle$!
 
 /* Atomic Expressions */
 AtExp ::= SCon 
-        | op VId 
-        | VId 
+        | !$\langle$!op!$\rangle$! VId 
         | {Lab: Exp, Lab: Exp, ...} 
         | let Dec in Exp end 
         | (Exp) 
