@@ -90,12 +90,13 @@
 % Macros for translation
 \newcommand\stog{\boldsymbol{\Longrightarrow}}
 \newcommand\stogtycon{\;\stog_\mathtt{TyCon}\;}
+\newcommand\stogtyvar{\;\stog_\mathtt{TyVar}\;}
 \newcommand\stogatexp{\;\stog_\mathtt{AtExp}\;}
 \newcommand\stogexp{\;\stog_\mathtt{Exp}\;}
 \newcommand\stogmatch{\;\stog_\mathtt{Match}\;}
 \newcommand\stogdec{\;\stog_\mathtt{Dec}\;}
 \newcommand\stogvalbind{\;\stog_\mathtt{ValBind}\;}
-\newcommand\stogtypbind{\;\stog_\mathtt{TypBind}\;}
+\newcommand\stogtybind{\;\stog_\mathtt{TyBind}\;}
 \newcommand\stogdatbind{\;\stog_\mathtt{DatBind}\;}
 \newcommand\stogconbind{\;\stog_\mathtt{ConBind}\;}
 \newcommand\stogexbind{\;\stog_\mathtt{ExBind}\;}
@@ -104,6 +105,7 @@
 \newcommand\stogpat{\;\stog_\mathtt{Pat}\;}
 \newcommand\stogty{\;\stog_\mathtt{Ty}\;}
 \newcommand\stogtyrow{\;\stog_\mathtt{TyRow}\;}
+\newcommand\stoglab{\;\stog_\mathtt{Lab}\;}
 
 \newcommand{\tbd}{\colorbox{yellow}{\textbf{TBD}}}
 
@@ -303,57 +305,25 @@ to mention here:
 
 \begin{itemize}
   \item We create the notation \# for characters in Coq to look like SML
-  characters\giselle{I think \# stands for something in Coq already, double
-  check.}
+  characters.
 
-  \item We use \coqe{\%float} for translating real numbers because numbers line
+  \item We use \coqe{%float} for translating real numbers because numbers like
   6 can be considered Z or floats, depending on which scope was imported last.
   (In SML, 6 is always \smle{int}, and 6.0 is \smle{real}).
 
 \end{itemize}
 
-\subsection{Type Constructors}
-
-\[
-\arraycolsep=15pt\def\arraystretch{3}
-\begin{array}{cc}
-\infer[\mathsf{TyCon}_{\smles{unit}}]{\smle{unit} \stogtycon \coqe{unit}}{}
-&
-\infer[\mathsf{TyCon}_{\smles{bool}}]{\smle{bool} \stogtycon \coqe{bool}}{}
-\\
-\infer[\mathsf{TyCon}_{\smles{int}}]{\smle{int} \stogtycon \coqe{int}}{}
-&
-\infer[\mathsf{TyCon}_{\smles{word}}]{\smle{word} \stogtycon \coqe{word}}{}
-\\
-\infer[\mathsf{TyCon}_{\smles{real}}]{\smle{real} \stogtycon \coqe{real}}{}
-&
-\infer[\mathsf{TyCon}_{\smles{string}}]{\smle{string} \stogtycon \coqe{string}}{}
-\\
-\infer[\mathsf{TyCon}_{\smles{char}}]{\smle{char} \stogtycon \coqe{char}}{}
-&
-\infer[\mathsf{TyCon}_{\smles{list}}]{\smle{list} \stogtycon \coqe{list}}{}
-\\
-\infer[\mathsf{TyCon}_{\smles{ref}}]{\smle{ref} \stogtycon \coqe{??}}{}
-&
-\infer[\mathsf{TyCon}_{\smles{exn}}]{\smle{exn} \stogtycon \coqe{??}}{}
-\\
-\end{array}
-\]
-
-TODO: missing valid names for type constructors (e.g. tree, stream, etc).
-
-Or: I believe TyCon is simply a string which is translated as is into Coq. If
-so, we do not need these rules...
-
-
 \subsection{Names and identifiers}
 
-TODO: In this section we mention which names need modification. From what I
-remember, these are:
+\[
+\infer[\mathsf{Lab}]{\smle{l} \stoglab \coqe{l}}{}
+\]
+
+TODO: In this section we mention which names need modification.
 
 \begin{itemize}
-  \item Type variables (which start with \_ in Coq and ' in SML)
-  
+  \item $\mathsf{Lab}$ are valid record labels.
+
   \item Identifiers that clash with Coq keywords\giselle{Still needs to be
   implemented}
   
@@ -361,6 +331,136 @@ remember, these are:
 
 \end{itemize}
 
+
+\subsection{Type Constructors}
+
+Most type constructors are translated \emph{as is}, using the
+$\mathsf{TyCon}$ rule.  However, some built-in type constructors need
+to be translated to the corresponding types in Coq.
+
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{TyCon}]{\smle{tycon} \stogtycon \coqe{tycon}}{
+  \smle{tycon} \notin \{ \smle{int},\smle{real},\\
+  \smle{char},\smle{order},\smle{unit} \}
+}
+&
+\infer[\mathsf{TyCon}_{\smles{int}}]{\smle{int} \stogtycon \coqe{Z}}{}
+\\
+\infer[\mathsf{TyCon}_{\smles{real}}]{\smle{real} \stogtycon \coqe{float}}{}
+&
+\infer[\mathsf{TyCon}_{\smles{char}}]{\smle{char} \stogtycon \coqe{ascii}}{}
+\\
+\infer[\mathsf{TyCon}_{\smles{order}}]{\smle{order} \stogtycon \coqe{comparison}}{}
+&
+\infer[\mathsf{TyCon}_{\smles{unit}}]{\smle{unit} \stogtycon \coqe{tt}}{}
+\\
+\end{array}
+\]
+
+\subsection{Type Variables}
+
+Type variables in SML are prefixed by \smle{'}, but this is illegal in
+Coq. Therefore, we prefix type variables in Coq by \coqe{_}.
+
+\[
+\infer[\mathsf{TyVar}]{\smle{'tyvar} \stogtyvar \coqe{_tyvar}}{
+  \smle{tyvar} \text{ is alphanumeric}
+}
+\]
+
+\subsection{Record Types}
+
+Record type entries in SMl are separated by a comma, while in Coq they 
+are separated by a semi-colon.
+
+\[
+\arraycolsep=15pt\def\arraystretch{3}
+\begin{array}{c}
+\infer[\mathsf{TyRow}_0]{\smle{l : t} \stogtyrow \coqe{l' : t'}}{
+  \smle{l} \stoglab \coqe{l'}
+  &
+  \smle{t} \stogty \coqe{t'}
+}
+\\
+\infer[\mathsf{TyRow}]{\smle{lt, R} \stogtyrow \coqe{lt' ; R'}}{
+  \smle{lt} \stogtyrow \coqe{lt'}
+  &
+  \smle{R} \stogtyrow \coqe{R'}
+}
+\end{array}
+\]
+
+\subsection{Type Expressions}
+
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{TyExp}_{\smles{TyVar}}]{\smle{t} \stogty \coqe{t'}}{
+  \smle{t} \stogtyvar \coqe{t'}
+}
+&
+\infer[\mathsf{TyExp}_{\smles{TyRow}}]{\smle{\{ t \}} \stogty \coqe{\{ t' \}}}{
+  \smle{t} \stogtyrow \coqe{t'}
+}
+\\
+\infer[\mathsf{TyExp}_{()}]{\smle!( t )! \stogty \coqe!( t' )!}{
+  \smle{t} \stogty \coqe{t'}
+}
+&
+\infer[\mathsf{TyExp}_{\smles{->}}]{t_1 \smle{->} t_2 \stogty t'_1 \coqe{->} t'_2}{
+  t_1 \stogty t'_1
+  &
+  t_2 \stogty t'_2}
+\end{array}
+\]
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{c}
+\infer[\mathsf{TyExp}_{\smles{TyCon}}]{\smle!$t_1, \dots, t_n\;$ con! \stogty \coqe!con' $\;t'_1 \dots t'_n$!}{
+  \smle{con} \stogtycon \coqe{con'}
+  &
+  t_i \stogty t'_i & \forall i. 1 \leq i \leq n, n \geq 0
+}
+\\
+\infer[\mathsf{TyExp}_{\smles{*}}]{\smle!($t_1$ * $t_2$ * ... * $t_n$)! \stogty 
+                      \coqe!($t'_1$ * $t'_2$ * ... * $t'_n$)\%type!}
+{
+  t_i \stogty t'_i & \forall i. 1 \leq i \leq n, n \geq 1
+}
+\end{array}
+\]
+\giselle{G: Why is the \%\coqes{type} needed in the translation of tuple types?}
+
+Notice that type constructors may take 0 arguments 
+(rule $\mathsf{TyExp}_{\smles{TyCon}}$), but tuple types must consist of 
+at least one type (rule $\mathsf{TyExp}_{\smles{*}}$).
+
+\subsection{Type Bindings}
+
+Type bindings are translated into Coq definitions. In case they are 
+mutually recursive, we need to use \coqe{Fixpoint}, thus the
+\coqe{end with} in rule $\mathsf{TyBind}$.
+
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{c}
+\infer[\mathsf{TyBind}_0]{\smle!$v_1, \dots, v_n$ con = t! \stogtybind \coqe!con' $v'_1 \dots v'_n$ = t'!}{
+  \smle{con} \stogtycon \coqe{con'}
+  &
+  \smle{t} \stogty \coqe{t'}
+  &
+  v_i \stogtyvar v'_i \;\; \forall i. 1 \leq i \leq n, n \geq 0
+}
+\\
+\infer[\mathsf{TyBind}]{\smle{b and tb} \stogtybind \coqe{b' end with tb'}}{
+  \smle{b} \stogtybind \coqe{b'}
+  &
+  \smle{tb} \stogtybind \coqe{tb'}
+}
+\end{array}
+\]
 
 \subsection{Atomic Expressions}
 
@@ -524,46 +624,42 @@ in Coq's \coqe{Bool} library.
 
 TODO
 
-\[
-\arraycolsep=15pt\def\arraystretch{3}
-\begin{array}{cc}
-\infer[\mathsf{Val}]{\smle{} \stogdec \coqe{}}{
-}
-&
-\infer[\mathsf{Type}]{}{
-}
-\\
-\infer[\mathsf{DaTyp}]{\smle{} \stogdec \coqe{}}{
-}
-&
-\infer[\mathsf{DaTypAlias}]{}{
-}
-\\
-\infer[\mathsf{AbsType}]{\smle{} \stogdec \coqe{}}{
-}
-&
-\infer[\mathsf{ExnDec}]{}{
-}
-\\
-\infer[\mathsf{Local}]{\smle{} \stogdec \coqe{}}{
-}
-&
-\infer[\mathsf{Open}]{}{
-}
-\\
-\infer[\mathsf{EmpDec}]{\smle{} \stogdec \coqe{}}{
-}
-&
-\infer[\mathsf{SeqDec}]{}{
-}
-\end{array}
-\]
+% \[
+% \arraycolsep=15pt\def\arraystretch{3}
+% \begin{array}{cc}
+% \infer[\mathsf{Val}]{\smle{} \stogdec \coqe{}}{
+% }
+% &
+% \infer[\mathsf{Type}]{}{
+% }
+% \\
+% \infer[\mathsf{DaTyp}]{\smle{} \stogdec \coqe{}}{
+% }
+% &
+% \infer[\mathsf{DaTypAlias}]{}{
+% }
+% \\
+% \infer[\mathsf{AbsType}]{\smle{} \stogdec \coqe{}}{
+% }
+% &
+% \infer[\mathsf{ExnDec}]{}{
+% }
+% \\
+% \infer[\mathsf{Local}]{\smle{} \stogdec \coqe{}}{
+% }
+% &
+% \infer[\mathsf{Open}]{}{
+% }
+% \\
+% \infer[\mathsf{EmpDec}]{\smle{} \stogdec \coqe{}}{
+% }
+% &
+% \infer[\mathsf{SeqDec}]{}{
+% }
+% \end{array}
+% \]
 
 \subsection{Value Bindings}
-
-TODO
-
-\subsection{Type Bindings}
 
 TODO
 
@@ -588,59 +684,6 @@ TODO
 TODO
 
 \subsection{Patterns}
-
-TODO
-
-\subsection{Type Expressions}
-
-\[
-\arraycolsep=10pt\def\arraystretch{3}
-\begin{array}{cc}
-\infer[\mathsf{TyVar}]{\smle{'X} \stogty \coqe{\_X}}{X \text{ is alphanumeric}}
-&
-\infer[\mathsf{TyRow}]{\smle{\{ s \}} \stogty \coqe{\{ g \}}}{s \stog g}
-\\
-\infer[\mathsf{TyCon}_p]{\smle{s t} \stogty \coqe{h g}}{
-  s \stogty g
-  &
-  t \stogtycon h
-}
-&
-\infer[\mathsf{Ty}_{\smles{->}}]{t_1 \smle{->} t_2 \stogty g_1 \coqe{->} g_2}{
-  t_1 \stogty g_1
-  &
-  t_2 \stogty g_2}
-\\
-\infer[\mathsf{Ty}_{()}]{\smle!( $t$ )! \stogty \coqe!( $g$ )!}{
-  t \stogty g
-}
-&
-\infer[\mathsf{Ty}_*]{\smle!($t_1$ * $t_2$ * ... * $t_n$)! \stogty 
-                      \coqe!($g_1$ * $g_2$ * ... * $g_n$)\%type!}
-{
-  t_i \stogty g_i & \forall i. 1 \leq i \leq n
-}
-\\
-\end{array}
-\]
-
-OBS:
-\begin{itemize}
-  \item It is likely that the translation is still full of mistakes.
-  
-  \item In \textsf{TyRow}, $s$ is a sequence of labels and types separated by
-  commas.
-  
-  \item In \textsf{TyCon}$_p$, $s$ is a sequence of types separated by commas. I
-  am not sure if the type parameters are translated into Coq... \laila{type
-  parameters are indeed translated, but the type constructor comes in the
-  beginning so 'a list become list \_a} 
-  
-  \item Maybe move the translation of type variables to the identifiers part?
-
-\end{itemize}
-
-\subsection{Record Types}
 
 TODO
 
@@ -682,15 +725,25 @@ SCon ::= /* integer, real, word, strings,
             and character constants (e.g. 42) */
 
 /* Type Constructors */
-TyCon ::= unit   | bool | int  | word | real
-        | string | char | list | ref  | exn
-        | /* valid names for types */
+TyCon ::= /* allowed type constructors (int,tree,list,etc) */
 
 /* Names and identifiers */
 VId   ::= /* allowed value identifiers */
 StrId ::= /* allowed structure identifiers */
 Lab   ::= /* allowed record labels */
 TyVar ::= /* allowed type variable names */
+
+/* Type Expressions */
+Ty ::= TyVar
+     | { TyRow }
+     | !$\langle$!Ty!$\rangle^*$! TyCon /* e.g. 'a, 'b Tree */
+     | Ty -> Ty
+     | (Ty)
+     /* Added types */
+     | (Ty * Ty * ...)
+
+/* Record Types */
+TyRow ::= Lab : Ty !$\langle$!, TyRow!$\rangle$!
 
 /* Atomic Expressions */
 AtExp ::= SCon 
@@ -769,18 +822,6 @@ Pat ::= AtPat
       | !$\langle$!op!$\rangle$! VId AtPat
       | Pat : Ty
       | !$\langle$!op!$\rangle$! VId !$\langle$!: Ty!$\rangle$! as pat
-
-/* Type Expressions */
-Ty ::= TyVar
-     | { TyRow }
-     | !$\langle$!Ty!$\rangle^*$! TyCon /* e.g. 'a, 'b Tree */
-     | Ty -> Ty
-     | (Ty)
-     /* Added types */
-     | (Ty * Ty * ...)
-
-/* Record Types */
-TyRow ::= Lab : Ty !$\langle$!, TyRow!$\rangle$!
 \end{grm}
 
 \section{Gallina's abstract syntax tree}
