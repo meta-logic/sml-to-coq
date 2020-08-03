@@ -603,33 +603,33 @@ definition.
 \[
 \arraycolsep=15pt\def\arraystretch{3}
 \begin{array}{cc}
-\infer[\mathsf{AtExp}]{\smle{e} \stogexp \coqe{e'}}{
+\infer[\mathsf{Exp}_{\smles{AtExp}}]{\smle{e} \stogexp \coqe{e'}}{
   \smle{e} \stogatexp \coqe{e'}
 }
 &
-\infer[\mathsf{App}]{\smle!e$_1$ e$_2$! \stogexp \coqe!e$_1$' e$_2$'!}{
+\infer[\mathsf{Exp}_{app}]{\smle!e$_1$ e$_2$! \stogexp \coqe!e$_1$' e$_2$'!}{
   \smle!e$_1$! \stogexp \coqe!e$_1$'!
   &
   \smle!e$_2$! \stogatexp \coqe!e$_2$'!
 }
 \\
-\infer[\mathsf{ExpTy}]{\smle{e : t} \stogexp \coqe{e' : t'}}{
+\infer[\mathsf{Exp}_{ty}]{\smle{e : t} \stogexp \coqe{e' : t'}}{
   \smle{e} \stogexp \coqe{e'}
   &
   \smle{t} \stogty \coqe{t'}
 }
 &
-\infer[\mathsf{Fn}]{\smle{fn m} \stogexp \tbd}{
+\infer[\mathsf{Exp}_{\smles{fn}}]{\smle{fn m} \stogexp \tbd}{
   \smle{m} \stogmatch \coqe{m'}
 }
 \\
-\infer[\mathsf{Handle}]{\smle{e handle m} \stogexp \tbd}{
+\infer[\mathsf{Exp}_{\smles{handle}}]{\smle{e handle m} \stogexp \tbd}{
   \smle{e} \stogexp \coqe{e'}
   &
   \smle{m} \stogmatch \coqe{m'}
 }
 &
-\infer[\mathsf{Raise}]{\smle{raise e} \stogexp \tbd}{
+\infer[\mathsf{Exp}_{\smles{raise}}]{\smle{raise e} \stogexp \tbd}{
   \smle{e} \stogexp \coqe{e'}
 }
 \end{array}
@@ -637,13 +637,13 @@ definition.
 \[
 \arraycolsep=15pt\def\arraystretch{3}
 \begin{array}{c}
-\infer[\mathsf{Case}]{\smle{case e of m} \stogexp \coqe{match e' with m' end}}{
+\infer[\mathsf{Exp}_{\smles{case}}]{\smle{case e of m} \stogexp \coqe{match e' with m' end}}{
   \smle{e} \stogexp \coqe{e'}
   &
   \smle{m} \stogmatch \coqe{m'}
 }
 \\
-\infer[\mathsf{If}]{\smle!if e$_1$ then e$_2$ else e$_3$! \stogexp 
+\infer[\mathsf{Exp}_{\smles{if}}]{\smle!if e$_1$ then e$_2$ else e$_3$! \stogexp 
                     \coqe!if e$_1$' then e$_2$' else e$_3$'!}{
   \smle!e$_i$! \stogexp \coqe!e$_i$'!
   &
@@ -654,14 +654,14 @@ definition.
 \[
 \arraycolsep=15pt\def\arraystretch{3}
 \begin{array}{cc}
-\infer[\mathsf{And}]{\smle!e$_1$ andalso e$_2$! \stogexp 
+\infer[\mathsf{Exp}_{and}]{\smle!e$_1$ andalso e$_2$! \stogexp 
                      \coqe!e$_1$' \&\& e$_2$'!}{
   \smle!e$_1$! \stogexp \coqe!e$_1$'!
   &
   \smle!e$_2$! \stogexp \coqe!e$_2$'!
 }
 &
-\infer[\mathsf{Or}]{\smle!e$_1$ orelse e$_2$! \stogexp 
+\infer[\mathsf{Exp}_{or}]{\smle!e$_1$ orelse e$_2$! \stogexp 
                      \coqe!e$_1$' || e$_2$'!}{
   \smle!e$_1$! \stogexp \coqe!e$_1$'!
   &
