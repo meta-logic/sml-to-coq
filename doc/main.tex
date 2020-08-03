@@ -444,7 +444,7 @@ Special constants are value inhabitants of \smle{int}, \smle{real},
   our solution is \emph{not} to open \coqe{float_scope} and explicit
   annotate every floating point number.
 
-  \item Negative numbers are indicated by \smle{~} in SML and by 
+  \item Negative numbers are indicated by $\sim$ in SML and by 
   \coqe{-} in Coq.
 
 \end{itemize}
@@ -454,11 +454,11 @@ Special constants are value inhabitants of \smle{int}, \smle{real},
 \begin{array}{cc}
 \infer[\mathsf{SCon}_{\smles{int}}]{\smle{n} \stogscon \coqe{n}}{}
 &
-\infer[\mathsf{SCon}_{\smles{int}_{-}}]{\smle{\~ n} \stogscon \coqe{- n}}{}
+\infer[\mathsf{SCon}_{\smles{int}_{-}}]{\smle!$\sim$ n! \stogscon \coqe{- n}}{}
 \\
 \infer[\mathsf{SCon}_{\smles{real}}]{\smle{r} \stogscon \coqe{r\%float}}{}
 &
-\infer[\mathsf{SCon}_{\smles{real}_{-}}]{\smle{\~ r} \stogscon \coqe{(- r)\%float}}{}
+\infer[\mathsf{SCon}_{\smles{real}_{-}}]{\smle!$\sim$ r! \stogscon \coqe{(- r)\%float}}{}
 \\
 \infer[\mathsf{SCon}_{\smles{string}}]{\smle{s} \stogscon \coqe{s}}{}
 &
