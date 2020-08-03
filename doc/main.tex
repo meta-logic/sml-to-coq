@@ -106,6 +106,8 @@
 \newcommand\stogty{\;\stog_\mathtt{Ty}\;}
 \newcommand\stogtyrow{\;\stog_\mathtt{TyRow}\;}
 \newcommand\stoglab{\;\stog_\mathtt{Lab}\;}
+\newcommand\stogscon{\;\stog_\mathtt{SCon}\;}
+\newcommand\stogvid{\;\stog_\mathtt{VId}\;}
 
 \newcommand{\tbd}{\colorbox{yellow}{\textbf{TBD}}}
 
@@ -298,39 +300,15 @@ $S \stog G$, where $S$ and $G$ are SML and Gallina ASTs respectively.
 The sections below are in the same order as SML's AST definition in the
 appendix.
 
-\subsection{Special constants}
+\subsection{Record Labels}
 
-TODO: This is the place to document how we translate constants. Things we need
-to mention here:
-
-\begin{itemize}
-  \item We create the notation \# for characters in Coq to look like SML
-  characters.
-
-  \item We use \coqe{%float} for translating real numbers because numbers like
-  6 can be considered Z or floats, depending on which scope was imported last.
-  (In SML, 6 is always \smle{int}, and 6.0 is \smle{real}).
-
-\end{itemize}
-
-\subsection{Names and identifiers}
+Record labels have no restrictions apart from starting with an
+alphanumeric character, or \_.
 
 \[
 \infer[\mathsf{Lab}]{\smle{l} \stoglab \coqe{l}}{}
 \]
-
-TODO: In this section we mention which names need modification.
-
-\begin{itemize}
-  \item $\mathsf{Lab}$ are valid record labels.
-
-  \item Identifiers that clash with Coq keywords\giselle{Still needs to be
-  implemented}
-  
-  \item ... something else?
-
-\end{itemize}
-
+\giselle{Are there allowed labels in SML that need special care?}
 
 \subsection{Type Constructors}
 
@@ -462,61 +440,162 @@ mutually recursive, we need to use \coqe{Fixpoint}, thus the
 \end{array}
 \]
 
+\subsection{Special constants}
+
+Special constants are value inhabitants of \smle{int}, \smle{real}, 
+\smle{word}, \smle{string}, and \smle{char}. Note that:
+
+\begin{itemize}
+  \item The notation \# for characters in Coq is defined in the 
+  library \texttt{charSml.v} to look exactly like SML characters.
+
+  \item Real constants are translated using the explicit type
+  annotation \%\coqe{float}. This could be avoided by using 
+  \coqe{float_scope}, however opening this scope will make Coq 
+  interpret any number without dot notation, such as \coqe{5}, 
+  as a floating point number instead of an integer.
+  In SML \smle{5} is \emph{always} an integer, and \smle{5.0} is
+  a floating point number. In order to keep the original types,
+  our solution is \emph{not} to open \coqe{float_scope} and explicit
+  annotate every floating point number.
+
+  \item Negative numbers are indicated by \smle{~} in SML and by 
+  \coqe{-} in Coq.
+
+\end{itemize}
+
+\[
+\arraycolsep=15pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{SCon}_{\smles{int}}]{\smle{n} \stogscon \coqe{n}}{}
+&
+\infer[\mathsf{SCon}_{\smles{int}_{-}}]{\smle{\~ n} \stogscon \coqe{- n}}{}
+\\
+\infer[\mathsf{SCon}_{\smles{real}}]{\smle{r} \stogscon \coqe{r\%float}}{}
+&
+\infer[\mathsf{SCon}_{\smles{real}_{-}}]{\smle{\~ r} \stogscon \coqe{(- r)\%float}}{}
+\\
+\infer[\mathsf{SCon}_{\smles{string}}]{\smle{s} \stogscon \coqe{s}}{}
+&
+\infer[\mathsf{SCon}_{\smles{char}}]{\smle{#c} \stogscon \coqe{#c}}{}
+\\
+\infer[\mathsf{SCon}_{\smles{word}}]{\smle{w} \stogscon \tbd}{}
+&
+\end{array}
+\]
+
+
+\subsection{Value Identifiers}
+
+Most value identifiers are translated \emph{as is} from SML to Coq, 
+however there are a few special cases that need to be handled
+exceptionally because the corresponding identifier in Coq is
+different. This is mostly due to different type constructors or
+functions.
+
+\[
+\arraycolsep=15pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{VId}]{\smle{id} \stogvid \coqe{id}}{
+  \smle{id} \notin \{\smle{SOME}, \smle{NONE},\\
+  \smle{LESS}, \smle{EQUAL}, \smle{GREATER} \}
+}
+&
+\infer[\mathsf{VId}_{\smles{EQUAL}}]{\smle{EQUAL} \stogvid \coqe{Eq}}{}
+\\
+\infer[\mathsf{VId}_{\smles{LESS}}]{\smle{LESS} \stogvid \coqe{Lt}}{}
+&
+\infer[\mathsf{VId}_{\smles{GREATER}}]{\smle{GREATER} \stogvid \coqe{Gt}}{}
+\\
+\infer[\mathsf{VId}_{\smles{SOME}}]{\smle{SOME} \stogvid \coqe{Some}}{}
+&
+\infer[\mathsf{VId}_{\smles{List.exists}}]{\smle{List.exists} \stogvid \coqe{List.existsb}}{}
+\\
+\infer[\mathsf{VId}_{\smles{NONE}}]{\smle{NONE} \stogvid \coqe{None}}{}
+&
+\infer[\mathsf{VId}_{\smles{ListPair.exists}}]{\smle{ListPair.exists} \stogvid \coqe{ListPair.existsb}}{}
+\end{array}
+\]
+\giselle{Are there other identifiers in SML that need special care?
+What do we do with Coq keywords? Are identifiers using dot considered as VId?}
+
+% A more extensive explanation on why we did not change SML's AST and
+% went with the special case instead. Leaving it here for posterity.
+%
+% \begin{paragraph}{\smle{option} expressions}
+% In SML, the type \smle{option}, with constructors \smle{SOME} and \smle{NONE},
+% is not built-in. Therefore, the keywords \smle{SOME} and \smle{NONE} are
+% \lstinline{VId}s and would be translated as is (by rule $\mathsf{AtExp}_2$).
+% This is problematic because Coq's option type constructors are \coqe{Some} and
+% \coqe{None} (i.e. in a different capitalization). One way to solve this is to
+% add special constructors for option types to SML's AST, much like we did for
+% tuples and lists. However, unlike tuples and lists, option types are not
+% recognized by the parser as special entities. This means we would need deeper
+% changes in HaMLet to create dedicated constructors for options. To avoid these
+% more intrusive modifications, we instead use rule $\mathsf{AtExp}_2$ with a
+% \emph{side condition}: if \smle{e} is \smle{SOME} or \smle{NONE}, then it is
+% translated to \coqe{Some} or \coqe{None}, respectively.
+% \end{paragraph}
+
+
 \subsection{Atomic Expressions}
 
 \setlength{\jot}{0.5pt} 
 \[
 \arraycolsep=15pt\def\arraystretch{3}
 \begin{array}{cc}
-\infern{\texttt{e is SCon}}{\smle{e} \stogatexp \coqe{e}}{AtExp}
-\qquad
-\infern{\texttt{e is VId}}{\smle{e} \stogatexp \coqe{e}}{AtExp}
+\infer[\mathsf{AtExp}_{\smles{SCon}}]{\smle{c} \stogatexp \coqe{c'}}{
+  \smle{c} \stogscon \coqe{c'}
+}
+&
+\infer[\mathsf{AtExp}_{\smles{VId}}]{\smle{id} \stogatexp \coqe{id'}}{
+  \smle{id} \stogvid \coqe{id'}
+}
 \\
-\infern{\smle{e} \stogexp \coqe{t}\quad \smle{d}\stogdec \coqe{Definition d'}}{
-  \smle{let d in e end} \stogatexp \coqe{let d' in t}
-}{AtExp}
+\infer[\mathsf{AtExp}_{\smles{()}}]{\smle{()} \stogatexp \coqe{()}}{}
+&
+\infer[\mathsf{AtExp}_{\smles{(e)}}]{\smle{(e)} \stogatexp \coqe{(e')}}{
+  \smle{e} \stogexp \coqe{e'}
+}
+\end{array}
+\]
+\[
+\arraycolsep=15pt\def\arraystretch{3}
+\begin{array}{c}
+\infer[\mathsf{AtExp}_{\smles{let}_1}]{\smle{let d in e end} \stogatexp \coqe{let d' in t}}{
+  \smle{e} \stogexp \coqe{t} & \smle{d}\stogdec \coqe{Definition d'}
+}
 \\
-\infern{
+\infer[\mathsf{AtExp}_{\smles{let}_n}]{\smle{let d in e end} \stogatexp \coqe!let d$_1$ in ... in let d$_n$ in t!}{
   \begin{gathered}
   \smle{e} \stogexp \coqe{t} \quad \smle{d}\stogdec \coqe{sentence}_1 ... \coqe{sentence}_n \\ 
   \coqe{sentence}_1 \equiv \coqe{Definition d}_1 \quad ... \quad \coqe{sentence}_n \equiv \coqe{Definition d}_n 
   \end{gathered}
-}{
-  \smle{let d in e end} \stogatexp \coqe!let d$_1$ in ... in let d$_n$ in t!
-}{\mathsf{AtExp}}
+}
 \\
-\infern{\smle{e} \stogexp \coqe{t}}{\smle{(e)} \stogatexp \coqe{(t)}}{AtExp}
+\infer[\mathsf{AtExp}_{tpl}]{\smle!($e_1, \dots, e_n$)! \stogatexp \coqe!($e'_1, \dots,e'_n$)!}{
+  e_i \stogexp e'_i 
+  & 
+  \forall i. 1 \leq i \leq n, n \geq 1
+}
 \\
-\infern{\smle{e}_1 \stogexp \coqe{t}_1 & \dots & \smle{e}_n \stogexp \coqe{t}_n}{
-  \smle!(e$_1$, ... , e$_n$)! \stogatexp \coqe!(t$_1$, ... ,t$_n$)!
-}{AtExp}
+\infer[\mathsf{AtExp}_{lst}]{\smle![$e_1, \dots, e_n$]! \stogatexp \coqe![$e'_1; \dots;e'_n$]!}{
+  e_i \stogexp e'_i 
+  & 
+  \forall i. 1 \leq i \leq n, n \geq 0
+}
 \\
-\infern{\smle{e}_1 \stogexp \coqe{t}_1 & \dots & \smle{e}_n \stogexp \coqe{t}_n}{
-  \smle![e$_1$, ... , e$_n$]! \stogatexp \coqe![t$_1$; ... ;t$_n$]!
-}{AtExp}
+\infer[\mathsf{AtExp}_{\smles{op}}]{\smle{op VId} \stogatexp \tbd}{}
+\\
+\infer[\mathsf{AtExp}_{rec}]{\smle!\{$l_1 : t_1, \dots, l_n : t_n$\}! \stogatexp \tbd}{}
 \end{array}
 \]
-\laila{op VId, Records, and Units have not yet been translated}
+\giselle{G: add translations for op VId and Records.}
 
 Obs: the declarations \texttt{d} inside let-expressions are translated as
 ``top-level'' Coq declarations (that is why the \coqe{Definition} keyword is
 there). The translation \texttt{d'} or \texttt{d}$_i$ is extracted from this
 definition.
-
-\begin{paragraph}{\smle{option} expressions}
-In SML, the type \smle{option}, with constructors \smle{SOME} and \smle{NONE},
-is not built-in. Therefore, the keywords \smle{SOME} and \smle{NONE} are
-\lstinline{VId}s and would be translated as is (by rule $\mathsf{AtExp}_2$).
-This is problematic because Coq's option type constructors are \coqe{Some} and
-\coqe{None} (i.e. in a different capitalization). One way to solve this is to
-add special constructors for option types to SML's AST, much like we did for
-tuples and lists. However, unlike tuples and lists, option types are not
-recognized by the parser as special entities. This means we would need deeper
-changes in HaMLet to create dedicated constructors for options. To avoid these
-more intrusive modifications, we instead use rule $\mathsf{AtExp}_2$ with a
-\emph{side condition}: if \smle{e} is \smle{SOME} or \smle{NONE}, then it is
-translated to \coqe{Some} or \coqe{None}, respectively.
-\end{paragraph}
 
 
 \subsection{Expressions}
