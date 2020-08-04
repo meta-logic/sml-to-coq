@@ -230,9 +230,7 @@ Module Int.
                      end
     end.
 
-  Local Open Scope nat_scope.
-
-  Local Definition natToDigit (n: nat) : ascii :=
+(* Local Definition ZToDigit (n: Z) : ascii :=
     match n with
     | 0 => "0"
     | 1 => "1"
@@ -246,20 +244,126 @@ Module Int.
     | _ => "9"
     end.
 
+  Local Fixpoint writeZ (time: nat) (n: Z) (acc: string): string :=
+    let acc' := String (ZToDigit (n mod 10)) acc in
+    match time with
+      | 0%nat => acc'
+      | S time' =>
+        match n / 10 with
+          | 0 => acc'
+          | n' => writeZ time' n' acc'
+        end
+    end.
+
+Local Definition toString' (n: Z) : string := writeZ (Z.abs_nat(n)) n  "".
+
+  (* 
+    Sml: int -> string
+    Coq: Z -> string
+  *)
+  Definition toString (n: Z): string :=  
+    match (sameSign(n, (-1)))  with
+    | true  => "-" ++ (toString' n)
+    | false => (toString' n)
+    end.
+
+Compute toString (-9875879).
+
+   *)
+
+  Local Open Scope nat_scope.
+
+  Local Definition natToDigit (n: nat) : ascii :=
+    match n with
+    | 0 => "0"
+    | 1 => "1"
+    | 2 => "2"
+    | 3 => "3"
+    | 4 => "4"
+    | 5 => "5"
+    | 6 => "6"
+    | 7 => "7"
+    | 8 => "8"
+    | 9 => "9"
+    | 10 => "A"
+    | 11 => "B"
+    | 12 => "C"
+    | 13 => "D"
+    | 14 => "E"
+    | _ => "F"
+    end.
+
+  Local Fixpoint writeBin (time n: nat) (acc: string): string := 
+    let acc' := String (natToDigit (n mod 2)) acc in
+    match time with
+    | 0 => acc'
+    | S time' =>
+      match n / 2 with
+      | 0 => acc'
+      | n' => writeBin time' n' acc'
+      end
+    end.
+
+  Local Fixpoint writeOct (time n: nat) (acc: string): string := 
+    let acc' := String (natToDigit (n mod 8)) acc in
+    match time with
+    | 0 => acc'
+    | S time' =>
+      match n / 8 with
+      | 0 => acc'
+      | n' => writeOct time' n' acc'
+      end
+    end.
+
   Local Fixpoint writeNat (time n : nat) (acc : string) : string :=
-  let acc' := String (natToDigit (n mod 10)) acc in
-  match time with
+    let acc' := String (natToDigit (n mod 10)) acc in
+    match time with
     | 0 => acc'
     | S time' =>
       match n / 10 with
-        | 0 => acc'
-        | n' => writeNat time' n' acc'
+      | 0 => acc'
+      | n' => writeNat time' n' acc'
       end
-  end.
+    end.
+
+  Local Fixpoint writeHex (time n: nat) (acc: string): string := 
+    let acc' := String (natToDigit (n mod 16)) acc in
+    match time with
+    | 0 => acc'
+    | S time' =>
+      match n / 16 with
+      | 0 => acc'
+      | n' => writeHex time' n' acc'
+      end
+    end.
+
+
+
+  Local Definition toBinStr' (time n : nat) : string := writeBin time n "".
+
+  Local Definition toOctStr' (time n : nat) : string := writeOct time n "".
 
   Local Definition toString' (n : nat) : string := writeNat n n "".
 
+  Local Definition toHexStr' (time n : nat) : string := writeHex time n "".
+
   Local Close Scope nat_scope.
+
+  Local Definition toBinStr (n: Z): string :=
+    let n' := Z.abs_nat(n) in
+    let time := (Nat.add (Nat.log2 n') 1) in
+    match (sameSign(n, (-1)))  with
+    | true  => "-" ++ (toBinStr' time n')
+    | false => (toBinStr' time n')
+    end.
+
+  Local Definition toOctStr (n: Z): string :=
+    let n' := Z.abs_nat(n) in
+    let time := (Nat.add (Nat.div (Nat.log2 n') (Nat.log2 8)) 1) in
+    match (sameSign(n, (-1)))  with
+    | true  => "-" ++ (toOctStr' time n')
+    | false => (toOctStr' time n')
+    end.
 
   (* 
     Sml: int -> string
@@ -272,14 +376,24 @@ Module Int.
     | false => (toString' n')
     end.
 
+  Local Definition toHexStr (n: Z): string :=
+    let n' := Z.abs_nat(n) in
+    let time := (Nat.add (Nat.div (Nat.log2 n') (Nat.log2 16)) 1) in
+    match (sameSign(n, (-1)))  with
+    | true  => "-" ++ (toHexStr' time n')
+    | false => (toHexStr' time n')
+    end.
+
   (*
     Sml: StringCvt.radix -> int -> string
     Coq: StringCvt.radix -> Z -> string
-
-    - Since Z in Coq can only represent Decimal numbers, then the parameter 
-      radix should always be StringCvt.DEC and the function fmt expected to
-      convert only decimal numbers.
   *)
-  Definition fmt (radix:StringCvt.radix) (i:Z): string := toString i.
+  Definition fmt (radix: StringCvt.radix) (i:Z): string := 
+    match radix with 
+    | StringCvt.BIN => toBinStr i
+    | StringCvt.DEC => toString i
+    | StringCvt.OCT => toOctStr i
+    | StringCvt.HEX => toHexStr i
+    end.
 
 End Int.

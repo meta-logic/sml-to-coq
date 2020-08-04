@@ -1,9 +1,12 @@
 Require Import Bool.
-Require Import ZArith.
+Require Import intSml.
+Close Scope Z_scope.
 Require Import Ascii.
-Require Import String.
+Require Import stringSml.
 Require Export Floats.
+Require Import listSml.
 Require Import stringCvtSml.
+Require Import IEEERealSml.
 
 Module Real.
 
@@ -393,12 +396,6 @@ Module Real.
     if (f == 8) then 8 else
     if (f == 9) then 9 else 0%Z.
 
-  Inductive rounding_mode :=
-    | TO_NEAREST
-    | TO_NEGINF
-    | TO_POSINF
-    | TO_ZERO.
-
   Local Fixpoint toInt' (f:float) (time:nat) (acc:float) :float :=
     match time with
     | 0       => acc
@@ -413,8 +410,21 @@ Module Real.
                  toInt'' (realTrunc(f / 10)) time' ( 10 * acc + (f2zDigit m))
     end.
 
-  (* Fixpoint numDigits (f:float):nat :=
-    if (f==0) then (0%nat) else 1 + numDigits(realTrunc(f / 10)). *)
+  (*  (*
+    requires : f >= 0
+  *)
+  Fixpoint numDigits' (f: spec_float) (acc: nat): option nat :=
+    match f with
+    | S754_nan => None
+    | S754_infinity(s) => None
+    | S754_zero(s) => Some acc
+    | S754_finite s m e => 
+      if (SF2Prim f) >= 0 then Some acc else 
+      numDigits' (Prim2SF((SF2Prim f) / 10)) (Nat.add acc 1)
+    end.
+
+  Definition numDigits (f:float):nat :=
+    numDigits' (Prim2SF f) (0%nat). *)
 
   (*
     Sml: IEEEReal.rounding_mode -> real -> int
@@ -425,17 +435,17 @@ Module Real.
       doesn't support exceptions then it will return the axioms
       OverflowException, and DivException
     *)
-  Definition toInt (m:rounding_mode) (f:float) (nd:nat):Z :=
+  Definition toInt (m: IEEEReal.rounding_mode) (f:float) (nd:nat):Z :=
     if (f == infinity) then OverflowException else
     if (isNan f) then DivException else
     match m with 
-    | TO_NEAREST => if (f < 0) then -1 * (toInt'' (toInt' (abs(realRound f)) nd 0) nd 0)
+    | IEEEReal.TO_NEAREST => if (f < 0) then -1 * (toInt'' (toInt' (abs(realRound f)) nd 0) nd 0)
                     else toInt'' (toInt' (realRound f) nd 0) nd 0
-    | TO_NEGINF  => if (f < 0) then -1 * (toInt'' (toInt' (abs(realFloor f)) nd 0) nd 0)
+    | IEEEReal.TO_NEGINF  => if (f < 0) then -1 * (toInt'' (toInt' (abs(realFloor f)) nd 0) nd 0)
                     else toInt'' (toInt' (realFloor f) nd 0) nd 0
-    | TO_POSINF  => if (f < 0) then -1 * (toInt'' (toInt' (abs(realCeil f)) nd 0) nd 0)
+    | IEEEReal.TO_POSINF  => if (f < 0) then -1 * (toInt'' (toInt' (abs(realCeil f)) nd 0) nd 0)
                     else toInt'' (toInt' (realCeil f) nd 0) nd 0
-    | TO_ZERO    => if (f < 0) then -1 * (toInt'' (toInt' (abs(realCeil f)) nd 0) nd 0)
+    | IEEEReal.TO_ZERO    => if (f < 0) then -1 * (toInt'' (toInt' (abs(realCeil f)) nd 0) nd 0)
                     else toInt'' (toInt' (realFloor f) nd 0) nd 0
      end.
 
@@ -448,7 +458,7 @@ Module Real.
       doesn't support exceptions then it will return the axioms
       OverflowException, and DivException
     *)
-  Definition toLargeInt (m:rounding_mode) (f:float) (nd:nat):Z := toInt m f nd.
+  Definition toLargeInt (m:IEEEReal.rounding_mode) (f:float) (nd:nat):Z := toInt m f nd.
 
   (*
     Sml: real -> int
@@ -459,7 +469,7 @@ Module Real.
       doesn't support exceptions then it will return the axioms
       OverflowException, and DivException
     *)
-  Definition floor (r:float) (nd:nat):Z := toInt TO_NEGINF (realFloor r) nd.
+  Definition floor (r:float) (nd:nat):Z := toInt (IEEEReal.TO_NEGINF) (realFloor r) nd.
 
   (*
     Sml: real -> int
@@ -470,7 +480,7 @@ Module Real.
       doesn't support exceptions then it will return the axioms
       OverflowException, and DivException
     *)
-  Definition ceil (r:float) (nd:nat):Z := toInt TO_POSINF (realCeil r) nd.
+  Definition ceil (r:float) (nd:nat):Z := toInt (IEEEReal.TO_POSINF) (realCeil r) nd.
 
   (*
     Sml: real -> int
@@ -481,7 +491,7 @@ Module Real.
       doesn't support exceptions then it will return the axioms
       OverflowException, and DivException
     *)
-  Definition trunc (r:float) (nd:nat):Z := toInt TO_ZERO (realTrunc r) nd.
+  Definition trunc (r:float) (nd:nat):Z := toInt (IEEEReal.TO_ZERO) (realTrunc r) nd.
 
   (*
     Sml: real -> int
@@ -492,7 +502,7 @@ Module Real.
       doesn't support exceptions then it will return the axioms
       OverflowException, and DivException
     *)
-  Definition round (r:float) (nd:nat):Z := toInt TO_NEAREST (realRound r) nd.
+  Definition round (r:float) (nd:nat):Z := toInt (IEEEReal.TO_NEAREST) (realRound r) nd.
 
   (*
     Sml: int -> real
@@ -516,7 +526,7 @@ Module Real.
     Sml: IEEEReal.rounding_mode -> LargeReal.real -> real
     Coq: rounding_mode -> float -> float
   *)
-  Definition fromLarge (m:rounding_mode) (f:float):float := f.
+  Definition fromLarge (m:IEEEReal.rounding_mode) (f:float):float := f.
 
 
   Local Definition FToDigit (f: float) : string :=
@@ -568,19 +578,44 @@ Module Real.
       end
    end.
 
-  (*
-    Sml: StringCvt.radix -> real -> string
-    Coq: StringCvt.radix -> float -> nat -> string
 
-    - For now The user should give me how many digits, until we fix numdigits.
-
-    - Since Z in Coq can only represent Decimal numbers, then the parameter 
-      radix should always be StringCvt.DEC and the function fmt expected to
-      convert only decimal numbers.
+  (* 
+    Sml: real -> IEEEReal.decimal_approx
+    Coq: real -> nat -> IEEEReal.decimal_approx
   *)
-  Definition fmt (radix: StringCvt.radix) (i: float) (nd: nat): string:=
-    toString i nd.
+  Definition toDecimal (f: float) (nd: nat): IEEEReal.decimal_approx :=
+    match IEEEReal.fromString (toString f nd) with
+    | None => {| IEEEReal.class:=IEEEReal.NAN;  IEEEReal.sign:=false;
+                 IEEEReal.digits:=[]; IEEEReal.exp:=0%Z|}
+    | Some x => x
+    end.
 
+  Local Fixpoint compDigits (d: list Z) (acc: float) (i: Z) :=
+    match d with
+    | [] => Some acc
+    | x::d' => if Z.ltb x 0 || Z.gtb x 9 then None else
+      compDigits d' (acc + ((fromInt x) / fromInt(Z.pow 10%Z i))) (Z.add i 1)
+    end.
+
+  (* 
+    Sml: IEEEReal.decimal_approx -> real option
+    Coq: IEEEReal.decimal_approx -> real option
+  *)
+  Definition fromDecimal (d: IEEEReal.decimal_approx): option float :=
+    match d with  
+    | {| IEEEReal.class:=c;  IEEEReal.sign:=s;
+      IEEEReal.digits:=d; IEEEReal.exp:=e|} =>
+      match c with
+      | IEEEReal.NAN => Some ((if s then -1 else 1) * nan)
+      | IEEEReal.INF => Some ((if s then -1 else 1) * infinity)
+      | IEEEReal.ZERO => Some ((if s then -1 else 1) * zero)
+      | _ => 
+        match (compDigits d (0%float) (1%Z)) with
+        | None => None
+        | Some x => Some ((if s then -1 else 1) * x * (fromInt(Z.pow 10%Z e)))
+        end
+      end
+    end.
 
   Local Definition digitToF (c: ascii) : option float :=
     match c with
@@ -642,15 +677,141 @@ Module Real.
                      end
     end.
 
-(* Not implemented yet
-   scan
-*)
+  Local Fixpoint compDigits' (d: list Z) (acc: float) (i: Z) :=
+    match d with
+    | [] => acc
+    | x::d' =>
+      compDigits' d' (acc + ((fromInt x) / fromInt(Z.pow 10%Z i))) (Z.add i 1)
+    end.
 
-(*
-   There is no type representation for Decimals such as in Sml.
-   toDecimal
-   fromDecimal
-*)
+  Local Fixpoint remZeros (l: list Z): list Z :=
+    match l with
+    | nil => nil
+    | x::l' => if Z.eqb x 0 then remZeros l' else x::l'
+    end.
+
+  Local Definition fmtSCI (arg: option Z) (f: float) (nd: nat) :=
+    match toDecimal f nd with 
+    {| IEEEReal.class:=c;  IEEEReal.sign:=s;
+    IEEEReal.digits:=d; IEEEReal.exp:=e|} =>
+      let dLen := List.length d in
+      let d' := remZeros d in
+      let dLen' := List.length d' in
+      let e' := Z.sub e 1 in
+      match arg with
+      | None   =>
+        let s' := 
+        (toString (((compDigits' (match Z.compare dLen' 7%Z with
+        | Lt => d' ++ (List.tabulate(Z.sub 7%Z dLen', (fun x => 0%Z)))
+        | Gt => List.take(d', 7%Z)
+        | Eq => d' end) 0 1) + (if (Z.gtb dLen' 7%Z) then
+        if (Z.gtb (List.nth(d',7%Z)) 4%Z) then (1/1e6) else 0 else 0))*10) nd) in
+        let lex := String.size (Int.toString e') in
+        let j := Z.add 7%Z lex in
+        (String.append (String.substring(s', 0%Z, j))
+        (String.append "E"%string  (Int.toString e')))
+      | Some x =>
+        let s' := 
+        (toString (((compDigits' (match Z.compare dLen' (Z.add 1 x) with
+        | Lt => d' ++ (List.tabulate(Z.sub (Z.add 1 x) dLen', (fun i => 0%Z)))
+        | Gt => List.take(d', Z.sub dLen' (Z.add 1 x))
+        | Eq => d' end) 0 1) + (if (Z.gtb dLen' (Z.add 1 x)) then
+        if (Z.gtb (List.nth(d',(Z.add 1 x))) 4%Z)
+        then (1 / fromInt(Z.pow 10%Z x)) else 0 else 0)) * 10) nd) in
+        let lex := String.size (Int.toString e') in
+        let j := Z.add (Z.add 1%Z x) lex in
+        (String.append (String.substring(s', 0%Z, j))
+        (String.append "E"%string  (Int.toString e')))
+      end
+    end.
+
+  Local Fixpoint getDecPointInd (s: string) (pos: Z) :=
+    match s with
+    | ""%string => pos
+    | String c s' => match Ascii.eqb c "." with
+                     | true => pos
+                     | false => getDecPointInd s' (Z.add pos 1)
+                     end
+    end.
+
+  Local Definition digitToZ (c: ascii): Z :=
+    match c with
+    | "0"%char => 0%Z
+    | "1"%char => 1%Z
+    | "2"%char => 2%Z
+    | "3"%char => 3%Z
+    | "4"%char => 4%Z
+    | "5"%char => 5%Z
+    | "6"%char => 6%Z
+    | "7"%char => 7%Z
+    | "8"%char => 8%Z
+    | "9"%char => 9%Z
+    | _ => 10%Z
+    end.
+
+  Local Definition valOf (x: option float): float :=
+    match x with
+    | Some s => s
+    | None   => UnorderedException
+    end.
+
+  Local Definition fmtFIX (arg: option Z) (f: float) (nd: nat) :=
+    let s := toString f nd in
+    let i := getDecPointInd s 0 in
+    let numDec := Z.sub (String.size s) (Z.add i 1) in
+    match arg with
+    | None => 
+      match Z.compare numDec 6%Z with
+      | Lt => 
+        String.append s 
+        (String.implode(List.tabulate(Z.sub 6%Z numDec,(fun i=>"0"%char))))
+      | Gt =>
+        let j  := Z.sub (String.size s)(numDec - 6%Z) in
+        let s' := String.substring(s,0%Z,j) in
+        let l  := (String.length s') in
+        if Z.ltb (digitToZ(String.sub(s,j))) 5 then
+        s' else 
+        String.substring(
+          toString(valOf(fromString s)+(1/fromInt(Z.pow 10%Z 6%Z))) l, 0%Z, j)
+      | Eq => s
+      end
+    | Some x =>
+      match Z.compare numDec x with
+      | Lt => 
+        String.append s 
+        (String.implode(List.tabulate(Z.sub x numDec,(fun i=>"0"%char))))
+      | Gt =>
+        let j  := Z.sub (String.size s)(numDec - x) in
+        let s' := String.substring(s,0%Z,j) in
+        let l  := (String.length s') in
+        if Z.ltb (digitToZ(String.sub(s,j))) 5 then
+        s' else 
+        String.substring(
+          toString(valOf(fromString s)+(1/fromInt(Z.pow 10%Z x))) l, 0%Z, j)
+      | Eq => s 
+      end
+    end.
+
+  (*
+    Sml: StringCvt.radix -> real -> string
+    Coq: StringCvt.radix -> float -> nat -> string
+
+    - For now The user should give me how many digits, until we fix numdigits.
+
+  *)
+  Definition fmt (radix: StringCvt.realfmt) (f: float) (nd: nat): string:=
+    match radix with
+    | StringCvt.SCI arg => fmtSCI arg f nd
+    | StringCvt.FIX arg => fmtFIX arg f nd
+    | StringCvt.GEN arg =>
+      let FIX := (fmtFIX arg f nd) in
+      let SCI := (fmtSCI arg f nd) in
+      match Z.compare (String.size FIX) (String.size SCI) with
+      | Lt => SCI
+      | _  => FIX
+      end
+    | StringCvt.EXACT   => toString f nd
+    end.
 
 End Real.
 
