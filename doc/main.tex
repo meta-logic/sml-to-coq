@@ -293,7 +293,9 @@ derivation (which ) solves the problem.
 
 In this section we define the translation from our modified HaMLet AST to our
 also modified Gallina's AST. We will use a derivation system with the judgment
-$S \stog G$, where $S$ and $G$ are SML and Gallina ASTs respectively.
+$S \stog G$, where $S$ and $G$ are SML and Gallina ASTs respectively. Gallina 
+variables are typically denoted by \coqe{x\g}, so that the prime symbol \smle{'}
+is reserved for SML's type variables.
 
 The sections below are in the same order as SML's AST definition in the
 appendix.
@@ -352,35 +354,40 @@ Coq. Therefore, we prefix type variables in Coq by \coqe{_}.
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{cc}
-\infer[\mathsf{TyExp}_{()}]{\smle!( t )! \stogty \coqe!( t' )!}{
-  \smle{t} \stogty \coqe{t'}
+\infer[\mathsf{TyExp}_{()}]{\smle{(t)} \stogty \coqe{(t\\g)}}{
+  \smle{t} \stogty \coqe{t\\g}
 }
 &
-\infer[\mathsf{TyExp}_{\smles{->}}]{t_1 \smle{->} t_2 \stogty t'_1 \coqe{->} t'_2}{
-  t_1 \stogty t'_1
+\infer[\mathsf{TyExp}_{\smles{->}}]{\smle{t_1 -> t_2} \stogty \coqe{t\\g_1 -> t\\g_2}}{
+  \smle{t_1} \stogty \coqe{t\\g_1}
   &
-  t_2 \stogty t'_2}
+  \smle{t_2} \stogty \coqe{t\\g_2}
+}
 \end{array}
 \]
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{c}
-\infer[\mathsf{TyExp}_{\smles{TyCon}}]{\smle!$t_1, \dots, t_n\;$ con! \stogty \coqe!con' $\;t'_1 \dots t'_n$!}{
-  \smle{con} \stogtycon \coqe{con'}
+\infer[\mathsf{TyExp}_{\smles{TyCon}}]{\smle{t_1, \\dots ,t_n con} \stogty \coqe{con\\g t\\g_1 ... t\\g_n}}{
+  \smle{con} \stogtycon \coqe{con\\g}
   &
-  t_i \stogty t'_i & \forall i. 1 \leq i \leq n, n \geq 0
+  \smle{t_i} \stogty \coqe{t\\g_i} 
+  & 
+  \forall i. 1 \leq i \leq n, n \geq 0
 }
 \\
-\infer[\mathsf{TyExp}_{\smles{*}}]{\smle!($t_1$ * $t_2$ * ... * $t_n$)! \stogty 
-                      \coqe!($t'_1$ * $t'_2$ * ... * $t'_n$)\%type!}
+\infer[\mathsf{TyExp}_{\smles{*}}]{\smle{(t_1 * t_2 * \\dots * t_n)} \stogty 
+                                   \coqe{(t\\g_1 * t\\g_2 * ... * t\\g_n)\%type}}
 {
-  t_i \stogty t'_i & \forall i. 1 \leq i \leq n, n \geq 1
+  \smle{t_i} \stogty \coqe{t\\g_i} 
+  & 
+  \forall i. 1 \leq i \leq n, n \geq 1
 }
 \\
-\infer[\mathsf{TyExp}_{rec}]{\smle!\{ $l_1 : t_1, \dots, l_n : t_n$ \}! \stogty \smle!\{ $l'_1 : t'_1; \dots; l'_n : t'_n$ \}!}{
-  l_i \stoglab l'_i
+\infer[\mathsf{TyExp}_{rec}]{\smle{\{ l_1: t_1, \\dots, l_n: t_n \}} \stogty \coqe!\{ l\\g_1: t\\g_1; ...; l\\g_n: t\\g_n \}!}{
+  \smle{l_i} \stoglab \coqe{l\\g_i}
   &
-  t_i \stogty t'_i
+  \smle{t_i} \stogty \coqe{t\\g_i}
   &
   \forall i. 1 \leq i \leq n, n \geq 1
 }
@@ -402,22 +409,23 @@ mutually recursive, we need to use \coqe{Fixpoint}, thus the
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{c}
-\infer[\mathsf{TyBind}_0]{\smle!$'v_1, \dots, 'v_n$ con = t! \stogtybind \coqe!con' $v'_1 \dots v'_n$ = t'!}{
-  \smle{con} \stogtycon \coqe{con'}
+\infer[\mathsf{TyBind}_0]{\smle{'v_1, \\dots ,'v_n con = t} \stogtybind \coqe{con\\g v\\g_1 ... v\\g_n = t\\g}}{
+  \smle{con} \stogtycon \coqe{con\\g}
   &
-  \smle{t} \stogty \coqe{t'}
+  \smle{t} \stogty \coqe{t\\g}
   &
-  'v_i \stogty v'_i \;\; \forall i. 1 \leq i \leq n, n \geq 0
+  \smle{'v_i} \stogty \coqe{v\\g_i} 
+  &
+  \forall i. 1 \leq i \leq n, n \geq 0
 }
 \\
-\infer[\mathsf{TyBind}]{\smle{b and tb} \stogtybind \coqe{b' end with tb'}}{
-  \smle{b} \stogtybind \coqe{b'}
+\infer[\mathsf{TyBind}]{\smle{b and tb} \stogtybind \coqe{b\\g end with tb\\g}}{
+  \smle{b} \stogtybind \coqe{b\\g}
   &
-  \smle{tb} \stogtybind \coqe{tb'}
+  \smle{tb} \stogtybind \coqe{tb\\g}
 }
 \end{array}
 \]
-\giselle{Fix primes type vars in the conclusion of first rule.}
 
 \subsection{Special constants}
 
@@ -448,11 +456,11 @@ Special constants are value inhabitants of \smle{int}, \smle{real},
 \begin{array}{cc}
 \infer[\mathsf{SCon}_{\smles{int}}]{\smle{n} \stogscon \coqe{n}}{}
 &
-\infer[\mathsf{SCon}_{\smles{int}_{-}}]{\smle!$\sim$ n! \stogscon \coqe{- n}}{}
+\infer[\mathsf{SCon}_{\smles{int-}}]{\smle!$\sim$ n! \stogscon \coqe{- n}}{}
 \\
 \infer[\mathsf{SCon}_{\smles{real}}]{\smle{r} \stogscon \coqe{r\%float}}{}
 &
-\infer[\mathsf{SCon}_{\smles{real}_{-}}]{\smle!$\sim$ r! \stogscon \coqe{(- r)\%float}}{}
+\infer[\mathsf{SCon}_{\smles{real-}}]{\smle!$\sim$ r! \stogscon \coqe{(- r)\%float}}{}
 \\
 \infer[\mathsf{SCon}_{\smles{string}}]{\smle{s} \stogscon \coqe{s}}{}
 &
@@ -523,130 +531,134 @@ What do we do with Coq keywords? Are identifiers using dot considered as VId?}
 \[
 \arraycolsep=15pt\def\arraystretch{3}
 \begin{array}{cc}
-\infer[\mathsf{AtExp}_{\smles{SCon}}]{\smle{c} \stogatexp \coqe{c'}}{
-  \smle{c} \stogscon \coqe{c'}
+\infer[\mathsf{AtExp}_{\smles{SCon}}]{\smle{c} \stogatexp \coqe{c\\g}}{
+  \smle{c} \stogscon \coqe{c\\g}
 }
 &
-\infer[\mathsf{AtExp}_{\smles{VId}}]{\smle{id} \stogatexp \coqe{id'}}{
-  \smle{id} \stogvid \coqe{id'}
+\infer[\mathsf{AtExp}_{\smles{VId}}]{\smle{id} \stogatexp \coqe{id\\g}}{
+  \smle{id} \stogvid \coqe{id\\g}
 }
 \\
 \infer[\mathsf{AtExp}_{\smles{()}}]{\smle{()} \stogatexp \coqe{()}}{}
 &
-\infer[\mathsf{AtExp}_{\smles{(e)}}]{\smle{(e)} \stogatexp \coqe{(e')}}{
-  \smle{e} \stogexp \coqe{e'}
+\infer[\mathsf{AtExp}_{\smles{(e)}}]{\smle{(e)} \stogatexp \coqe{(e\\g)}}{
+  \smle{e} \stogexp \coqe{e\\g}
 }
 \end{array}
 \]
 \[
 \arraycolsep=15pt\def\arraystretch{3}
 \begin{array}{c}
-\infer[\mathsf{AtExp}_{\smles{let}_1}]{\smle{let d in e end} \stogatexp \coqe{let d' in t}}{
-  \smle{e} \stogexp \coqe{t} & \smle{d}\stogdec \coqe{Definition d'}
+\infer[\mathsf{AtExp}_{\smles{let}_1}]{\smle{let d in e end} \stogatexp \coqe{let d\\g in e\\g}}{
+  \smle{e} \stogexp \coqe{e\\g} & \smle{d}\stogdec \coqe{Definition d\\g}
 }
 \\
-\infer[\mathsf{AtExp}_{\smles{let}_n}]{\smle{let d in e end} \stogatexp \coqe!let d$_1$ in ... in let d$_n$ in t!}{
-  \begin{gathered}
-  \smle{e} \stogexp \coqe{t} \quad \smle{d}\stogdec \coqe{sentence}_1 ... \coqe{sentence}_n \\ 
-  \coqe{sentence}_1 \equiv \coqe{Definition d}_1 \quad ... \quad \coqe{sentence}_n \equiv \coqe{Definition d}_n 
-  \end{gathered}
+\infer[\mathsf{AtExp}_{\smles{let}_n}]{\smle{let d in e end} \stogatexp \coqe{let d_1 in ... in let d_n in e\\g}}{
+  \smle{e} \stogexp \coqe{e\\g}
+  &
+  \smle{d}\stogdec \coqe{Definition d_1 ... Definition d_n} 
 }
 \\
-\infer[\mathsf{AtExp}_{tpl}]{\smle!($e_1, \dots, e_n$)! \stogatexp \coqe!($e'_1, \dots,e'_n$)!}{
-  e_i \stogexp e'_i 
+\infer[\mathsf{AtExp}_{tpl}]{\smle{(e_1, \\dots ,e_n)} \stogatexp \coqe{(e\\g_1, ...,e\\g_n)}}{
+  \smle{e_i} \stogexp \coqe{e\\g_i} 
   & 
   \forall i. 1 \leq i \leq n, n \geq 1
 }
 \\
-\infer[\mathsf{AtExp}_{lst}]{\smle![$e_1, \dots, e_n$]! \stogatexp \coqe![$e'_1; \dots;e'_n$]!}{
-  e_i \stogexp e'_i 
+\infer[\mathsf{AtExp}_{lst}]{\smle{[e_1, \\dots ,e_n]} \stogatexp \coqe{[e\\g_1; ...;e\\g_n]}}{
+  \smle{e_i} \stogexp \coqe{e\\g_i} 
   & 
   \forall i. 1 \leq i \leq n, n \geq 0
 }
 \\
 \infer[\mathsf{AtExp}_{\smles{op}}]{\smle{op id} \stogatexp \tbd}{}
 \\
-\infer[\mathsf{AtExp}_{rec}]{\smle!\{$l_1 : t_1, \dots, l_n : t_n$\}! \stogatexp \tbd}{}
+\infer[\mathsf{AtExp}_{rec}]{\smle{\{l_1 = e_1, \\dots, l_n = e_n\}} \stogatexp \coqe!\{| l\\g_1 = e\\g_1; ...; l\\g_n = e\\g_n |\}!}{
+  \smle{l_i} \stoglab \coqe{l\\g_i}
+  &
+  \smle{e_i} \stogexp \coqe{e\\g_i}
+  &
+  \forall i. 1 \leq i \leq n, n \geq 1
+}
 \end{array}
 \]
-\giselle{add translations for op VId and Records.}
+\giselle{add translations for op VId and check translation for Records.}
 
-Obs: the declarations \texttt{d} inside let-expressions are translated as
+The declarations \smle{d} inside SML let-expressions are translated as
 ``top-level'' Coq declarations (that is why the \coqe{Definition} keyword is
-there). The translation \texttt{d'} or \texttt{d}$_i$ is extracted from this
+there). The translation \coqe{d\g} or \coqe{d_i} is extracted from this
 definition.
 
 
 \subsection{Expressions}
 
 \[
-\arraycolsep=15pt\def\arraystretch{3}
+\arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{cc}
-\infer[\mathsf{Exp}_{\smles{AtExp}}]{\smle{e} \stogexp \coqe{e'}}{
-  \smle{e} \stogatexp \coqe{e'}
+\infer[\mathsf{Exp}_{\smles{AtExp}}]{\smle{e} \stogexp \coqe{e\\g}}{
+  \smle{e} \stogatexp \coqe{e\\g}
 }
 &
-\infer[\mathsf{Exp}_{app}]{\smle!e$_1$ e$_2$! \stogexp \coqe!e$_1$' e$_2$'!}{
-  \smle!e$_1$! \stogexp \coqe!e$_1$'!
+\infer[\mathsf{Exp}_{app}]{\smle{e_1 e_2} \stogexp \coqe{e\\g_1 e\\g_2}}{
+  \smle{e_1} \stogexp \coqe{e\\g_1}
   &
-  \smle!e$_2$! \stogatexp \coqe!e$_2$'!
+  \smle{e_2} \stogatexp \coqe{e\\g_2}
 }
 \\
-\infer[\mathsf{Exp}_{ty}]{\smle{e : t} \stogexp \coqe{e' : t'}}{
-  \smle{e} \stogexp \coqe{e'}
+\infer[\mathsf{Exp}_{ty}]{\smle{e : t} \stogexp \coqe{e\\g : t\\g}}{
+  \smle{e} \stogexp \coqe{e\\g}
   &
-  \smle{t} \stogty \coqe{t'}
+  \smle{t} \stogty \coqe{t\\g}
 }
 &
 \infer[\mathsf{Exp}_{\smles{fn}}]{\smle{fn m} \stogexp \tbd}{
-  \smle{m} \stogmatch \coqe{m'}
+  \smle{m} \stogmatch \coqe{m\\g}
 }
 \\
 \infer[\mathsf{Exp}_{\smles{handle}}]{\smle{e handle m} \stogexp \tbd}{
-  \smle{e} \stogexp \coqe{e'}
+  \smle{e} \stogexp \coqe{e\\g}
   &
-  \smle{m} \stogmatch \coqe{m'}
+  \smle{m} \stogmatch \coqe{m\\g}
 }
 &
 \infer[\mathsf{Exp}_{\smles{raise}}]{\smle{raise e} \stogexp \tbd}{
-  \smle{e} \stogexp \coqe{e'}
+  \smle{e} \stogexp \coqe{e\\g}
 }
 \end{array}
 \]
 \[
 \arraycolsep=15pt\def\arraystretch{3}
 \begin{array}{c}
-\infer[\mathsf{Exp}_{\smles{case}}]{\smle{case e of m} \stogexp \coqe{match e' with m' end}}{
-  \smle{e} \stogexp \coqe{e'}
+\infer[\mathsf{Exp}_{\smles{case}}]{\smle{case e of m} \stogexp \coqe{match e\\g with m\\g end}}{
+  \smle{e} \stogexp \coqe{e\\g}
   &
-  \smle{m} \stogmatch \coqe{m'}
+  \smle{m} \stogmatch \coqe{m\\g}
 }
 \\
-\infer[\mathsf{Exp}_{\smles{if}}]{\smle!if e$_1$ then e$_2$ else e$_3$! \stogexp 
-                    \coqe!if e$_1$' then e$_2$' else e$_3$'!}{
-  \smle!e$_i$! \stogexp \coqe!e$_i$'!
+\infer[\mathsf{Exp}_{\smles{if}}]{\smle{if e_1 then e_2 else e_3} \stogexp 
+                                  \coqe{if e\\g_1 then e\\g_2 else e\\g_3}}{
+  \smle{e_i} \stogexp \coqe{e\\g_i}
   &
   \forall i \in \{1,2,3\}
 }
 \end{array}
 \]
 \[
-\arraycolsep=15pt\def\arraystretch{3}
+\arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{cc}
-\infer[\mathsf{Exp}_{and}]{\smle!e$_1$ andalso e$_2$! \stogexp 
-                     \coqe!e$_1$' \&\& e$_2$'!}{
-  \smle!e$_1$! \stogexp \coqe!e$_1$'!
+\infer[\mathsf{Exp}_{and}]{\smle{e_1 andalso e_2} \stogexp 
+                           \coqe{e\\g_1 \&\& e\\g_2}}{
+  \smle{e_1} \stogexp \coqe{e\\g_1}
   &
-  \smle!e$_2$! \stogexp \coqe!e$_2$'!
+  \smle{e_2} \stogexp \coqe{e\\g_2}
 }
 &
-\infer[\mathsf{Exp}_{or}]{\smle!e$_1$ orelse e$_2$! \stogexp 
-                     \coqe!e$_1$' || e$_2$'!}{
-  \smle!e$_1$! \stogexp \coqe!e$_1$'!
+\infer[\mathsf{Exp}_{or}]{\smle{e_1 orelse e_2} \stogexp 
+                          \coqe{e\\g_1 || e\\g_2}}{
+  \smle{e_1} \stogexp \coqe{e\\g_1}
   &
-  \smle!e$_2$! \stogexp \coqe!e$_2$'!
+  \smle{e_2} \stogexp \coqe{e\\g_2}
 }
-\\
 \end{array}
 \]
 
@@ -661,18 +673,18 @@ in Coq's \coqe{Bool} library.
 \[
 \arraycolsep=15pt\def\arraystretch{3}
 \begin{array}{c}
-\infer[\mathsf{Match}_0]{\smle{p => e} \stogmatch \coqe{p' => e'}}{
-  \smle{p} \stogpat \coqe{p'}
+\infer[\mathsf{Match}_0]{\smle{p => e} \stogmatch \coqe{p\\g => e\\g}}{
+  \smle{p} \stogpat \coqe{p\\g}
   &
-  \smle{e} \stogexp \coqe{e'}
+  \smle{e} \stogexp \coqe{e\\g}
 }
 \\
-\infer[\mathsf{Match}]{\smle{p => e | M} \stogmatch \coqe{p' => e' | M'}}{
-  \smle{p} \stogpat \coqe{p'}
+\infer[\mathsf{Match}]{\smle{p => e | M} \stogmatch \coqe{p\\g => e\\g | M\\g}}{
+  \smle{p} \stogpat \coqe{p\\g}
   &
-  \smle{e} \stogexp \coqe{e'}
+  \smle{e} \stogexp \coqe{e\\g}
   &
-  \smle{M} \stogmatch {M'}
+  \smle{M} \stogmatch \coqe{M\\g}
 }
 
 \end{array}
@@ -685,18 +697,18 @@ in Coq's \coqe{Bool} library.
 \begin{array}{cc}
 \infer[\mathsf{AtPat}_{\_}]{\smle{_} \stogatpat \coqe{_}}{}
 &
-\infer[\mathsf{AtPat}_{\smles{SCon}}]{\smle{c} \stogatpat \coqe{c'}}{
-  \smle{c} \stogscon \coqe{c'}
+\infer[\mathsf{AtPat}_{\smles{SCon}}]{\smle{c} \stogatpat \coqe{c\\g}}{
+  \smle{c} \stogscon \coqe{c\\g}
 }
 \\
-\infer[\mathsf{AtPat}_{\smles{VId}}]{\smle{id} \stogatpat \coqe{id'}}{
-  \smle{id} \stogvid \coqe{id'}
+\infer[\mathsf{AtPat}_{\smles{VId}}]{\smle{id} \stogatpat \coqe{id\\g}}{
+  \smle{id} \stogvid \coqe{id\\g}
 }
 &
 \infer[\mathsf{AtPat}_{\smles{op}}]{\smle{op id} \stogatpat \tbd}{}
 \\
-\infer[\mathsf{AtPat}_{\smles{(p)}}]{\smle{(p)} \stogatpat \coqe{(p')}}{
-  \smle{p} \stogpat \coqe{p'}
+\infer[\mathsf{AtPat}_{\smles{(p)}}]{\smle{(p)} \stogatpat \coqe{(p\\g)}}{
+  \smle{p} \stogpat \coqe{p\\g}
 }
 &
 \infer[\mathsf{AtPat}_{\smles{()}}]{\smle{()} \stogatpat \coqe{()}}{}
@@ -705,27 +717,48 @@ in Coq's \coqe{Bool} library.
 \[
 \arraycolsep=15pt\def\arraystretch{3}
 \begin{array}{c}
-\infer[\mathsf{AtPat}_{tpl}]{\smle!($p_1, \dots, p_n$)! \stogatpat \coqe!($p'_1, \dots,p'_n$)!}{
-  p_i \stogpat p'_i 
+\infer[\mathsf{AtPat}_{tpl}]{\smle{(p_1, \\dots ,p_n)} \stogatpat \coqe{(p\\g_1, ...,p\\g_n)}}{
+  \smle{p_i} \stogpat \coqe{p\\g_i} 
   & 
   \forall i. 1 \leq i \leq n, n \geq 1
 }
 \\
-\infer[\mathsf{AtPat}_{lst}]{\smle![$p_1, \dots, p_n$]! \stogatpat \coqe![$p'_1; \dots;p'_n$]!}{
-  p_i \stogpat p'_i 
+\infer[\mathsf{AtPat}_{lst}]{\smle{[p_1, \\dots ,p_n]} \stogatpat \coqe{[p\\g_1; ...;p\\g_n]}}{
+  \smle{p_i} \stogpat \coqe{p\\g_i} 
   & 
   \forall i. 1 \leq i \leq n, n \geq 0
 }
 \\
-\infer[\mathsf{AtPat}_{rec}]{\smle{\{ recpat \}} \stogatpat \coqe{\{ recpat' \}}}{
-  \smle{recpat} \stogpatrow \coqe{recpat'}
+\infer[\mathsf{AtPat}_{rec}]{\smle{\{ p \}} \stogatpat \coqe!\{ p\\g \}!}{
+  \smle{p} \stogpatrow \coqe{p\\g}
 }
 \end{array}
 \]
 
 \subsection{Record Patterns}
 
-TODO
+\[
+\arraycolsep=15pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{PatRow}_{\dots}]{\smle!$\dots$! \stogpatrow \tbd}{}
+&
+\infer[\mathsf{PatRow}_0]{\smle{l = p} \stogpatrow \coqe{l\\g = p\\g}}{
+  \smle{l} \stoglab \coqe{l\\g}
+  &
+  \smle{p} \stogpat \coqe{p\\g}
+}
+\end{array}
+\]
+\[
+\arraycolsep=15pt\def\arraystretch{3}
+\begin{array}{c}
+\infer[\mathsf{PatRow}]{\smle{lp, pr} \stogpatrow \coqe{lp\\g ; pr\\g}}{
+  \smle{lp} \stogpatrow \coqe{lp\\g}
+  &
+  \smle{pr} \stogpatrow \coqe{pr\\g}
+}
+\end{array}
+\]
 
 \subsection{Patterns}
 
@@ -845,7 +878,7 @@ Ty ::= TyVar
 /* Atomic Expressions */
 AtExp ::= SCon 
         | !$\langle$!op!$\rangle$! VId 
-        | {Lab: Exp, Lab: Exp, ..., Lab: Exp} 
+        | {Lab = Exp, Lab = Exp, ..., Lab = Exp} 
         | let Dec in Exp end 
         | (Exp) 
         /* Added expressions (records in hamlet) */
