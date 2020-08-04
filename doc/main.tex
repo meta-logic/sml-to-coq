@@ -90,7 +90,6 @@
 % Macros for translation
 \newcommand\stog{\boldsymbol{\Longrightarrow}}
 \newcommand\stogtycon{\;\stog_\mathtt{TyCon}\;}
-\newcommand\stogtyvar{\;\stog_\mathtt{TyVar}\;}
 \newcommand\stogatexp{\;\stog_\mathtt{AtExp}\;}
 \newcommand\stogexp{\;\stog_\mathtt{Exp}\;}
 \newcommand\stogmatch{\;\stog_\mathtt{Match}\;}
@@ -336,24 +335,17 @@ to be translated to the corresponding types in Coq.
 \end{array}
 \]
 
-\subsection{Type Variables}
+
+\subsection{Type Expressions}
 
 Type variables in SML are prefixed by \smle{'}, but this is illegal in
 Coq. Therefore, we prefix type variables in Coq by \coqe{_}.
 
 \[
-\infer[\mathsf{TyVar}]{\smle{'tyvar} \stogtyvar \coqe{_tyvar}}{
-  \smle{tyvar} \text{ is alphanumeric}
-}
-\]
-
-\subsection{Type Expressions}
-
-\[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{c}
-\infer[\mathsf{TyExp}_{\smles{TyVar}}]{\smle{t} \stogty \coqe{t'}}{
-  \smle{t} \stogtyvar \coqe{t'}
+\infer[\mathsf{TyExp}_{\smles{TyVar}}]{\smle{'t} \stogty \coqe{_t}}{
+  \smle{t} \text{ is alphanumeric}
 }
 \end{array}
 \]
@@ -394,11 +386,12 @@ Coq. Therefore, we prefix type variables in Coq by \coqe{_}.
 }
 \end{array}
 \]
-\giselle{G: Why is the \%\coqes{type} needed in the translation of tuple types?}
+\giselle{Why is the \%\coqes{type} needed in the translation of tuple types?}
 
 Notice that type constructors may take 0 arguments 
-(rule $\mathsf{TyExp}_{\smles{TyCon}}$), but tuple types must consist of 
-at least one type (rule $\mathsf{TyExp}_{\smles{*}}$).
+(rule $\mathsf{TyExp}_{\smles{TyCon}}$), but tuple and record types 
+must consist of at least one type 
+(rules $\mathsf{TyExp}_{\smles{*}}$ and $\mathsf{TyExp}_{rec}$).
 
 \subsection{Type Bindings}
 
@@ -409,12 +402,12 @@ mutually recursive, we need to use \coqe{Fixpoint}, thus the
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{c}
-\infer[\mathsf{TyBind}_0]{\smle!$v_1, \dots, v_n$ con = t! \stogtybind \coqe!con' $v'_1 \dots v'_n$ = t'!}{
+\infer[\mathsf{TyBind}_0]{\smle!$'v_1, \dots, 'v_n$ con = t! \stogtybind \coqe!con' $v'_1 \dots v'_n$ = t'!}{
   \smle{con} \stogtycon \coqe{con'}
   &
   \smle{t} \stogty \coqe{t'}
   &
-  v_i \stogtyvar v'_i \;\; \forall i. 1 \leq i \leq n, n \geq 0
+  'v_i \stogty v'_i \;\; \forall i. 1 \leq i \leq n, n \geq 0
 }
 \\
 \infer[\mathsf{TyBind}]{\smle{b and tb} \stogtybind \coqe{b' end with tb'}}{
@@ -424,6 +417,7 @@ mutually recursive, we need to use \coqe{Fixpoint}, thus the
 }
 \end{array}
 \]
+\giselle{Fix primes type vars in the conclusion of first rule.}
 
 \subsection{Special constants}
 
@@ -575,7 +569,7 @@ What do we do with Coq keywords? Are identifiers using dot considered as VId?}
 \infer[\mathsf{AtExp}_{rec}]{\smle!\{$l_1 : t_1, \dots, l_n : t_n$\}! \stogatexp \tbd}{}
 \end{array}
 \]
-\giselle{G: add translations for op VId and Records.}
+\giselle{add translations for op VId and Records.}
 
 Obs: the declarations \texttt{d} inside let-expressions are translated as
 ``top-level'' Coq declarations (that is why the \coqe{Definition} keyword is
