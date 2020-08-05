@@ -230,47 +230,6 @@ Module Int.
                      end
     end.
 
-(* Local Definition ZToDigit (n: Z) : ascii :=
-    match n with
-    | 0 => "0"
-    | 1 => "1"
-    | 2 => "2"
-    | 3 => "3"
-    | 4 => "4"
-    | 5 => "5"
-    | 6 => "6"
-    | 7 => "7"
-    | 8 => "8"
-    | _ => "9"
-    end.
-
-  Local Fixpoint writeZ (time: nat) (n: Z) (acc: string): string :=
-    let acc' := String (ZToDigit (n mod 10)) acc in
-    match time with
-      | 0%nat => acc'
-      | S time' =>
-        match n / 10 with
-          | 0 => acc'
-          | n' => writeZ time' n' acc'
-        end
-    end.
-
-Local Definition toString' (n: Z) : string := writeZ (Z.abs_nat(n)) n  "".
-
-  (* 
-    Sml: int -> string
-    Coq: Z -> string
-  *)
-  Definition toString (n: Z): string :=  
-    match (sameSign(n, (-1)))  with
-    | true  => "-" ++ (toString' n)
-    | false => (toString' n)
-    end.
-
-Compute toString (-9875879).
-
-   *)
-
   Local Open Scope nat_scope.
 
   Local Definition natToDigit (n: nat) : ascii :=
