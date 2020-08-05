@@ -762,8 +762,61 @@ in Coq's \coqe{Bool} library.
 
 \subsection{Patterns}
 
-TODO
+In Coq, patterns cannot be typed (error ``Casts are not supported in
+this pattern''). Therefore, we ignore types in patterns coming from
+SML (rules $\mathsf{Pat}_{\smles{Ty}}$, $\mathsf{Pat}_{\smles{as/ty}}$, 
+and $\mathsf{Pat}_{\smles{op/as/ty}}$).
+\giselle{Can this be problematic in any way?}
 
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{Pat}_{\smles{AtPat}}]{\smle{p} \stogpat \coqe{p\\g}}{
+  \smle{p} \stogatpat \coqe{p\\g}
+}
+&
+\infer[\mathsf{Pat}_{\smles{Ty}}]{\smle{p : t} \stogpat \coqe{p\\g}}{
+  \smle{p} \stogpat \coqe{p\\g}
+}
+\\
+\infer[\mathsf{Pat}_{\smles{VId}}]{\smle{id p} \stogpat \coqe{id\\g p\\g}}{
+  \smle{id} \stogvid \coqe{id\\g}
+  &
+  \smle{p} \stogatpat \coqe{p\\g}
+}
+&
+\infer[\mathsf{Pat}_{\smles{opVId}}]{\smle{op id p} \stogpat \tbd}{
+  \smle{id} \stogvid \coqe{id\\g}
+  &
+  \smle{p} \stogatpat \coqe{p\\g}
+}
+\\
+\infer[\mathsf{Pat}_{\smles{as}}]{\smle{id as p} \stogpat \coqe{p\\g as id\\g}}{
+  \smle{id} \stogvid \coqe{id\\g}
+  &
+  \smle{p} \stogatpat \coqe{p\\g}
+}
+&
+\infer[\mathsf{Pat}_{\smles{op/as}}]{\smle{op id as p} \stogpat \tbd}{
+  \smle{id} \stogvid \coqe{id\\g}
+  &
+  \smle{p} \stogatpat \coqe{p\\g}
+}
+\\
+\infer[\mathsf{Pat}_{\smles{as/ty}}]{\smle{id : t as p} \stogpat \coqe{p\\g as id\\g}}{
+  \smle{id} \stogvid \coqe{id\\g}
+  &
+  \smle{p} \stogatpat \coqe{p\\g}
+}
+&
+\infer[\mathsf{Pat}_{\smles{op/as/ty}}]{\smle{op id : t as p} \stogpat \tbd}{
+  \smle{id} \stogvid \coqe{id\\g}
+  &
+  \smle{p} \stogatpat \coqe{p\\g}
+}
+
+\end{array}
+\]
 
 \subsection{Declarations}
 
