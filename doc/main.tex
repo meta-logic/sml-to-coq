@@ -332,13 +332,13 @@ to be translated to the corresponding types in Coq.
 \\
 \infer[\mathsf{TyCon}_{\smles{order}}]{\smle{order} \stogtycon \coqe{comparison}}{}
 &
-\infer[\mathsf{TyCon}_{\smles{unit}}]{\smle{unit} \stogtycon \coqe{tt}}{}
+\infer[\mathsf{TyCon}_{\smles{unit}}]{\smle{unit} \stogtycon \coqe{unit}}{}
 \\
 \end{array}
 \]
 
 
-\subsection{Type Expressions}
+\subsection{Types}
 
 Type variables in SML are prefixed by \smle{'}, but this is illegal in
 Coq. Therefore, we prefix type variables in Coq by \coqe{_}.
@@ -346,7 +346,7 @@ Coq. Therefore, we prefix type variables in Coq by \coqe{_}.
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{c}
-\infer[\mathsf{TyExp}_{\smles{TyVar}}]{\smle{'t} \stogty \coqe{_t}}{
+\infer[\mathsf{Ty}_{\smles{TyVar}}]{\smle{'t} \stogty \coqe{_t}}{
   \smle{t} \text{ is alphanumeric}
 }
 \end{array}
@@ -354,11 +354,11 @@ Coq. Therefore, we prefix type variables in Coq by \coqe{_}.
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{cc}
-\infer[\mathsf{TyExp}_{()}]{\smle{(t)} \stogty \coqe{(t\\g)}}{
+\infer[\mathsf{Ty}_{()}]{\smle{(t)} \stogty \coqe{(t\\g)}}{
   \smle{t} \stogty \coqe{t\\g}
 }
 &
-\infer[\mathsf{TyExp}_{\smles{->}}]{\smle{t_1 -> t_2} \stogty \coqe{t\\g_1 -> t\\g_2}}{
+\infer[\mathsf{Ty}_{\smles{->}}]{\smle{t_1 -> t_2} \stogty \coqe{t\\g_1 -> t\\g_2}}{
   \smle{t_1} \stogty \coqe{t\\g_1}
   &
   \smle{t_2} \stogty \coqe{t\\g_2}
@@ -368,7 +368,7 @@ Coq. Therefore, we prefix type variables in Coq by \coqe{_}.
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{c}
-\infer[\mathsf{TyExp}_{\smles{TyCon}}]{\smle{t_1, \\dots ,t_n con} \stogty \coqe{con\\g t\\g_1 ... t\\g_n}}{
+\infer[\mathsf{Ty}_{\smles{TyCon}}]{\smle{t_1, \\dots ,t_n con} \stogty \coqe{con\\g t\\g_1 ... t\\g_n}}{
   \smle{con} \stogtycon \coqe{con\\g}
   &
   \smle{t_i} \stogty \coqe{t\\g_i} 
@@ -376,7 +376,7 @@ Coq. Therefore, we prefix type variables in Coq by \coqe{_}.
   \forall i. 1 \leq i \leq n, n \geq 0
 }
 \\
-\infer[\mathsf{TyExp}_{\smles{*}}]{\smle{(t_1 * t_2 * \\dots * t_n)} \stogty 
+\infer[\mathsf{Ty}_{\smles{*}}]{\smle{(t_1 * t_2 * \\dots * t_n)} \stogty 
                                    \coqe{(t\\g_1 * t\\g_2 * ... * t\\g_n)\%type}}
 {
   \smle{t_i} \stogty \coqe{t\\g_i} 
@@ -384,7 +384,7 @@ Coq. Therefore, we prefix type variables in Coq by \coqe{_}.
   \forall i. 1 \leq i \leq n, n \geq 1
 }
 \\
-\infer[\mathsf{TyExp}_{rec}]{\smle{\{ l_1: t_1, \\dots, l_n: t_n \}} \stogty \coqe!\{ l\\g_1: t\\g_1; ...; l\\g_n: t\\g_n \}!}{
+\infer[\mathsf{Ty}_{rec}]{\smle{\{ l_1: t_1, \\dots, l_n: t_n \}} \stogty \coqe!\{ l\\g_1: t\\g_1; ...; l\\g_n: t\\g_n \}!}{
   \smle{l_i} \stoglab \coqe{l\\g_i}
   &
   \smle{t_i} \stogty \coqe{t\\g_i}
@@ -393,12 +393,20 @@ Coq. Therefore, we prefix type variables in Coq by \coqe{_}.
 }
 \end{array}
 \]
-\giselle{Why is the \%\coqes{type} needed in the translation of tuple types?}
+
+Tuples need to be explicitly annotated as a type (\%\coqe{type}) so
+that they are not confused with \coqe{nat} multiplication. For
+example, the following definition fails without annotating the tuple
+type:
+
+\begin{coq}
+Fail Definition t := nat * nat.
+\end{coq}
 
 Notice that type constructors may take 0 arguments 
-(rule $\mathsf{TyExp}_{\smles{TyCon}}$), but tuple and record types 
+(rule $\mathsf{Ty}_{\smles{TyCon}}$), but tuple and record types 
 must consist of at least one type 
-(rules $\mathsf{TyExp}_{\smles{*}}$ and $\mathsf{TyExp}_{rec}$).
+(rules $\mathsf{Ty}_{\smles{*}}$ and $\mathsf{Ty}_{rec}$).
 
 \subsection{Type Bindings}
 
@@ -539,7 +547,7 @@ What do we do with Coq keywords? Are identifiers using dot considered as VId?}
   \smle{id} \stogvid \coqe{id\\g}
 }
 \\
-\infer[\mathsf{AtExp}_{\smles{()}}]{\smle{()} \stogatexp \coqe{()}}{}
+\infer[\mathsf{AtExp}_{\smles{()}}]{\smle{()} \stogatexp \coqe{tt}}{}
 &
 \infer[\mathsf{AtExp}_{\smles{(e)}}]{\smle{(e)} \stogatexp \coqe{(e\\g)}}{
   \smle{e} \stogexp \coqe{e\\g}
@@ -981,6 +989,27 @@ Exp ::= AtExp
 /* Pattern matching */
 Match ::= Pat => Exp !$\langle$!| Match!$\rangle$!
 
+/* Atomic Patterns */
+AtPat ::= _ 
+        | SCon
+        | !$\langle$!op!$\rangle$! VId 
+        | { !$\langle$!PatRow!$\rangle$! }
+        | ( Pat )
+        /* Added patterns (translated to records originally) */
+        | ()
+        | (Pat, Pat, ...)
+        | [Pat, Pat, ...]
+
+/* Record Patterns */
+PatRow ::= ... /* Wildcard for records */
+         | Lab = Pat !$\langle$!, PatRow!$\rangle$!
+
+/* Patterns */
+Pat ::= AtPat
+      | !$\langle$!op!$\rangle$! VId AtPat
+      | Pat : Ty
+      | !$\langle$!op!$\rangle$! VId !$\langle$!: Ty!$\rangle$! as pat
+
 /* Declarations */
 Dec ::= val !$\langle$!TyVar!$\rangle^*$! ValBind /* E.g. val 'a x = 5 */
       | type TypBind
@@ -1009,27 +1038,6 @@ ConBind ::= !$\langle$!op!$\rangle$! VId !$\langle$!of Ty!$\rangle$! !$\langle$!
 /* Exception binding */
 ExBind ::= !$\langle$!op!$\rangle$! VId !$\langle$!of Ty!$\rangle$! !$\langle$!and ExBind!$\rangle$!
          | !$\langle$!op!$\rangle$! VId = !$\langle$!VId!$\rangle$! !$\langle$!and ExBind!$\rangle$!
-
-/* Atomic Patterns */
-AtPat ::= _ 
-        | SCon
-        | !$\langle$!op!$\rangle$! VId 
-        | { !$\langle$!PatRow!$\rangle$! }
-        | ( Pat )
-        /* Added patterns (translated to records originally) */
-        | ()
-        | (Pat, Pat, ...)
-        | [Pat, Pat, ...]
-
-/* Record Patterns */
-PatRow ::= ... /* Wildcard for records */
-         | Lab = Pat !$\langle$!, PatRow!$\rangle$!
-
-/* Patterns */
-Pat ::= AtPat
-      | !$\langle$!op!$\rangle$! VId AtPat
-      | Pat : Ty
-      | !$\langle$!op!$\rangle$! VId !$\langle$!: Ty!$\rangle$! as pat
 \end{grm}
 
 \section{Gallina's abstract syntax tree}
