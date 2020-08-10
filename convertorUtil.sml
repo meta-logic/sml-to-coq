@@ -15,14 +15,18 @@ struct
         val rid_ctr = ref 0 (* record id counter *)
     	(* Sml symbol to Gallina ident. If ident starts with ' it converts it to _
         	Doesn't take care of Gallina reserved words *)
-        fun checkLegal (s : string) : G.ident = 
-            if String.isPrefix "'" s then "_" ^ String.extract(s,1, NONE) else s            
+        fun checkLegal (s : string) : G.ident =
+            if String.isPrefix "'" s then "_" ^ String.extract(s,1, NONE) else s
 
         (* Converting SML's ids to Gallina id *)
         fun tycon2id (tycon : TyCon.Id) : G.ident = checkLegal(TyCon.toString tycon)
-        fun ltycon2id (tycon : LongTyCon.longId) : G.ident = checkLegal(LongTyCon.toString tycon)
-        fun vid2id (tycon : VId.Id) : G.ident = checkLegal(VId.toString tycon)
-        fun lvid2id (tycon : LongVId.longId) : G.ident = checkLegal(LongVId.toString tycon)
+        fun ltycon2id (tycon : LongTyCon.longId) = checkLegal(LongTyCon.toString tycon)
+        fun vid2id (tycon : VId.Id) = checkLegal(VId.toString tycon)
+        fun lvid2id (tycon : LongVId.longId) = checkLegal(LongVId.toString tycon)
+        fun strid2id (strid : StrId.Id) = checkLegal(StrId.toString strid)
+        fun lstrid2id (lstrid : LongStrId.longId) = checkLegal(LongStrId.toString lstrid)
+        fun sigid2id (sigid : SigId.Id) = checkLegal(SigId.toString sigid)
+        fun funid2id (funid : FunId.Id) = checkLegal(FunId.toString funid)
 
         (* ? : ('a -> 'b list) * 'a option -> 'b list
            ? f o returns [] if o = NONE and f val if o = SOME val *)
@@ -38,10 +42,10 @@ struct
 
         fun % f l = List.map (fn a => f(~a)) l
 
-        fun mkMatchNotationTerm (matcher : G.matchItem,  matchees: G.pattern) (body : G.term, exhaustive : bool) = 
+        fun mkMatchNotationTerm (matcher : G.matchItem,  matchees: G.pattern) (body : G.term, exhaustive : bool) =
             G.MatchNotationTerm {matchItem = matcher, body = G.Equation(matchees, body), exhaustive = exhaustive}
         (* mkSortTerm returns a Prop, Set or Type Gallina terms *)
-        fun mkSortTerm (i : int) : G.term = 
+        fun mkSortTerm (i : int) : G.term =
         	let val typ = case i of  0 => G.Prop
         							| 1 => G.Type
         							| 2 => G.Set
@@ -60,7 +64,7 @@ struct
 
         fun updateTerm (_ : G.ident) (_: G.binder list) (clause as G.Clause(_, _, NONE) : G.clause) : G.clause
             = clause
-            | updateTerm name parametersVal (clause as G.Clause(id, bL, SOME typ)) = 
+            | updateTerm name parametersVal (clause as G.Clause(id, bL, SOME typ)) =
             let
                 val terms = List.map (fn (G.SingleBinder{name = G.Name name, ...} )=> G.IdentTerm name) parametersVal
                 val output = mkExplicitTerm (G.IdentTerm name) terms
@@ -68,9 +72,9 @@ struct
                 G.Clause (id, bL, SOME(mkArrowTerm (typ, output) ) )
             end
 
-        fun mkBinders (terms : G.term list) : G.binder list = 
+        fun mkBinders (terms : G.term list) : G.binder list =
             let
-                fun term2binder (G.IdentTerm id) = 
+                fun term2binder (G.IdentTerm id) =
                     G.SingleBinder {name = G.Name id, typ = SOME (G.IdentTerm "Type"), inferred = true}
             in
                 List.map term2binder terms

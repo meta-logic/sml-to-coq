@@ -133,8 +133,13 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
   and sentence = DefinitionSentence of definition
                | InductiveSentence of inductive
                | FixpointSentence of fixpoint
+               | AssumptionSentence of assumption
                (* Gallina syntax extension *)
                | RecordSentence of recBody list
+               | ModuleSentence of module
+               | SignatureSentence of gsignature
+               | DeclareModuleSentence of declaration
+               | IncludeSentence of inclusion
                 (* extra seq of sentences *)
                | SeqSentences of sentence list
 
@@ -174,4 +179,45 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
 
   and fixpoint = Fixpoint of fixbody list | CoFixpoint of cofixbody list
 
-end   
+  and assumption = Assumption of assumKeyword * assums
+
+  and assumKeyword = (* Axiom *)
+                    Conjecture
+                   | Parameter
+                   | Parameters
+                   | Variable
+                   | Variables
+
+  and assums = Assum of ident list * term
+
+  and module = IModule of { id : ident, typ : ofModuleTyp option, bindings : moduleBindings list, body : moduleBody } (* Interctive Module *)
+             | Module of { id : ident, typ : ofModuleTyp option, bindings : moduleBindings list, body : moduleExpression }
+
+  and moduleBody = ModuleBody of sentence list
+
+  and moduleExpression = ModuleName of ident
+                       | FunctorName of ident list
+
+  and moduleExp = ModuleExp of sentence list
+
+  and ofModuleTyp = TransparentSig of moduleTyp
+                | OpaqueSig of moduleTyp
+
+  and moduleTyp = SigName of ident
+                | SigParens of moduleTyp
+                | SigType of moduleTyp * withDecl
+
+  and withDecl = WithTyp of definition
+
+  and moduleBindings = ModuleBinding of import option * ident list * moduleTyp
+
+  and import = Import | Export
+
+  and gsignature = Signature of { id : ident, bindings : moduleBindings list, body : signatureBody }
+
+  and signatureBody = SigBody of sentence list
+
+  and declaration = Declare of { id : ident, bindings : moduleBindings list, typ : moduleTyp }
+
+  and inclusion = Include of moduleTyp
+end
