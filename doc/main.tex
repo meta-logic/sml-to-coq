@@ -762,11 +762,7 @@ in Coq's \coqe{Bool} library.
 
 \subsection{Patterns}
 
-In Coq, patterns cannot be typed (error ``Casts are not supported in
-this pattern''). Therefore, we ignore types in patterns coming from
-SML (rules $\mathsf{Pat}_{\smles{Ty}}$, $\mathsf{Pat}_{\smles{as/ty}}$, 
-and $\mathsf{Pat}_{\smles{op/as/ty}}$).
-\giselle{Can this be problematic in any way?}
+\giselle{TODO: decide what to do for types in patterns.}
 
 \[
 \arraycolsep=10pt\def\arraystretch{3}
@@ -775,8 +771,10 @@ and $\mathsf{Pat}_{\smles{op/as/ty}}$).
   \smle{p} \stogatpat \coqe{p\\g}
 }
 &
-\infer[\mathsf{Pat}_{\smles{Ty}}]{\smle{p : t} \stogpat \coqe{p\\g}}{
+\infer[\mathsf{Pat}_{\smles{Ty}}]{\smle{p : t} \stogpat \tbd}{
   \smle{p} \stogpat \coqe{p\\g}
+  &
+  \smle{t} \stogty \coqe{t\\g}
 }
 \\
 \infer[\mathsf{Pat}_{\smles{VId}}]{\smle{id p} \stogpat \coqe{id\\g p\\g}}{
@@ -802,19 +800,26 @@ and $\mathsf{Pat}_{\smles{op/as/ty}}$).
   &
   \smle{p} \stogatpat \coqe{p\\g}
 }
-\\
-\infer[\mathsf{Pat}_{\smles{as/ty}}]{\smle{id : t as p} \stogpat \coqe{p\\g as id\\g}}{
+\end{array}
+\]
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{c}
+\infer[\mathsf{Pat}_{\smles{as/ty}}]{\smle{id : t as p} \stogpat \tbd}{
   \smle{id} \stogvid \coqe{id\\g}
+  &
+  \smle{t} \stogty \coqe{t\\g}
   &
   \smle{p} \stogatpat \coqe{p\\g}
 }
-&
+\\
 \infer[\mathsf{Pat}_{\smles{op/as/ty}}]{\smle{op id : t as p} \stogpat \tbd}{
   \smle{id} \stogvid \coqe{id\\g}
   &
+  \smle{t} \stogty \coqe{t\\g}
+  &
   \smle{p} \stogatpat \coqe{p\\g}
 }
-
 \end{array}
 \]
 
@@ -822,40 +827,61 @@ and $\mathsf{Pat}_{\smles{op/as/ty}}$).
 
 TODO
 
-% \[
-% \arraycolsep=15pt\def\arraystretch{3}
-% \begin{array}{cc}
-% \infer[\mathsf{Val}]{\smle{} \stogdec \coqe{}}{
-% }
-% &
-% \infer[\mathsf{Type}]{}{
-% }
-% \\
-% \infer[\mathsf{DaTyp}]{\smle{} \stogdec \coqe{}}{
-% }
-% &
-% \infer[\mathsf{DaTypAlias}]{}{
-% }
-% \\
-% \infer[\mathsf{AbsType}]{\smle{} \stogdec \coqe{}}{
-% }
-% &
-% \infer[\mathsf{ExnDec}]{}{
-% }
-% \\
-% \infer[\mathsf{Local}]{\smle{} \stogdec \coqe{}}{
-% }
-% &
-% \infer[\mathsf{Open}]{}{
-% }
-% \\
-% \infer[\mathsf{EmpDec}]{\smle{} \stogdec \coqe{}}{
-% }
-% &
-% \infer[\mathsf{SeqDec}]{}{
-% }
-% \end{array}
-% \]
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{Dec}_{\smles{val}}]{\smle{val 'v_1 \\dots 'v_n vb} \stogdec \tbd}{
+  \smle{'v_i} \stogty \coqe{v\\g_i}
+  &
+  \smle{vb} \stogvalbind \tbd
+}
+&
+\infer[\mathsf{Dec}_{\smles{type}}]{\smle{type tb} \stogdec \tbd}{
+  \smle{tb} \stogtybind \tbd
+}
+\\
+\infer[\mathsf{Dec}_{\varepsilon}]{\varepsilon \stogdec \tbd}{
+}
+&
+\infer[\mathsf{Dec}_{\smles{;}}]{\smle{d_1 ; d_2} \stogdec \tbd}{
+  \smle{d_1} \stogdec \tbd
+  &
+  \smle{d_2} \stogdec \tbd
+}
+\end{array}
+\]
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{c}
+\infer[\mathsf{Dec}_{\smles{datatype}_1}]{\smle{datatype db} \stogdec \tbd}{
+  \smle{db} \stogdatbind \tbd
+}
+\\
+\infer[\mathsf{Dec}_{\smles{datatype}_2}]{\smle{datatype t_1 = datatype t_2} \stogdec \tbd}{
+  \smle{t_1} \stogtycon \coqe{t\\g_1}
+  &
+  \smle{t_2} \stogtycon \coqe{t\\g_2}
+}
+\\
+\infer[\mathsf{Dec}_{\smles{abstype}}]{\smle{abstype db with d end} \stogdec \tbd}{
+  \smle{db} \stogdatbind \tbd
+  &
+  \smle{d} \stogdec \tbd
+}
+\\
+\infer[\mathsf{Dec}_{\smles{exception}}]{\smle{exception eb} \stogdec \tbd}{
+}
+\\
+\infer[\mathsf{Dec}_{\smle{local}}]{\smle{local d_1 in d_2 end} \stogdec \tbd}{
+  \smle{d_1} \stogdec \tbd
+  &
+  \smle{d_2} \stogdec \tbd
+}
+\\
+\infer[\mathsf{Dec}_{\smles{open}}]{\smle{open s_1 \\dots s_n} \stogdec \tbd}{
+}
+\end{array}
+\]
 
 \subsection{Value Bindings}
 
