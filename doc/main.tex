@@ -154,7 +154,7 @@ readily available.
 
 In order to have a translation as precise as possible, we needed a few
 modifications in HaMLet. All changes were related to derived
-forms.\giselle{check if this is still the case at the end.}
+forms.\giselle{check if this is still the case at the end.}\laila{ + changing the opacity of some structures}
 Derived forms are SML expressions that can be replaced by equivalent forms
 during parsing, resulting in SML parse trees that are formed by only a subset of
 the constructs in syntax trees. For example, boolean operators can be replaced by
@@ -309,6 +309,7 @@ alphanumeric character, or \_.
 \infer[\mathsf{Lab}]{\smle{l} \stoglab \coqe{l}}{}
 \]
 \giselle{Are there allowed labels in SML that need special care?}
+\laila{Yes, numeric labels, and this is till not taken care of in the code}
 
 \subsection{Type Constructors}
 
@@ -402,6 +403,10 @@ type:
 \begin{coq}
 Fail Definition t := nat * nat.
 \end{coq}
+=======
+\laila{actually record are unique because in addition to this translation and depending on the context a record declaration might be added to the context}
+\giselle{Why is the \%\coqes{type} needed in the translation of tuple types?}
+\laila{Because "*" is overloaded (multiplication)}
 
 Notice that type constructors may take 0 arguments 
 (rule $\mathsf{Ty}_{\smles{TyCon}}$), but tuple and record types 
@@ -413,7 +418,7 @@ must consist of at least one type
 Type bindings are translated into Coq definitions. In case they are 
 mutually recursive, we need to use \coqe{Fixpoint}, thus the
 \coqe{end with} in rule $\mathsf{TyBind}$.
-
+\laila{Can we have mutually recursive types in SML}
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{c}
@@ -534,7 +539,7 @@ What do we do with Coq keywords? Are identifiers using dot considered as VId?}
 
 
 \subsection{Atomic Expressions}
-
+\laila{Need to take special care of expressions with uninstantiated type variables (e.g. NONE)}
 \setlength{\jot}{0.5pt} 
 \[
 \arraycolsep=15pt\def\arraystretch{3}
@@ -599,7 +604,7 @@ definition.
 
 
 \subsection{Expressions}
-
+\laila{for the "match" rule, do we need to mention here that non-exhaustive matches have an additional case for pattern failure?}
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{cc}
@@ -770,8 +775,13 @@ in Coq's \coqe{Bool} library.
 
 \subsection{Patterns}
 
-\giselle{TODO: decide what to do for types in patterns.}
-
+\laila{Update: we allow types in patterns as long as they're not nested, and we move the type cast to the expression being matched against}
+=======
+In Coq, patterns cannot be typed (error ``Casts are not supported in
+this pattern''). Therefore, we ignore types in patterns coming from
+SML (rules $\mathsf{Pat}_{\smles{Ty}}$, $\mathsf{Pat}_{\smles{as/ty}}$, 
+and $\mathsf{Pat}_{\smles{op/as/ty}}$).
+\giselle{Can this be problematic in any way?}
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{cc}
