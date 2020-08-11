@@ -186,7 +186,7 @@ straighforward.
 
 % all modifications are sound.
 
-\section{Changes in HaMLet}
+\subsection{Changes in HaMLet}
 
 The following tables are taken from SML's documentation but in our case, we
 restore the original forms (left column) from their equivalent forms (right
@@ -253,7 +253,7 @@ the translation (see discussion on $fvalbind$ below).
  \hline
 \end{tabularx}
 
-\subsection{Useful Derived Forms}
+\subsubsection{Useful Derived Forms}
 
 The derivation of function-value bindings $fvalbind$ is the one case where we
 need to keep the derivation because it simplifies translation. The syntax in
@@ -297,10 +297,18 @@ $S \stog G$, where $S$ and $G$ are SML and Gallina ASTs respectively. Gallina
 variables are typically denoted by \coqe{x\g}, so that the prime symbol \smle{'}
 is reserved for SML's type variables.
 
-The sections below are in the same order as SML's AST definition in the
-appendix.
+Before presenting the derivation system defining the translation
+formally, we first explain the strategy used for some constructs that
+did not have a direct translation.
 
-\subsection{Record Labels}
+\subsection{Records}
+
+\subsection{Translation rules}
+
+The sections below present the derivation rules for the translation of
+each syntactic category in SML's AST.
+
+\subsubsection{Record Labels}
 
 Record labels have no restrictions apart from starting with an
 alphanumeric character, or \_.
@@ -311,7 +319,7 @@ alphanumeric character, or \_.
 \giselle{Are there allowed labels in SML that need special care?}
 \laila{Yes, numeric labels, and this is till not taken care of in the code}
 
-\subsection{Type Constructors}
+\subsubsection{Type Constructors}
 
 Most type constructors are translated \emph{as is}, using the
 $\mathsf{TyCon}$ rule.  However, some built-in type constructors need
@@ -339,7 +347,7 @@ to be translated to the corresponding types in Coq.
 \]
 
 
-\subsection{Types}
+\subsubsection{Types}
 
 Type variables in SML are prefixed by \smle{'}, but this is illegal in
 Coq. Therefore, we prefix type variables in Coq by \coqe{_}.
@@ -413,7 +421,7 @@ Notice that type constructors may take 0 arguments
 must consist of at least one type 
 (rules $\mathsf{Ty}_{\smles{*}}$ and $\mathsf{Ty}_{rec}$).
 
-\subsection{Type Bindings}
+\subsubsection{Type Bindings}
 
 Type bindings are translated into Coq definitions. In case they are 
 mutually recursive, we need to use \coqe{Fixpoint}, thus the
@@ -440,7 +448,7 @@ mutually recursive, we need to use \coqe{Fixpoint}, thus the
 \end{array}
 \]
 
-\subsection{Special constants}
+\subsubsection{Special constants}
 
 Special constants are value inhabitants of \smle{int}, \smle{real}, 
 \smle{word}, \smle{string}, and \smle{char}. Note that:
@@ -485,7 +493,7 @@ Special constants are value inhabitants of \smle{int}, \smle{real},
 \]
 
 
-\subsection{Value Identifiers}
+\subsubsection{Value Identifiers}
 
 Most value identifiers are translated \emph{as is} from SML to Coq, 
 however there are a few special cases that need to be handled
@@ -538,8 +546,9 @@ What do we do with Coq keywords? Are identifiers using dot considered as VId?}
 % \end{paragraph}
 
 
-\subsection{Atomic Expressions}
+\subsubsection{Atomic Expressions}
 \laila{Need to take special care of expressions with uninstantiated type variables (e.g. NONE)}
+
 \setlength{\jot}{0.5pt} 
 \[
 \arraycolsep=15pt\def\arraystretch{3}
@@ -603,8 +612,9 @@ there). The translation \coqe{d\g} or \coqe{d_i} is extracted from this
 definition.
 
 
-\subsection{Expressions}
+\subsubsection{Expressions}
 \laila{for the "match" rule, do we need to mention here that non-exhaustive matches have an additional case for pattern failure?}
+
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{cc}
@@ -681,7 +691,7 @@ in Coq's \coqe{Bool} library.
 \end{paragraph}
 
 
-\subsection{Pattern Matching}
+\subsubsection{Pattern Matching}
 
 \[
 \arraycolsep=15pt\def\arraystretch{3}
@@ -703,7 +713,7 @@ in Coq's \coqe{Bool} library.
 \end{array}
 \]
 
-\subsection{Atomic Patterns}
+\subsubsection{Atomic Patterns}
 
 \[
 \arraycolsep=15pt\def\arraystretch{3}
@@ -748,7 +758,7 @@ in Coq's \coqe{Bool} library.
 \end{array}
 \]
 
-\subsection{Record Patterns}
+\subsubsection{Record Patterns}
 
 \[
 \arraycolsep=15pt\def\arraystretch{3}
@@ -773,15 +783,10 @@ in Coq's \coqe{Bool} library.
 \end{array}
 \]
 
-\subsection{Patterns}
+\subsubsection{Patterns}
 
 \laila{Update: we allow types in patterns as long as they're not nested, and we move the type cast to the expression being matched against}
-=======
-In Coq, patterns cannot be typed (error ``Casts are not supported in
-this pattern''). Therefore, we ignore types in patterns coming from
-SML (rules $\mathsf{Pat}_{\smles{Ty}}$, $\mathsf{Pat}_{\smles{as/ty}}$, 
-and $\mathsf{Pat}_{\smles{op/as/ty}}$).
-\giselle{Can this be problematic in any way?}
+
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{cc}
@@ -841,7 +846,7 @@ and $\mathsf{Pat}_{\smles{op/as/ty}}$).
 \end{array}
 \]
 
-\subsection{Declarations}
+\subsubsection{Declarations}
 
 TODO
 
@@ -901,19 +906,19 @@ TODO
 \end{array}
 \]
 
-\subsection{Value Bindings}
+\subsubsection{Value Bindings}
 
 TODO
 
-\subsection{Data Bindings}
+\subsubsection{Data Bindings}
 
 TODO
 
-\subsection{Constructor Bindings}
+\subsubsection{Constructor Bindings}
 
 TODO
 
-\subsection{Exception Bindings}
+\subsubsection{Exception Bindings}
 
 TODO
 
