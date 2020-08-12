@@ -20,6 +20,8 @@ Module Real.
 
   Axiom  DivException : forall{a}, a.
 
+  Axiom  SizeException : forall{a}, a.
+
   (*
     Sml: int
     Coq: Z
@@ -145,10 +147,15 @@ Module Real.
 
   (*
     Sml: real * real -> IEEEReal.real_order
-    Coq: float * float -> float_comparison
+    Coq: float * float -> IEEEReal.float_comparison
   *)
-  Definition compareReal '((r1, r2):float*float):float_comparison :=
-    compare r1 r2.
+  Definition compareReal '((r1, r2):float*float):IEEEReal.real_order :=
+    match compare r1 r2 with
+    | FLt => IEEEReal.LESS
+    | FGt => IEEEReal.GREATER
+    | FEq => IEEEReal.EQUAL
+    | _   => IEEEReal.UNORDERED
+    end.
 
   (*
     Sml: real * real -> IEEEReal.real_order
@@ -242,27 +249,37 @@ Module Real.
 
   (*
     Sml: real -> IEEEReal.float_class
-    Coq: float -> bool
+    Coq: float -> IEEEReal.float_class
   *)
-  Definition class (r:float):float_class := classify r.
+  Definition class (r:float):IEEEReal.float_class := 
+    match classify r with
+    | PNormal => IEEEReal.NORMAL
+    | NNormal => IEEEReal.NORMAL
+    | PSubn => IEEEReal.SUBNORMAL
+    | NSubn => IEEEReal.SUBNORMAL
+    | PZero => IEEEReal.ZERO
+    | NZero => IEEEReal.ZERO
+    | PInf => IEEEReal.INF
+    | NInf => IEEEReal.INF
+    | NAN => IEEEReal.NAN
+    end.
 
-  (* Translating this will be annoying *)
   Record flt : Set := mkflt { man : float; exp : BinNums.Z}.
 
   (*
     Sml: real -> {man : real, exp : int}
-    Coq: float -> flt
+    Coq: float -> Real.flt
     - Translating this will be annoying 
   *)
-  Definition toManExp (r:float):flt:= 
+  Definition toManExp (r:float):Real.flt:= 
     let (man, exp) := (frexp r) in (mkflt (man) (exp)).
 
   (*
     Sml: {man : real, exp : int} -> real
-    Coq: flt -> float
+    Coq: Real.flt -> float
     - Translating this will be annoying 
   *)
-  Definition fromManExp '(r:flt):float := 
+  Definition fromManExp '(r:Real.flt):float := 
     let (man, exp) := r in ldexp man exp.
 
   Definition maxInt := 4503599627370496.0.
@@ -289,14 +306,13 @@ Module Real.
                | false => x end
     end.
 
-  (* Translating this will be annoying *)
   Record nmbr : Set := mknmbr { whole : float; frac : float}.
 
   (*
     Sml: real -> {whole : real, frac : real}
-    Coq: float -> nmbr
+    Coq: float -> Real.nmbr
   *)
-  Definition split (x:float):nmbr := 
+  Definition split (x:float): Real.nmbr := 
     let w := exWhole' x in let f := x-w in
     match (abs f) == 1.0 with
     | true  => (mknmbr (w+f) (0.0))
@@ -524,7 +540,7 @@ Module Real.
 
   (*
     Sml: IEEEReal.rounding_mode -> LargeReal.real -> real
-    Coq: rounding_mode -> float -> float
+    Coq: IEEEReal.rounding_mode -> float -> float
   *)
   Definition fromLarge (m:IEEEReal.rounding_mode) (f:float):float := f.
 
@@ -562,7 +578,7 @@ Module Real.
 
   (* 
     Sml: real -> string
-    Coq: float -> string
+    Coq: float -> nat -> string
     - For now The user should give me how many digits, until we fix numdigits.
   *)
   Definition toString (r: float) (nd: nat): string:= 
@@ -581,7 +597,7 @@ Module Real.
 
   (* 
     Sml: real -> IEEEReal.decimal_approx
-    Coq: real -> nat -> IEEEReal.decimal_approx
+    Coq: float -> nat -> IEEEReal.decimal_approx
   *)
   Definition toDecimal (f: float) (nd: nat): IEEEReal.decimal_approx :=
     match IEEEReal.fromString (toString f nd) with
@@ -599,7 +615,7 @@ Module Real.
 
   (* 
     Sml: IEEEReal.decimal_approx -> real option
-    Coq: IEEEReal.decimal_approx -> real option
+    Coq: IEEEReal.decimal_approx -> option float
   *)
   Definition fromDecimal (d: IEEEReal.decimal_approx): option float :=
     match d with  
@@ -801,14 +817,32 @@ Module Real.
   *)
   Definition fmt (radix: StringCvt.realfmt) (f: float) (nd: nat): string:=
     match radix with
-    | StringCvt.SCI arg => fmtSCI arg f nd
-    | StringCvt.FIX arg => fmtFIX arg f nd
+    | StringCvt.SCI arg => 
+      match arg with
+      | None   => fmtSCI arg f nd
+      | Some i => if Z.ltb i 0 then SizeException else fmtSCI arg f nd
+      end
+    | StringCvt.FIX arg => 
+      match arg with
+      | None   => fmtFIX arg f nd
+      | Some i => if Z.ltb i 0 then SizeException else fmtFIX arg f nd
+      end
     | StringCvt.GEN arg =>
-      let FIX := (fmtFIX arg f nd) in
-      let SCI := (fmtSCI arg f nd) in
-      match Z.compare (String.size FIX) (String.size SCI) with
-      | Lt => SCI
-      | _  => FIX
+      match arg with
+      | None   =>
+        let FIX := (fmtFIX arg f nd) in
+        let SCI := (fmtSCI arg f nd) in
+        match Z.compare (String.size FIX) (String.size SCI) with
+        | Lt => SCI
+        | _  => FIX
+        end
+      | Some i => if Z.ltb i 1 then SizeException else
+        let FIX := (fmtFIX arg f nd) in
+        let SCI := (fmtSCI arg f nd) in
+        match Z.compare (String.size FIX) (String.size SCI) with
+        | Lt => SCI
+        | _  => FIX
+        end
       end
     | StringCvt.EXACT   => toString f nd
     end.

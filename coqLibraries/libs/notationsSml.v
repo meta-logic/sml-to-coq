@@ -8,6 +8,7 @@ Require Import List.
 Import ListNotations.
 
 Axiom patternFailure: forall{a}, a.
+Axiom  SizeException : forall{a}, a.
 Notation "# X" := (X % char) (at level 0).
 
 (* < , <= , > , >= *)
@@ -246,6 +247,8 @@ Instance divInfixNat : divInfix nat :=
 
 (*---------------------------------------------------------------------------*)
 
+Local Definition maxSize: nat :=  16777215%nat.
+
 (* ^ *)
 Class powAppInfix A : Type :=
 {
@@ -256,7 +259,8 @@ Notation "op^ ( x , y )" := (powApp x y).
 
 Instance powAppInfixReal : powAppInfix string :=
 {
-  powApp  := String.append
+  powApp  := fun a b => let s := String.append a b in 
+             if Nat.ltb maxSize (String.length s) then SizeException else s
 }.
 
 Instance powAppInfixNat : powAppInfix nat :=

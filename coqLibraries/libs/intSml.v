@@ -180,9 +180,8 @@ Module Int.
   *)
   Definition sameSign '((i1, i2): Z * Z):bool := sign i1 =? sign i2.
 
-  (*Sml Spacific*)
+  (* Not Implemented *)
   (* 
-    Definition fmt.
     scan
   *)
 

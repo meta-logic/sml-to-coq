@@ -32,15 +32,17 @@ Module ListPair.
     | false => UnequalLengthsException
     end.
 
+  Local Fixpoint unzip' {A B:Type} (l:list (A * B)):list A * list B :=
+    match l with
+    | [] => ([],[])
+    | (x,y)::l' => let (l1,l2) := unzip' l' in (x::l1,y::l2)
+     end.
+
   (*
     Sml: ('a * 'b) list -> 'a list * 'b list
     Coq: list (A * B) -> list A * list A
   *)
-  Fixpoint unzip {A B:Type} (l:list (A * B)):list A * list B :=
-    match l with
-    | [] => ([],[])
-    | (x,y)::l' => let (l1,l2) := unzip l' in (x::l1,y::l2)
-     end.
+  Definition unzip {A B:Type} (l:list (A * B)):list A * list B := unzip' l.
 
   Local Fixpoint app' {A B:Type} (f:A*B->unit) (l1:list A) (l2:list B):unit :=
     match l1, l2 with

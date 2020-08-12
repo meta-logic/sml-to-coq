@@ -2,6 +2,7 @@ Require Import Bool.
 Require Import String.
 Require Import List.
 Require Import ZArith.
+Require Import stringCvtSml.
 Require Export Ascii.
 Notation "# x" := (x%char) (at level 0).
 
@@ -37,7 +38,7 @@ Module Char.
 
   (* 
     Sml: int -> char
-    Coq: nat -> ascii
+    Coq: Z -> ascii
   *)
   Definition chr (n:Z):ascii := 
     if (Z.ltb n 0) || (Z.ltb maxOrd n) then ChrException 
@@ -393,10 +394,13 @@ Module Char.
     end.
 
   (*
+    - Scan (Not Implemented)
     Sml: (Char.char, 'a) StringCvt.reader -> (char, 'a) StringCvt.reader
-    Coq: ascii -> string -> option (ascii * string) 
+    Coq: StringCvt.reader ascii A ->  StringCvt.reader ascii A
   *)
-  Definition scan (c:ascii) (s:string):option (ascii * string) :=
+
+
+  Local Definition fromString' (s:string):option (ascii * string) :=
     let cl := String.list_ascii_of_string(s) in scan' cl.
 
   (* 
@@ -405,7 +409,7 @@ Module Char.
   *)
 
   Definition fromString (s:string):option ascii := 
-    let c := scan " " s in
+    let c := fromString' s in
     match c with 
     | None => None
     | Some (x, str) => Some x 
@@ -417,7 +421,7 @@ Module Char.
   *)
 
   Definition fromCString (s:string):option ascii := 
-    let c := scan " " s in
+    let c := fromString' s in
     match c with 
     | None => None
     | Some (x, str) => Some x 
