@@ -303,6 +303,90 @@ did not have a direct translation.
 
 \subsection{Records}
 
+A record is a set of named fields typed by record types, for example:
+
+\begin{sml}
+{name = "Bob", age = 42} : {name : string, age : int }
+\end{sml}
+
+In SML, records can occur as expressions or patterns. When matching a
+record pattern, the user can specify the names of relevant fields, and
+omit the remaining using ellipsis. For example:
+
+\begin{sml}
+fun getAge (r: {name : string, age : int }) = case r of
+  {age = x, ...} => x;
+\end{sml}
+
+It is important to note that SML must be able to infer what fields are
+omitted by the ellipsis, otherwise it terminates with an error.
+
+Gallina has support for record types as well
+(\url{https://coq.github.io/doc/master/refman/language/core/records.html}),
+however these are not built-in types and must be declared using
+\coqe{Record}. So the \smle{getAge} function above could be:
+
+\begin{coq}
+Record rec := { name : string; age : Z }.
+Definition getAge (r : rec1) := match r with 
+  {| name := _; age := x |} => x.
+\end{coq}
+
+There are three important points that must be taken into consideration
+when translating records:
+
+\begin{enumerate}
+  \item Any record expression, type, or pattern in an SML declaration
+  will possibly require a \coqe{Record} declaration preceding the
+  translation, and record types must be replaced by the \coqe{Record}
+  identifier.
+
+  \item The \coqe{Record} declaration automatically generates
+  projection functions for each of the record's fields, as a result,
+  field names cannot be reused in the code.
+
+  \item There is no Gallina equivalent to SML's ellipsis when pattern
+  matching records. So the translation must make all record fields
+  explicit in patterns.
+\end{enumerate}
+
+To make sure all necessary records are declared in the translation, we
+make use of a \emph{record context} associated with Gallina's AST.
+This context is split into a local and a global part. The global
+record context $\mathcal{R}_g$ contains all record types that already
+have a declaration in the AST. The local record context
+$\mathcal{R}_l$ is used in the translation of SML's declarations, and
+starts empty. As the declaration is deconstructed, record expressions,
+patterns, or types may be encountered. If the record type is in
+$\mathcal{R}_g$ or $\mathcal{R}_l$ the translation proceeds as usual.
+If not, the type is stored in $\mathcal{R}_l$ using a fresh
+name\footnote{All fresh names start with \_, since names in SML cannot
+start with this character.}. Once
+the declaration translation is done, the types from $\mathcal{R}_l$
+are translated into \coqe{Record} AST's and added to the main
+translation AST before the declaration. The content of $\mathcal{R}_l$
+is then moved to $\mathcal{R}_g$.
+
+To avoid name clashing, we modify the record fields' names by
+prefixing it with the fresh name used for the record type. Each
+time a record type, expression, or pattern is found, either its type
+is found in the record context, or a new type is created. In both
+situations we are able to tell what this prefix is, and rename the
+labels accordingly.
+\giselle{I do not know how the context works, but it might make sense
+to have it with the original label names, and add the prefix only when
+translating.}
+
+Ellipsis on record patterns are resolved by looking into the
+annotations after SML's elaboration phase. Since the record type must
+be able to be inferred, this information can be extracted after
+elaboration, and the pattern can be unfolded with all fields.
+\giselle{Is this done?}
+
+\subsection{Type Variables}
+
+\subsection{Typed Patterns}
+
 \subsection{Translation rules}
 
 The sections below present the derivation rules for the translation of
@@ -311,7 +395,7 @@ each syntactic category in SML's AST.
 \subsubsection{Record Labels}
 
 Record labels have no restrictions apart from starting with an
-alphanumeric character, or \_.
+alphanumeric character.
 
 \[
 \infer[\mathsf{Lab}]{\smle{l} \stoglab \coqe{l}}{}
@@ -402,19 +486,16 @@ Coq. Therefore, we prefix type variables in Coq by \coqe{_}.
 }
 \end{array}
 \]
+\laila{actually record are unique because in addition to this translation and depending on the context a record declaration might be added to the context}
 
 Tuples need to be explicitly annotated as a type (\%\coqe{type}) so
-that they are not confused with \coqe{nat} multiplication. For
-example, the following definition fails without annotating the tuple
-type:
+that they are not interpreted as \coqe{nat} multiplication. For
+example, the following definition fails if the tuple type is not
+annotated:
 
 \begin{coq}
 Fail Definition t := nat * nat.
 \end{coq}
-=======
-\laila{actually record are unique because in addition to this translation and depending on the context a record declaration might be added to the context}
-\giselle{Why is the \%\coqes{type} needed in the translation of tuple types?}
-\laila{Because "*" is overloaded (multiplication)}
 
 Notice that type constructors may take 0 arguments 
 (rule $\mathsf{Ty}_{\smles{TyCon}}$), but tuple and record types 
