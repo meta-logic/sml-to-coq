@@ -179,7 +179,7 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
 
   and fixpoint = Fixpoint of fixbody list | CoFixpoint of cofixbody list
 
-  and assumption = Assumption of assumKeyword * assums
+  and assumption = Assumption of assumKeyword * ident * term
 
   and assumKeyword = (* Axiom *)
                     Conjecture
@@ -188,8 +188,6 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
                    | Variable
                    | Variables
 
-  and assums = Assum of ident list * term
-
   and module = IModule of { id : ident, typ : ofModuleTyp option, bindings : moduleBindings list, body : moduleBody } (* Interctive Module *)
              | Module of { id : ident, typ : ofModuleTyp option, bindings : moduleBindings list, body : moduleExpression }
 
@@ -197,8 +195,6 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
 
   and moduleExpression = ModuleName of ident
                        | FunctorName of ident list
-
-  and moduleExp = ModuleExp of sentence list
 
   and ofModuleTyp = TransparentSig of moduleTyp
                 | OpaqueSig of moduleTyp
@@ -213,7 +209,9 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
 
   and import = Import | Export
 
-  and gsignature = Signature of { id : ident, bindings : moduleBindings list, body : signatureBody }
+  and gsignature = 
+      ISignature of {id : ident, bindings : moduleBindings list, body : signatureBody }
+      | Signature of { id : ident, bindings : moduleBindings list, body : moduleTyp }
 
   and signatureBody = SigBody of sentence list
 
