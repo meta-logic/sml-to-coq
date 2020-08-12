@@ -28,7 +28,7 @@ struct
   and valdesc2sent(valdesc : ValDesc') : G.sentence =
       let fun valdesc2sents(ValDesc(vid, ty, valdesc2)) =
               let
-                  val sent = G.AssumptionSentence (G.Assumption (G.Parameter, G.Assum([vid2id(~vid)], ty2term(~ty))))
+                  val sent = G.AssumptionSentence (G.Assumption (G.Parameter, vid2id(~vid), ty2term(~ty)))
                   val sents = sent :: ? (fn x => valdesc2sents(~x)) (valdesc2)
               in
                   sents
@@ -44,7 +44,7 @@ struct
                   fun tyvars2typ [] = G.SortTerm(G.Type)
                     | tyvars2typ (tyvar :: tyvars) = G.ArrowTerm(G.SortTerm(G.Type), tyvars2typ tyvars)
                   val typ = tyvars2typ tyvars
-                  val sent = G.AssumptionSentence (G.Assumption (G.Parameter, G.Assum([tycon2id(~tycon)], typ)))
+                  val sent = G.AssumptionSentence (G.Assumption (G.Parameter, tycon2id(~tycon), typ))
                   val sents = sent :: ? (fn x => typdesc2sents(~x)) (typdesc2)
               in
                   sents
@@ -97,6 +97,16 @@ struct
           G.SeqSentences(strdesc2sents strdesc)
       end
 
+  and syndesc2sents([] : (TyVar seq * TyCon * Ty) list) : G.sentence list = []
+    | syndesc2sents((tyvars, tycon, ty) :: syndescs)  = 
+      let
+          val id = tycon2id(~tycon)
+          val binders = tyvarseq2binder (List.map ~ ($(~tyvars)))
+          val body = ty2term(~ty)
+      in
+          (G.DefinitionSentence(G.DefinitionDef{localbool = false, id = id, binders = binders, typ = NONE, body = body})) :: syndesc2sents syndescs
+      end
+
   and spec2signature (sigid, spec : Spec') : G.gsignature =
       let
           fun spec2sents (VALSpec(valdesc)) : G.sentence list = [valdesc2sent(~valdesc)]
@@ -106,9 +116,10 @@ struct
             | spec2sents (EMPTYSpec) = []
             | spec2sents (SEQSpec(spec1, spec2)) = spec2sents(~spec1) @ spec2sents(~spec2)
             | spec2sents (INCLUDESpec(sigexp)) = [G.IncludeSentence(G.Include(sigexp2moduleTyp(~sigexp)))]
+            | spec2sents (SYNSpecX(syndesc)) = syndesc2sents(~syndesc)
           val body = G.SigBody(spec2sents spec)
       in
-          G.Signature {id = sigid, bindings = [], body = body}
+          G.ISignature {id = sigid, bindings = [], body = body}
       end
 
   and sigexp2moduleTyp (SIGSigExp(spec) : SigExp' ) : G.moduleTyp = G.SigName (spec2id(~spec))
@@ -168,6 +179,26 @@ struct
           G.Module { id = id, typ = typ, bindings = bindings, body = body }
       end
 
+  and sigexp2signature (sigid, SIGSigExp(spec)) : G.gsignature = spec2signature(sigid, ~spec)
+    | sigexp2signature (sigid, IDSigExp(sigid')) = G.Signature {id = sigid, bindings = [], body = G.SigName(sigid2id(~sigid'))}
+    | sigexp2signature (sigid, WHERETYPESigExp(sigexp, tyvars, ltycon, ty)) =
+      let
+          val gsignature = sigexp2signature(sigid, ~sigexp)
+          val id = ltycon2id(~ltycon)
+          val tyvars = tyvarseq2binder (List.map ~ ($(~tyvars)))
+          val ty = ty2term (~ty)
+          val defBody = if tyvars = [] then ty else
+                        G.FunTerm(tyvars, ty)
+          val withdecl = G.WithTyp(G.DefinitionDef {localbool = false, id = id, binders = [], typ = NONE, body = defBody})
+      in
+          case gsignature of
+              G.ISignature{body = body, id = id', bindings = bindings} =>
+              G.ISignature{body = updateSigBody body (id, tyvars, ty), id = id', bindings = bindings}
+            | G.Signature {body = body, id = id, bindings = bindings} =>
+              G.Signature {body = G.SigType(body, withdecl), id = id, bindings = bindings}
+      end
+
+
   and strbind2sent (strbind : StrBind) : G.sentence =
       let fun strbind2sents (StrBind(strid, strexp, strbnd2)@@_) =
               let
@@ -184,6 +215,20 @@ struct
           G.SeqSentences (strbind2sents strbind)
       end
 
+  and sigbind2sent (sigbind : SigBind) : G.sentence =
+      let fun sigbind2sents(SigBind(sigid, sigexp, sigbind2)@@_) =
+              let
+                  val id = sigid2id(~sigid)
+                  val gsignature = sigexp2signature(id, ~sigexp)
+                  val sent = G.SignatureSentence gsignature
+                  val sents = ?sigbind2sents sigbind2
+              in
+                  sent :: sents
+              end
+      in
+          G.SeqSentences (sigbind2sents sigbind)
+      end
+
 	(* FROM: SyntaxModuleFn.sml: 72 -> 76
 	 * TO:   Gallina.sml : 121 -> 128
 	 * FROM SECTION: Appendix C.2 page 106
@@ -197,6 +242,7 @@ struct
     | strDec2sents (SEQStrDec(strdec1, strdec2)@@_) =
       G.SeqSentences (strDec2sents(strdec1) :: [strDec2sents(strdec2)])
 
+  and sigDec2sents (SigDec(sigbind) @@ _ : SigDec) : G.sentence = sigbind2sent sigbind
 
   (* FROM: SyntaxModuleFn.sml: 142 -> 145
 	 * TO:   Gallina.sml : 121 -> 128
@@ -205,8 +251,9 @@ struct
 	 * TO SECTION: Section 3.1.4 Page 30
 	 * KEYWORD: sentence
 	 *)	
-	and topDec2sents (STRDECTopDec(dec, topDec2) @@ _ : TopDec) : G.sentence list =
-	    (strDec2sents dec) :: (?(topDec2sents) topDec2)
-		| topDec2sents _  = raise Fail "Unimplemented top declaration \n"
+	and topDec2sents (STRDECTopDec(strdec, topdec2) @@ _ : TopDec) : G.sentence list =
+	    (strDec2sents strdec) :: (?(topDec2sents) topdec2)
+		| topDec2sents (SIGDECTopDec(sigdec, topdec2)@@_) =
+      (sigDec2sents sigdec) :: (?(topDec2sents) topdec2)
 	end
 end

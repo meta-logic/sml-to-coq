@@ -96,6 +96,19 @@ struct
         fun opetize (SOME Op : Op option) (id : G.ident) : G.ident = "op" ^ id
           | opetize _ id = id
 
+        fun updateSigBody (G.SigBody(sents)) (id, binders, ty) : G.signatureBody =
+            let fun updateSent(sent) =
+                    case sent of G.SeqSentences(sents) => G.SeqSentences(List.map updateSent sents)
+                               | G.AssumptionSentence(G.Assumption(keyword, id', body)) => 
+                                 if id' = id
+                                 then G.DefinitionSentence(G.DefinitionDef{localbool = false, id = id, binders = binders, body = ty, typ = NONE})
+                                 else sent
+                               | _ => sent
+            in
+                G.SigBody(List.map updateSent sents)
+            end
+
+
         (*fun idFromFixbody (Fixbody (fixbody) : G.fixbody) : G.ident = #id fixbody*)
 
     end    	
