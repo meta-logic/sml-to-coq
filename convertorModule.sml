@@ -229,6 +229,48 @@ struct
           G.SeqSentences (sigbind2sents sigbind)
       end
 
+  and funbind2sent (funbind : FunBind) : G.sentence =
+      let fun funbind2sents(FunBind(funid, strid, sigexp, strexp, funbind2)@@_) =
+              let
+                  val funid = funid2id(~funid)
+                  val strid = strid2id(~strid)
+                  val moduletyp = sigexp2moduleTyp(~sigexp)
+                  val module = strexp2module (funid, ~strexp)
+                  val bindings = [G.ModuleBinding(NONE, [strid], moduletyp)]
+                  val sent = (case module of
+                                  G.IModule {bindings = _, id = id, typ = typ, body = body} =>
+                                  G.ModuleSentence (G.IModule{bindings = bindings, id = id, typ = typ, body = body})
+                                | G.Module{bindings = _, id = id, typ = typ, body = body} =>
+                                  G.ModuleSentence (G.Module{bindings = bindings, id = id, typ = typ, body = body}))
+                  val context = !cxt
+                  val _ = cxt := []
+                  val sents = ?funbind2sents funbind2
+              in
+                  context @ (sent :: sents)
+              end
+            | funbind2sents (SPECFunBindX(funid, spec, strexp, funbind2)@@_) = 
+              let
+                  val funid = funid2id(~funid)
+                  val sigid = spec2id (~spec)
+                  val moduletyp = G.SigName(sigid)
+                  val strid = strid2id(StrId.invent())
+                  val module = strexp2module(funid, ~strexp)
+                  val bindings = [G.ModuleBinding(SOME G.Import, [strid], moduletyp)]
+                  val sent = (case module of
+                                  G.IModule {bindings = _, id = id, typ = typ, body = body} =>
+                                  G.ModuleSentence (G.IModule{bindings = bindings, id = id, typ = typ, body = body})
+                                | G.Module{bindings = _, id = id, typ = typ, body = body} =>
+                                  G.ModuleSentence (G.Module{bindings = bindings, id = id, typ = typ, body = body}))
+                  val context = !cxt
+                  val _ = cxt := []
+                  val sents = ?funbind2sents funbind2
+              in
+                  context @ (sent :: sents)
+              end
+      in
+          G.SeqSentences (funbind2sents funbind)
+      end
+
 	(* FROM: SyntaxModuleFn.sml: 72 -> 76
 	 * TO:   Gallina.sml : 121 -> 128
 	 * FROM SECTION: Appendix C.2 page 106
@@ -244,6 +286,8 @@ struct
 
   and sigDec2sents (SigDec(sigbind) @@ _ : SigDec) : G.sentence = sigbind2sent sigbind
 
+  and funDec2sents (FunDec(funbind)@@_ : FunDec) : G.sentence = funbind2sent funbind
+
   (* FROM: SyntaxModuleFn.sml: 142 -> 145
 	 * TO:   Gallina.sml : 121 -> 128
    * FROM SECTION: Appendix C.2 page 106
@@ -255,5 +299,7 @@ struct
 	    (strDec2sents strdec) :: (?(topDec2sents) topdec2)
 		| topDec2sents (SIGDECTopDec(sigdec, topdec2)@@_) =
       (sigDec2sents sigdec) :: (?(topDec2sents) topdec2)
+    | topDec2sents (FUNDECTopDec(fundec, topdec2)@@_) =
+      (funDec2sents fundec) :: ((?topDec2sents) topdec2)
 	end
 end
