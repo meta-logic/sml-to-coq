@@ -333,6 +333,7 @@ formally, we first explain the strategy used for some constructs that
 did not have a direct translation.
 
 \subsection{Records}
+\label{sec:records}
 
 A record is a set of named fields typed by record types, for example:
 
@@ -425,14 +426,12 @@ each syntactic category in SML's AST.
 
 \subsubsection{Record Labels}
 
-Record labels have no restrictions apart from starting with an
-alphanumeric character.
+Record labels are translated using the record type prefix, as
+explained in Section~\ref{sec:records}.
 
 \[
-\infer[\mathsf{Lab}]{\smle{l} \stoglab \coqe{l}}{}
+\infer[\mathsf{Lab}]{\smle{pre, l} \stoglab \coqe{pre_l}}{}
 \]
-\giselle{Are there allowed labels in SML that need special care?}
-\laila{Yes, numeric labels, and this is till not taken care of in the code}
 
 \subsubsection{Type Constructors}
 
@@ -509,7 +508,7 @@ Coq. Therefore, we prefix type variables in Coq by \coqe{_}.
 }
 \\
 \infer[\mathsf{Ty}_{rec}]{\smle{\{ l_1: t_1, \\dots, l_n: t_n \}} \stogty \coqe!\{ l\\g_1: t\\g_1; ...; l\\g_n: t\\g_n \}!}{
-  \smle{l_i} \stoglab \coqe{l\\g_i}
+  \smle{pre, l_i} \stoglab \coqe{l\\g_i}
   &
   \smle{t_i} \stogty \coqe{t\\g_i}
   &
@@ -708,7 +707,7 @@ What do we do with Coq keywords? Are identifiers using dot considered as VId?}
 \infer[\mathsf{AtExp}_{\smles{op}}]{\smle{op id} \stogatexp \tbd}{}
 \\
 \infer[\mathsf{AtExp}_{rec}]{\smle{\{l_1 = e_1, \\dots, l_n = e_n\}} \stogatexp \coqe!\{| l\\g_1 = e\\g_1; ...; l\\g_n = e\\g_n |\}!}{
-  \smle{l_i} \stoglab \coqe{l\\g_i}
+  \smle{pre, l_i} \stoglab \coqe{l\\g_i}
   &
   \smle{e_i} \stogexp \coqe{e\\g_i}
   &
@@ -878,7 +877,7 @@ in Coq's \coqe{Bool} library.
 \infer[\mathsf{PatRow}_{\dots}]{\smle!$\dots$! \stogpatrow \tbd}{}
 &
 \infer[\mathsf{PatRow}_0]{\smle{l = p} \stogpatrow \coqe{l\\g = p\\g}}{
-  \smle{l} \stoglab \coqe{l\\g}
+  \smle{pre, l} \stoglab \coqe{l\\g}
   &
   \smle{p} \stogpat \coqe{p\\g}
 }
