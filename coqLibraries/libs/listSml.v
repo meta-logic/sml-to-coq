@@ -55,6 +55,8 @@ Module List.
     | _  => List.tl l
     end.
 
+  Local Fixpoint last' {A: Type} (l:list A):A := List.last l EmptyException.
+
   (*
     Sml: 'a list -> 'a
     Coq: list A -> A
@@ -62,7 +64,7 @@ Module List.
       but since Coq doesn't have exceptions then it will return the axiom 
       EmptyException
   *)
-  Fixpoint last {A: Type} (l:list A):A := List.last l EmptyException.
+  Definition last {A: Type} (l:list A):A := last' l.
 
   (*
     Sml: 'a list -> ('a * 'a list) option
@@ -130,15 +132,17 @@ Module List.
   Definition revAppend {A: Type} '((l, l'):list A * list A):list A :=
      List.rev_append l l'.
 
+  Local Fixpoint app' {A: Type} (f:A->unit) (l:list A): unit:=
+    match l with
+    | [] => tt
+    | a :: t => let _ := (f a) in app' f t
+    end.
+
   (*
     Sml: ('a -> unit) -> 'a list -> unit
     Coq: (A -> unit) -> list A -> unit
   *)
-  Fixpoint app {A: Type} (f:A->unit) (l:list A): unit:= 
-    match l with
-    | [] => tt
-    | a :: t => let _ := (f a) in app f t
-    end.
+  Definition app {A: Type} (f:A->unit) (l:list A): unit:= app' f l.
 
   (*
     Sml: ('a -> 'b) -> 'a list -> 'b list
@@ -146,18 +150,21 @@ Module List.
   *)
   Definition map {A B: Type} (f: A->B) (l:list A):list B := List.map f l.
 
+  Local Fixpoint mapPartial' {A B: Type} (f: A-> option B) (l:list A):list B :=
+    match l with
+    | [] => []
+    | x::l' => match f x with 
+               | None   => mapPartial' f l'
+               | Some y => y::mapPartial' f l'
+               end
+    end.
+
   (*
     Sml: ('a -> 'b option) -> 'a list -> 'b list
     Coq: (A -> option B) -> list A -> list B
   *)
-  Fixpoint mapPartial {A B: Type} (f: A-> option B) (l:list A):list B :=
-    match l with
-    | [] => []
-    | x::l' => match f x with 
-               | None   => mapPartial f l'
-               | Some y => y::mapPartial f l'
-               end
-    end.
+  Definition mapPartial {A B: Type} (f: A-> option B) (l:list A):list B := 
+    mapPartial' f l.
 
   (*
     Sml: ('a -> bool) -> 'a list -> 'a option
@@ -178,25 +185,31 @@ Module List.
   Definition partition {A: Type} (f:A->bool) (l:list A):list A * list A :=
      List.partition f l.
 
-  (*
-    Sml: ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
-    Coq: (A * B -> B) -> B -> list A -> B
-  *)
-  Fixpoint foldl {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
+  Local Fixpoint foldl' {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
     match l with
     | nil => b0
-    | cons a t => foldl f (f(a,b0)) t
+    | cons a t => foldl' f (f(a,b0)) t
     end.
 
   (*
     Sml: ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
     Coq: (A * B -> B) -> B -> list A -> B
   *)
-  Fixpoint foldr {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
+  Definition foldl {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B := 
+    foldl' f b0 l.
+
+  Local Fixpoint foldr' {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
     match l with
     | nil => b0
-    | cons a t => f(a, foldr f b0 t)
+    | cons a t => f(a, foldr' f b0 t)
     end.
+
+  (*
+    Sml: ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+    Coq: (A * B -> B) -> B -> list A -> B
+  *)
+  Definition foldr  {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
+    foldr' f b0 l.
 
   (*
     Sml: ('a -> bool) -> 'a list -> bool
@@ -220,7 +233,7 @@ Module List.
 
   (*
     Sml:  int * (int -> 'a) -> 'a list
-    Coq:  nat * (Z -> A) -> list A
+    Coq:  Z * (Z -> A) -> list A
   *)
   Definition tabulate {A: Type} '((n, f):Z * (Z->A)):list A :=
     tabulate' (Z.to_nat n) n f [].

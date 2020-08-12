@@ -1,6 +1,6 @@
 Require Import stringSml.
 Require Import listSml.
-Require Import charSml.
+Require Import Ascii.
 Require Import optionSml.
 Require Import ZArith.
 Require Import Bool.
@@ -73,12 +73,23 @@ Module StringCvt.
   Definition dropl {A} (f: ascii->bool) (rdr: reader ascii A) (src: A) 
            (time: nat): A := let (a,b) := splitl f rdr src time in b.
 
+  Local Definition ord (c:ascii):Z := Z.of_nat(Ascii.nat_of_ascii(c)).
+
+  Local Definition isSpace (c:ascii):bool := 
+    match  (Z.leb (ord "009"%char) (ord c)),
+           (Z.leb (ord c) (ord "013"%char)),
+           (Ascii.eqb c " "%char) with
+    | false, _, false => false
+    | _, false, false => false
+    | _, _, _  => true
+    end.
+
   (*
     Sml: (char, 'a) reader -> 'a -> 'a
     Coq: reader ascii A -> A -> nat -> A
   *)
   Definition skipWS {A} (rdr: reader ascii A) (src: A) (time: nat): A :=
-    dropl (Char.isSpace) rdr src time.
+    dropl (isSpace) rdr src time.
 
   Definition cs:= Z.
 
