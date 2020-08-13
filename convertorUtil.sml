@@ -108,6 +108,16 @@ struct
                 G.SigBody(List.map updateSent sents)
             end
 
+        fun updateTyvarCtx (tyvars : TyVar seq) (tyvarctx : TT.set) : TT.set =
+            let
+                fun tyvarseq2strings (tyvars: TyVar.TyVar list) : string list = List.map TyVar.toString tyvars
+                val tyvars = tyvarseq2strings (List.map ~ ($(~tyvars)))
+                fun update [] ctx = ctx
+                  | update (tyvar::tyvars) ctx = TT.insert (update tyvars ctx) tyvar
+            in
+                update tyvars tyvarctx
+            end
+
 
         (*fun idFromFixbody (Fixbody (fixbody) : G.fixbody) : G.ident = #id fixbody*)
 

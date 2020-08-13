@@ -694,7 +694,7 @@ struct
         and dec2sent ((TYPEDec(typbind)@@ _) : Dec): G.sentence = typbind2sent typbind
             | dec2sent (DATATYPEDec(datbind)@@_) = datbind2sent datbind
             (* ignoring tyvarseq for now (function declarations) *)
-            | dec2sent (VALDec(tyvarseq, valbind)@@_) = valbind2sent valbind
+            | dec2sent (VALDec(tyvars, valbind)@@_) = (tyvarCtx := updateTyvarCtx (tyvars) (!tyvarCtx); valbind2sent valbind)
             | dec2sent _ = raise Fail "Unimplemented declaration! \n"
     end 
 end

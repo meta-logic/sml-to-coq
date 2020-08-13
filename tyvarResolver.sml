@@ -13,8 +13,7 @@ structure CU = ConvertorUtil.TT
 val tyvarCtx' = ref (TT.empty)
                        
 fun resolveType' (tyvarCtx : TT.set) (S.TyVar tyvar : S.Type') : TT.set * G.term option =
-    if String.isPrefix "_" (#name tyvar) andalso
-       not (TT.member (!tyvarCtx') (#name tyvar)) then
+    if not (TT.member (!tyvarCtx') (#name tyvar)) then
         (TT.insert tyvarCtx (#name tyvar), SOME (G.IdentTerm (#name tyvar)))
     else
         (tyvarCtx, SOME (G.IdentTerm (#name tyvar)))
