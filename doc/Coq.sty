@@ -134,7 +134,7 @@ literate=
 %
 }[keywords,comments,strings]
 
-\lstnewenvironment{coq}{\lstset{language=Coq}}{}
+\lstnewenvironment{coq}[1][]{\lstset{language=Coq,caption={#1}}}{}
 
 % pour inliner dans le texte
 \def\coqe{\lstinline[language=Coq, basicstyle=\small]}

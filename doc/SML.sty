@@ -80,7 +80,7 @@
 %
 }
 
-\lstnewenvironment{sml}{\lstset{language=SML}}{}
+\lstnewenvironment{sml}[1][]{\lstset{language=SML,caption={#1}}}{}
 
 % For inline code
 \def\smle{\lstinline[language=SML, basicstyle=\small, escapeinside={~}{^}]}

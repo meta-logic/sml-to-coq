@@ -81,6 +81,9 @@
   \SavedLstInline
 }
 
+\renewcommand{\lstlistingname}{Example}% Listing -> Algorithm
+\renewcommand{\lstlistlistingname}{List of \lstlistingname s}% List of Listings -> List of Algorithms
+
 \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
 \newcommand{\giselle}[1]{\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum]{G: #1}}
 
@@ -106,6 +109,30 @@
 \newcommand\stoglab{\;\stog_\mathtt{Lab}\;}
 \newcommand\stogscon{\;\stog_\mathtt{SCon}\;}
 \newcommand\stogvid{\;\stog_\mathtt{VId}\;}
+
+\newcommand\stogstrexp{\;\stog_\mathtt{StrExp}\;}
+\newcommand\stogstrdec{\;\stog_\mathtt{StrDec}\;}
+\newcommand\stogstrbind{\;\stog_\mathtt{StrBind}\;}
+
+\newcommand\stogsigexp{\;\stog_\mathtt{SigExp}\;}
+\newcommand\stogsigdec{\;\stog_\mathtt{SigDec}\;}
+\newcommand\stogsigbind{\;\stog_\mathtt{SigBind}\;}
+
+\newcommand\stogspec{\;\stog_\mathtt{Spec}\;}
+\newcommand\stogvaldesc{\;\stog_\mathtt{ValDesc}\;}
+\newcommand\stogtypdesc{\;\stog_\mathtt{TypDesc}\;}
+\newcommand\stogdatdesc{\;\stog_\mathtt{DatDesc}\;}
+\newcommand\stogcondesc{\;\stog_\mathtt{ConDesc}\;}
+\newcommand\stogexdesc{\;\stog_\mathtt{ExDesc}\;}
+\newcommand\stogstrdesc{\;\stog_\mathtt{StrDesc}\;}
+
+\newcommand\stogfundec{\;\stog_\mathtt{FunDec}\;}
+\newcommand\stogfunbind{\;\stog_\mathtt{FunBind}\;}
+\newcommand\stogtopdec{\;\stog_\mathtt{TopDec}\;}
+
+\newcommand\stogstrid{\;\stog_\mathtt{StrId}\;}
+\newcommand\stogfunid{\;\stog_\mathtt{FunId}\;}
+\newcommand\stogsigid{\;\stog_\mathtt{SigId}\;}
 
 \newcommand{\tbd}{\colorbox{yellow}{\textbf{TBD}}}
 
@@ -289,8 +316,7 @@ derivation (which ) solves the problem.
 
 \section{Changes in Gallina}
 
-\section{Translation}
-
+\section{Translation of the Core}
 In this section we define the translation from our modified HaMLet AST to our
 also modified Gallina's AST. We will use a derivation system with the judgment
 $S \stog G$, where $S$ and $G$ are SML and Gallina ASTs respectively. Gallina 
@@ -1002,7 +1028,52 @@ TODO
 \subsubsection{Exception Bindings}
 
 TODO
+\newpage
 
+\section{Translation of Modules}
+\subsection{Functor Applications}
+Structure Bindings in SML has one format:
+\smle{strid = strexp}, where strexp (the body of a structure) can be a functor application.\\
+Functor applications, in turn, can be nested:
+\begin{sml}
+D = Dict(structure Key = ListOrdered(structure Ordered = IntOrdered))
+\end{sml}
+However, in Gallina, that's not allowed:
+\begin{coq}
+Fail Module D := Dict(ListOrdered(IntOrdered)).
+The command has indeed failed with message:
+A module cannot be applied to another module application or with-expression; 
+you must give a name to the intermediate result module first.
+\end{coq}
+Therefore, nested functor application are unfolded into multiple declarations to unnest functor them:
+\begin{coq}
+Module strid_1 := ListOrdered(IntOrdered).
+Module D := strid_1.
+\end{coq}
+\subsection{Translation rules}
+\subsubsection{Structure Expressions}
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{StrExp}_{\smles{basic}}]{\smle{struct sd end} \stogstrdec \coqe{sd\\g}}{
+  \smle{sd} \stogstrdec \coqe{sd\\g}
+}
+\end{array}
+\]
+\subsubsection{Structure Declarations}
+\subsubsection{Structure Bindings}
+\subsubsection{Signature Expressions}
+\subsubsection{Signature Declarations}
+\subsubsection{Signature Bindings}
+\subsubsection{Specification}
+\subsubsection{Value Descriptions}
+\subsubsection{Type Descriptions}
+\subsubsection{Datatype Descriptions}
+\subsubsection{Exception Descriptions}
+\subsubsection{Structure Descriptions}
+\subsubsection{Functor Declarations}
+\subsubsection{Functor Bindings}
+\subsubsection{Top-Level Declarations}
 \section{Simulation}
 
 \giselle{This is *very* preliminary. Just some ideas to see where it goes.}
