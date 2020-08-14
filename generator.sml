@@ -209,9 +209,10 @@ struct
     case sentence of 
       nil    => nil
     | x::ast => case x of
-                  G.DefinitionSentence(d) => definitionG(d)::sentenceG(ast)
+                  G.DefinitionSentence(d) => definitionG(d)::sentenceG(ast) 
                 | G.InductiveSentence(i)  => inductiveG(i)::sentenceG(ast)
-                | G.FixpointSentence(f)   => fixpointG(f)::sentenceG(ast)
+                | G.FixpointSentence(f)   => fixpointG(f)::sentenceG(ast) 
+                | G.AssumptionSentence(a) => assumptionG(a)::sentenceG(ast)
                 | G.RecordSentence(r)     => recordG(r)::sentenceG(ast)
                 | G.SeqSentences(n)       => sentenceG(n)@sentenceG(ast)
 
@@ -246,8 +247,8 @@ struct
 
   and inductiveG (ind: G.inductive): string  = 
     case ind of
-        G.Inductive(inbL)   => "Inductive "   ^ concatListWith("\nwith ", indBodyG, inbL)^"."
-      | G.CoInductive(inbL) => "CoInductive " ^ concatListWith("\nwith ", indBodyG, inbL)^"."
+      G.Inductive(inbL)   => "Inductive "   ^ concatListWith("\nwith ", indBodyG, inbL)^"."
+    | G.CoInductive(inbL) => "CoInductive " ^ concatListWith("\nwith ", indBodyG, inbL)^"."
   
 
   and indBodyG (G.IndBody{id=i, bind=bL, typ=t, clauses=cL}) =
@@ -262,8 +263,21 @@ struct
 
   and fixpointG (fp: G.fixpoint): string =
     case fp of
-        G.Fixpoint(fL)   => "Fixpoint "   ^ concatListWith("\nwith ", fixbodyG, fL)^"."
-      | G.CoFixpoint(fL) => "CoFixpoint " ^ concatListWith("\nwith ", coFixbodyG, fL)^"."  
+      G.Fixpoint(fL)   => "Fixpoint "   ^ concatListWith("\nwith ", fixbodyG, fL)^"."
+    | G.CoFixpoint(fL) => "CoFixpoint " ^ concatListWith("\nwith ", coFixbodyG, fL)^"."  
+
+
+  and assumptionG (G.Assumption(ak, i, t)) = 
+    assumKeywordG(ak) ^ " " ^ i ^ " : " ^ termG(t) ^ "." 
+
+
+  and assumKeywordG (a: G.assumKeyword) = 
+    case a of 
+      G.Conjecture => "Conjecture"
+    | G.Parameter  => "Parameter"
+    | G.Parameters => "Parameters"
+    | G.Variable   => "Variable"
+    | G.Variables  => "Variables"
 
 
   and convertChar (s: string): string = 
