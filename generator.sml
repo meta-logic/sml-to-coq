@@ -214,6 +214,7 @@ struct
                 | G.FixpointSentence(f)   => fixpointG(f)::sentenceG(ast) 
                 | G.AssumptionSentence(a) => assumptionG(a)::sentenceG(ast)
                 | G.RecordSentence(r)     => recordG(r)::sentenceG(ast)
+                | G.ModuleSentence(m)     => moduleG(m)::sentenceG(ast)
                 | G.SeqSentences(n)       => sentenceG(n)@sentenceG(ast)
 
 
@@ -279,6 +280,54 @@ struct
     | G.Variable   => "Variable"
     | G.Variables  => "Variables"
 
+  and moduleG (m: G.module): string =
+    case m of
+      G.IModule{id=i, typ=oo, bindings=ml, body=mB} => 
+      "Module " ^ i ^" "^ concatListWith("\n", moduleBindingsG, ml) ^ " " ^
+      (case oo of NONE => "" | SOME x => ofModuleTypG(x)^" ") ^ ".\n" ^
+      moduleBodyG(mB) ^ "\nEnd " ^ i ^"."
+    | G.Module{id=i, typ=oo, bindings=ml, body=mE} => 
+      "Module " ^ i ^" "^ concatListWith("\n", moduleBindingsG, ml) ^ " " ^
+      (case oo of NONE => "" | SOME x => ofModuleTypG(x)^" ")  ^ ".\n" ^
+      moduleExpressionG(mE) ^ "\nEnd " ^ i ^"."
+
+
+  and moduleBodyG (G.ModuleBody(sL)): string = 
+    concatListWith("\n", fn x => x , sentenceG(sL))
+
+
+  and moduleExpressionG (m: G.moduleExpression): string =
+    case m of
+      G.ModuleName(i)   => i
+    | G.FunctorName(iL) => "!" ^ concatListWith(" ", (fn x => x), iL)
+
+
+  and ofModuleTypG (m: G.ofModuleTyp): string =
+    case m of
+      G.TransparentSig(m') => ":" ^ moduleTypG(m')
+    | G.OpaqueSig(m')      => "<:" ^ moduleTypG(m')
+
+
+  and moduleTypG (m: G.moduleTyp): string = 
+    case m of
+      G.SigName(i) => i
+    | G.SigParens(mT) => "( " ^ moduleTypG(mT) ^ " )"
+    | G.SigType(mT, w) => moduleTypG(mT) ^" "^ withDeclG(w)
+
+
+  and withDeclG (G.WithTyp(d)): string = "with " ^ definitionG(d)
+
+
+  and moduleBindingsG(G.ModuleBinding(iO, iL, mT)): string =
+    "( " ^ (case iO of NONE => "" | SOME i => importG(i)^" ") ^ 
+    concatListWith(" ",fn x => x, iL) ^" : " ^ moduleTypG(mT) ^ " )"
+
+
+  and importG (i: G.import): string = 
+    case i of
+      G.Import => "Import"
+    | G.Export => "Export"
+  
 
   and convertChar (s: string): string = 
     let
