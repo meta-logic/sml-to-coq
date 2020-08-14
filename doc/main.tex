@@ -1045,23 +1045,45 @@ The command has indeed failed with message:
 A module cannot be applied to another module application or with-expression; 
 you must give a name to the intermediate result module first.
 \end{coq}
-Therefore, nested functor application are unfolded into multiple declarations to unnest functor them:
+Therefore, nested functor applications are unfolded into multiple declarations:
 \begin{coq}
 Module strid_1 := ListOrdered(IntOrdered).
 Module D := strid_1.
 \end{coq}
 \subsection{Translation rules}
 \subsubsection{Structure Expressions}
+\subsubsection{Structure Declarations}
+\subsubsection{Structure Bindings}
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{cc}
-\infer[\mathsf{StrExp}_{\smles{basic}}]{\smle{struct sd end} \stogstrdec \coqe{sd\\g}}{
+\infer[\mathsf{StrBind}_{\smles{struct}}]{\smle{S = struct sd end} \stogstrdec \coqe{Module S := sd\\g}}{
   \smle{sd} \stogstrdec \coqe{sd\\g}
+}\\
+\infer[\mathsf{StrExp}_{\smles{id}}]{\smle{S = SId} \stogstrbind \coqe{Module S := SId\\g}}{
+  \smle{SId} \stogstrid \coqe{SId\\g}
+}\\
+\infer[\mathsf{StrExp}_{\smles{colon}}]{\smle{S : SIG = SId} \stogstrexp \coqe{Module S : SIG\\g := SId\\g}}{
+  \smle{SId} \stogstrid \coqe{SId\\g}&
+  \smle{SIG} \stogsigexp \coqe{SIG\\g}
 }
 \end{array}
 \]
-\subsubsection{Structure Declarations}
-\subsubsection{Structure Bindings}
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{StrBind}_{\smles{seal}}]{\smle{S :> SIG = SId} \stogstrdec \coqe{Module S :> SIG\\g := SId\\g}}{
+  \smle{SId} \stogstrid \coqe{SId\\g}&
+  \smle{SIG} \stogsigexp \coqe{SIG\\g}
+}\\
+\infer[\mathsf{StrBind}_{\smles{app}}]{\smle{S = FId(se)} \stogstrbind \coqe{Module S := FId\\g(se\\g)}}{
+  \smle{FId} \stogfunid \coqe{FId\\g}
+  \smle{se} \stogstrexp \coqe{se\\g}
+}\\
+\infer[\mathsf{StrExp}_{\smles{let}}]{\smle{S = let sd in se} \stogstrexp \tbd}{\tbd
+}
+\end{array}
+\]
 \subsubsection{Signature Expressions}
 \subsubsection{Signature Declarations}
 \subsubsection{Signature Bindings}
