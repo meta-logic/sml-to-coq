@@ -215,6 +215,7 @@ struct
                 | G.AssumptionSentence(a) => assumptionG(a)::sentenceG(ast)
                 | G.RecordSentence(r)     => recordG(r)::sentenceG(ast)
                 | G.ModuleSentence(m)     => moduleG(m)::sentenceG(ast)
+                | G.IncludeSentence(i)    => inclusionG(i)::sentenceG(ast)
                 | G.SeqSentences(n)       => sentenceG(n)@sentenceG(ast)
 
 
@@ -269,7 +270,7 @@ struct
 
 
   and assumptionG (G.Assumption(ak, i, t)) = 
-    assumKeywordG(ak) ^ " " ^ i ^ " : " ^ termG(t) ^ "." 
+    assumKeywordG(ak) ^ " " ^ convertIdent(i) ^ " : " ^ termG(t) ^ "." 
 
 
   and assumKeywordG (a: G.assumKeyword) = 
@@ -283,13 +284,13 @@ struct
   and moduleG (m: G.module): string =
     case m of
       G.IModule{id=i, typ=oo, bindings=ml, body=mB} => 
-      "Module " ^ i ^" "^ concatListWith("\n", moduleBindingsG, ml) ^ " " ^
-      (case oo of NONE => "" | SOME x => ofModuleTypG(x)^" ") ^ ".\n" ^
-      moduleBodyG(mB) ^ "\nEnd " ^ i ^"."
+      "Module " ^ convertIdent(i) ^" "^ concatListWith("\n", moduleBindingsG, ml)
+      ^ " " ^ (case oo of NONE => "" | SOME x => ofModuleTypG(x)^" ") ^ ".\n" ^
+      moduleBodyG(mB) ^ "\nEnd " ^ convertIdent(i) ^"."
     | G.Module{id=i, typ=oo, bindings=ml, body=mE} => 
-      "Module " ^ i ^" "^ concatListWith("\n", moduleBindingsG, ml) ^ " " ^
-      (case oo of NONE => "" | SOME x => ofModuleTypG(x)^" ")  ^ ".\n" ^
-      moduleExpressionG(mE) ^ "\nEnd " ^ i ^"."
+      "Module " ^ convertIdent(i) ^" "^ concatListWith("\n", moduleBindingsG, ml)
+      ^ " " ^ (case oo of NONE => "" | SOME x => ofModuleTypG(x)^" ")  ^ ".\n" ^
+      moduleExpressionG(mE) ^ "\nEnd " ^ convertIdent(i) ^"."
 
 
   and moduleBodyG (G.ModuleBody(sL)): string = 
@@ -328,6 +329,8 @@ struct
       G.Import => "Import"
     | G.Export => "Export"
   
+
+  and inclusionG (G.Include (m)): string = "Include " ^ moduleTypG(m) ^ "."
 
   and convertChar (s: string): string = 
     let
