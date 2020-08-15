@@ -215,6 +215,7 @@ struct
                 | G.AssumptionSentence(a)    => assumptionG(a)::sentenceG(ast)
                 | G.RecordSentence(r)        => recordG(r)::sentenceG(ast)
                 | G.ModuleSentence(m)        => moduleG(m)::sentenceG(ast)
+                | G.SignatureSentence(g)     => gsignatureG(g)::sentenceG(ast)
                 | G.DeclareModuleSentence(d) => declarationG(d)::sentenceG(ast)
                 | G.IncludeSentence(i)       => inclusionG(i)::sentenceG(ast)
                 | G.SeqSentences(n)          => sentenceG(n)@sentenceG(ast)
@@ -330,6 +331,23 @@ struct
       G.Import => "Import"
     | G.Export => "Export"
   
+  
+  and gsignatureG (g: G.gsignature): string =
+    case g of
+      G.ISignature{id=i, bindings=ml, body=s} => 
+      "Module Type " ^ convertIdent(i) ^" "^
+      concatListWith("\n", moduleBindingsG, ml) ^ ".\n" ^ 
+      signatureBodyG(s) ^  "\nEnd " ^ convertIdent(i) ^"."
+    | G.Signature{id=i, bindings=ml, body=m} =>
+      "Module Type " ^ convertIdent(i) ^" "^
+      concatListWith("\n", moduleBindingsG, ml) ^ ".\n" ^ 
+      moduleTypG(m) ^  "\nEnd " ^ convertIdent(i) ^"."
+
+
+  and signatureBodyG (G.SigBody(sL)): string = 
+    concatListWith("\n", fn x => x , sentenceG(sL))
+
+
   and declarationG (G.Declare {id=i, bindings=ml, typ=mT}): string = 
     "Declare Module " ^ convertIdent(i) ^ " " ^
     concatListWith("\n", moduleBindingsG, ml) ^ " : " ^ moduleTypG(mT) ^ "."
