@@ -209,14 +209,15 @@ struct
     case sentence of 
       nil    => nil
     | x::ast => case x of
-                  G.DefinitionSentence(d) => definitionG(d)::sentenceG(ast) 
-                | G.InductiveSentence(i)  => inductiveG(i)::sentenceG(ast)
-                | G.FixpointSentence(f)   => fixpointG(f)::sentenceG(ast) 
-                | G.AssumptionSentence(a) => assumptionG(a)::sentenceG(ast)
-                | G.RecordSentence(r)     => recordG(r)::sentenceG(ast)
-                | G.ModuleSentence(m)     => moduleG(m)::sentenceG(ast)
-                | G.IncludeSentence(i)    => inclusionG(i)::sentenceG(ast)
-                | G.SeqSentences(n)       => sentenceG(n)@sentenceG(ast)
+                  G.DefinitionSentence(d)    => definitionG(d)::sentenceG(ast) 
+                | G.InductiveSentence(i)     => inductiveG(i)::sentenceG(ast)
+                | G.FixpointSentence(f)      => fixpointG(f)::sentenceG(ast) 
+                | G.AssumptionSentence(a)    => assumptionG(a)::sentenceG(ast)
+                | G.RecordSentence(r)        => recordG(r)::sentenceG(ast)
+                | G.ModuleSentence(m)        => moduleG(m)::sentenceG(ast)
+                | G.DeclareModuleSentence(d) => declarationG(d)::sentenceG(ast)
+                | G.IncludeSentence(i)       => inclusionG(i)::sentenceG(ast)
+                | G.SeqSentences(n)          => sentenceG(n)@sentenceG(ast)
 
 
   and recordG (rL) = "Record " ^ concatListWith("with ", recBodyG, rL)
@@ -329,6 +330,10 @@ struct
       G.Import => "Import"
     | G.Export => "Export"
   
+  and declarationG (G.Declare {id=i, bindings=ml, typ=mT}): string = 
+    "Declare Module " ^ convertIdent(i) ^ " " ^
+    concatListWith("\n", moduleBindingsG, ml) ^ " : " ^ moduleTypG(mT) ^ "."
+
 
   and inclusionG (G.Include (m)): string = "Include " ^ moduleTypG(m) ^ "."
 
