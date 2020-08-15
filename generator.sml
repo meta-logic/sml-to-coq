@@ -300,7 +300,7 @@ struct
   and moduleExpressionG (m: G.moduleExpression): string =
     case m of
       G.ModuleName(i)   => i
-    | G.FunctorName(iL) => "!" ^ concatListWith(" ", (fn x => x), iL)
+    | G.FunctorName(id1, id2) => "!" ^ id1 ^ " " ^ id2
 
 
   and ofModuleTypG (m: G.ofModuleTyp): string =

@@ -194,7 +194,7 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
   and moduleBody = ModuleBody of sentence list
 
   and moduleExpression = ModuleName of ident
-                       | FunctorName of ident list
+                       | FunctorName of ident * ident
 
   and ofModuleTyp = TransparentSig of moduleTyp
                 | OpaqueSig of moduleTyp
