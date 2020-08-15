@@ -141,7 +141,8 @@ struct
   and sigexp2ofmoduleTyp(sigexp : SigExp', true : bool) : G.ofModuleTyp = G.OpaqueSig (sigexp2moduleTyp sigexp)
     | sigexp2ofmoduleTyp (sigexp, false) = G.TransparentSig (sigexp2moduleTyp sigexp)
 
-  and strexp2id (strexp : StrExp') : G.ident =
+  and strexp2id (IDStrExp(lstrid) : StrExp') : G.ident = lstrid2id(~lstrid)
+    | strexp2id (strexp) =
       let
           val strid = strid2id(StrId.invent())
           val _ = cxt := !cxt @ [G.ModuleSentence(strexp2module(strid, strexp))]
@@ -174,7 +175,7 @@ struct
           val id = strid
           val typ = NONE
           val bindings = []
-          val body = G.FunctorName [(funid2id(~funid)), strexp2id(~strexp) ]
+          val body = G.FunctorName ((funid2id(~funid)), strexp2id(~strexp))
       in
           G.Module { id = id, typ = typ, bindings = bindings, body = body }
       end
