@@ -12,6 +12,9 @@
 \usepackage{amsthm}
 \newtheorem{theorem}{Theorem}
 
+\usepackage[symbol]{footmisc}
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+
 \usepackage{listings}
 
 \usepackage{Coq}
@@ -92,6 +95,7 @@
 
 % Macros for translation
 \newcommand\stog{\boldsymbol{\Longrightarrow}}
+\newcommand{\stoga}[1]{\overset{#1}{\boldsymbol{\Longrightarrow}}}
 \newcommand\stogtycon{\;\stog_\mathtt{TyCon}\;}
 \newcommand\stogatexp{\;\stog_\mathtt{AtExp}\;}
 \newcommand\stogexp{\;\stog_\mathtt{Exp}\;}
@@ -115,6 +119,7 @@
 \newcommand\stogstrbind{\;\stog_\mathtt{StrBind}\;}
 
 \newcommand\stogsigexp{\;\stog_\mathtt{SigExp}\;}
+\newcommand{\stogsigexpa}[1]{\;\stoga{#1}_\mathtt{SigExp}\;}
 \newcommand\stogsigdec{\;\stog_\mathtt{SigDec}\;}
 \newcommand\stogsigbind{\;\stog_\mathtt{SigBind}\;}
 
@@ -1031,41 +1036,53 @@ TODO
 \newpage
 
 \section{Translation of Modules}
-\subsection{Functor Applications}
-Structure Bindings in SML has one format:
-\smle{strid = strexp}, where strexp (the body of a structure) can be a functor application.\\
-Functor applications, in turn, can be nested:
-\begin{sml}
-D = Dict(structure Key = ListOrdered(structure Ordered = IntOrdered))
-\end{sml}
-However, in Gallina, that's not allowed:
+\subsection{In-binding vs. Inline Expressions}
+Structure and signature expressions in SML can either be found in a binding or inline (check the subsections below for elaboration). 
+
+In Gallina, inline modules and module types are not allowed; they must be replaced by identifiers:
 \begin{coq}
 Fail Module D := Dict(ListOrdered(IntOrdered)).
 The command has indeed failed with message:
 A module cannot be applied to another module application or with-expression; 
 you must give a name to the intermediate result module first.
 \end{coq}
-Therefore, nested functor applications are unfolded into multiple declarations:
-\begin{coq}
-Module strid_1 := ListOrdered(IntOrdered).
-Module D := strid_1.
-\end{coq}
-\subsection{Translation rules}
+Therefore, we distinguish between the translation of in-binding expressions (sections \tbd) and inline expressions (sections \tbd) - where inbinding expressions are interleaved with the translation rules of bindings.\\
+Moreover, for inline expressions we use the translation judgement: \smle{exp} $\stoga{\Sigma}$ \coqe{exp\\g} which states that SML's expression \smle{exp} translates to Gallina's expression \coqe{exp\\g} while producing a - possibly empty - set of Gallina sentences (either module or module type sentences to be precise) that need to precede the current sentence.\\
+Note that the normal transition judgement $\stog$ is equivalent to $\stoga{\Sigma}$ with $\Sigma$ being empty.
 \subsubsection{Structure Expressions}
+In-binding structure expressions in SML have one format:\\
+\smle{strid  = strexp}\\
+and inline expressions have one format:\\
+\smle{strid = funid(strexp)}.
+\subsubsection{Signature Expressions}
+In-binding signature expressions in SML have one format:\\
+\smle{sigid  = sigexp}\\
+while inline signatire expressions can appear in five different formats:\\
+\smle{strexp : sigexp}\\
+\smle{strexp :> sigexp}\\
+\smle{include sigexp}\\
+\smle{structure strid : sigexp}\\
+\smle{functor funid (strid : sigexp) = strexp}
+\subsection{Translation rules}
+\subsubsection{Structure Expressions (Inline)}
 \subsubsection{Structure Declarations}
 \subsubsection{Structure Bindings}
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{cc}
-\infer[\mathsf{StrBind}_{\smles{struct}}]{\smle{S = struct sd end} \stogstrdec \coqe{Module S := sd\\g}}{
+\infer[\mathsf{StrBind}_{\smles{struct}}]{\smle{S = struct sd end} \stogstrbind \coqe{Module S. sd\\g End S.}}{
   \smle{sd} \stogstrdec \coqe{sd\\g}
 }\\
-\infer[\mathsf{StrExp}_{\smles{id}}]{\smle{S = SId} \stogstrbind \coqe{Module S := SId\\g}}{
+\infer[\mathsf{StrBind}_{\smles{id}}]{\smle{S = SId} \stogstrbind \coqe{Module S := SId\\g}}{
   \smle{SId} \stogstrid \coqe{SId\\g}
 }\\
-\infer[\mathsf{StrExp}_{\smles{colon}}]{\smle{S : SIG = SId} \stogstrexp \coqe{Module S : SIG\\g := SId\\g}}{
-  \smle{SId} \stogstrid \coqe{SId\\g}&
-  \smle{SIG} \stogsigexp \coqe{SIG\\g}
+\infer[\mathsf{StrBind}_{\smles{colon1}}]{\smle{S = SExp : SIG} \stogstrexp \coqe{\\Sigma. Module S\\g : SIG\\g := SExp\\g}}{
+  \smle{S = SExp} \stogstrexp \coqe{Module S\\g := SExp\\g}&
+  \smle{SIG} \stogsigexpa{\Sigma} \coqe{SIG\\g}
+}\\
+\infer[\mathsf{StrBind}_{\smles{colon2}}]{\smle{S = SExp : SIG} \stogstrexp \coqe{\\Sigma. Module S\\g : SIG\\g. SExp\\g. End S\\g.}}{
+  \smle{S = SExp} \stogstrexp \coqe{Module S\\g. SExp\\g. End S\\g.}&
+  \smle{SIG} \stogsigexpa{\Sigma} \coqe{SIG\\g}
 }
 \end{array}
 \]
