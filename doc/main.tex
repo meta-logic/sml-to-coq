@@ -1199,9 +1199,31 @@ being empty.
 \subsection{Translation rules}
 
 \subsubsection{Structure Expressions (Inline)}
-
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{StrExp}_{\smles{id}}]{\smle{StrId} \stogstrexp \coqe{StrId\\g}}{
+  \smle{StrId} \stogstrid \coqe{StrId\\g}
+}\\
+\infer[\mathsf{StrExp}_{\smles{others}}]{\smle{StrExp} \stogstrexpa{\coqe{Sent\\g}} \coqe{StrId\\g}}{
+  \smle{StrId = StrExp} \stogstrbind \coqe{Sent\\g}&
+  \smle{StrId} \stogstrid \coqe{StrId\\g}&
+  \smle{StrId} \notin Context
+}
+\end{array}
+\]
 \subsubsection{Structure Declarations}
-
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{StrDec}_{\smles{dec}}]{\smle{Dec} \stogstrdec \coqe{Sent\\g}}{
+  \smle{Dec} \stogdec \coqe{Sent\\g}
+}&
+\infer[\mathsf{StrDec}_{\smles{structure}}]{\smle{structure SBind} \stogstrdec \coqe{Sent\\g}}{
+  \smle{SBind} \stogstrbind \coqe{Sent\\g}
+}
+\end{array}
+\]
 \subsubsection{Structure Bindings}
 \[
 \arraycolsep=10pt\def\arraystretch{3}
