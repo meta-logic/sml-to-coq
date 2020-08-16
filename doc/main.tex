@@ -330,7 +330,44 @@ is reserved for SML's type variables.
 
 Before presenting the derivation system defining the translation
 formally, we first explain the strategy used for some constructs that
-did not have a direct translation.
+posed challenges.
+
+\subsection{Overloaded Operators}
+
+Some comparison and arithmetic operators in SML are overloaded for
+multiple types. For example, the equality check works for strings and
+integers:
+
+\begin{sml}
+val b = "a" = "a" andalso 5 = 3;
+\end{sml}
+
+Boolean equality checks for string and integers in Coq, denoted by
+\coqe{=?} are defined in \coqe{string_scope} and \coqe{Z_scope},
+respectively. However, the last opened scope shadows the first, and
+trying to use both at the same time fails. For example:
+
+\begin{coq}
+Require Import ZArith.
+Open Scope Z_scope.
+Require Import String.
+Open Scope string_scope.
+Require Import Bool.
+
+Fail Definition b := ("a" =? "a") && (5 =? 3).
+\end{coq}
+
+\noindent
+indeed fails with the message:
+\texttt{The term "5" has type "Z" while it is expected to have type
+"string"}.
+
+Operation overload is solved using typeclasses. We have defined
+several typeclasses for different sets of operators and instantiated
+them with the types supported. We also defined notations for the
+operators to be the same as SML whenever possible. The typeclasses,
+instances, and notation definitions can be found in module
+\coqe{notationsSML.v}.
 
 \subsection{Records}
 \label{sec:records}
