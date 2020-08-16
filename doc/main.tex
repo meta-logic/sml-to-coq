@@ -110,11 +110,13 @@
 \newcommand\stogpatrow{\;\stog_\mathtt{PatRow}\;}
 \newcommand\stogpat{\;\stog_\mathtt{Pat}\;}
 \newcommand\stogty{\;\stog_\mathtt{Ty}\;}
+\newcommand\stogtyvar{\;\stog_\mathtt{TyVar}\;}
 \newcommand\stoglab{\;\stog_\mathtt{Lab}\;}
 \newcommand\stogscon{\;\stog_\mathtt{SCon}\;}
 \newcommand\stogvid{\;\stog_\mathtt{VId}\;}
 
 \newcommand\stogstrexp{\;\stog_\mathtt{StrExp}\;}
+\newcommand{\stogstrexpa}[1]{\;\stoga{#1}_\mathtt{StrExp}\;}
 \newcommand\stogstrdec{\;\stog_\mathtt{StrDec}\;}
 \newcommand\stogstrbind{\;\stog_\mathtt{StrBind}\;}
 
@@ -1201,48 +1203,91 @@ being empty.
 \subsubsection{Structure Declarations}
 
 \subsubsection{Structure Bindings}
-
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{cc}
-\infer[\mathsf{StrBind}_{\smles{struct}}]{\smle{S = struct sd end} \stogstrbind \coqe{Module S. sd\\g End S.}}{
-  \smle{sd} \stogstrdec \coqe{sd\\g}
+\infer[\mathsf{StrBind}_{\smles{struct}}]{\smle{S = struct SDec end} \stogstrbind \coqe{Module S. SDec\\g End S.}}{
+  \smle{SDec} \stogstrdec \coqe{SDec\\g}
 }\\
 \infer[\mathsf{StrBind}_{\smles{id}}]{\smle{S = SId} \stogstrbind \coqe{Module S := SId\\g}}{
   \smle{SId} \stogstrid \coqe{SId\\g}
 }\\
-\infer[\mathsf{StrBind}_{\smles{colon1}}]{\smle{S = SExp : SIG} \stogstrexp \coqe{\\Sigma. Module S\\g : SIG\\g := SExp\\g}}{
-  \smle{S = SExp} \stogstrexp \coqe{Module S\\g := SExp\\g}&
+\infer[\mathsf{StrBind}_{\smles{colon1}}]{\smle{S = SExp : SIG} \stogstrbind \coqe{\\Sigma. Module S\\g <: SIG\\g := SExp\\g}}{
+  \smle{S = SExp} \stogstrbind \coqe{Module S\\g := SExp\\g}&
   \smle{SIG} \stogsigexpa{\Sigma} \coqe{SIG\\g}
 }\\
-\infer[\mathsf{StrBind}_{\smles{colon2}}]{\smle{S = SExp : SIG} \stogstrexp \coqe{\\Sigma. Module S\\g : SIG\\g. SExp\\g. End S\\g.}}{
-  \smle{S = SExp} \stogstrexp \coqe{Module S\\g. SExp\\g. End S\\g.}&
+\infer[\mathsf{StrBind}_{\smles{colon2}}]{\smle{S = SExp : SIG} \stogstrbind \coqe{\\Sigma. Module S\\g <: SIG\\g. SExp\\g. End S\\g.}}{
+  \smle{S = SExp} \stogstrbind \coqe{Module S\\g. SExp\\g. End S\\g.}&
   \smle{SIG} \stogsigexpa{\Sigma} \coqe{SIG\\g}
-}
+}\\
+\infer[\mathsf{StrBind}_{\smles{seal1}}]{\smle{S = SExp :> SIG} \stogstrbind \coqe{\\Sigma. Module S\\g : SIG\\g := SExp\\g}}{
+  \smle{S = SExp} \stogstrbind \coqe{Module S\\g := SExp\\g}&
+  \smle{SIG} \stogsigexpa{\Sigma} \coqe{SIG\\g}
+}\\
+\infer[\mathsf{StrBind}_{\smles{seal2}}]{\smle{S = SExp :> SIG} \stogstrbind \coqe{\\Sigma. Module S\\g : SIG\\g. SExp\\g. End S\\g.}}{
+  \smle{S = SExp} \stogstrbind \coqe{Module S\\g. SExp\\g. End S\\g.}&
+  \smle{SIG} \stogsigexpa{\Sigma} \coqe{SIG\\g}
+}\\
+\infer[\mathsf{StrBind}_{\smles{app}}]{\smle{S = FId(SExp)} \stogstrbind \coqe{\\Sigma . Module S := FId\\g(SExp\\g)}}{
+  \smle{FId} \stogfunid \coqe{FId\\g}&
+  \smle{SExp} \stogstrexpa{\Sigma} \coqe{SExp\\g}
+}\\
+\infer[\mathsf{StrBind}_{\smles{let}}]{\smle{let SDec in SExp end} \stogstrbind \tbd}{\tbd}
 \end{array}
 \]
-\[
-\arraycolsep=10pt\def\arraystretch{3}
-\begin{array}{cc}
-\infer[\mathsf{StrBind}_{\smles{seal}}]{\smle{S :> SIG = SId} \stogstrdec \coqe{Module S :> SIG\\g := SId\\g}}{
-  \smle{SId} \stogstrid \coqe{SId\\g}&
-  \smle{SIG} \stogsigexp \coqe{SIG\\g}
-}\\
-\infer[\mathsf{StrBind}_{\smles{app}}]{\smle{S = FId(se)} \stogstrbind \coqe{Module S := FId\\g(se\\g)}}{
-  \smle{FId} \stogfunid \coqe{FId\\g}
-  \smle{se} \stogstrexp \coqe{se\\g}
-}\\
-\infer[\mathsf{StrExp}_{\smles{let}}]{\smle{S = let sd in se} \stogstrexp \tbd}{\tbd
-}
-\end{array}
-\]
-
 \subsubsection{Signature Expressions}
 
 \subsubsection{Signature Declarations}
 
 \subsubsection{Signature Bindings}
-
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{SigBind}_{\smles{sig}}]
+{\smle{S = sig Spec end} \stogsigbind \coqe{Module Type S. Spec\\g End S.}}
+{
+  \smle{Spec} \stogspec \coqe{Spec\\g}
+}\\
+\infer[\mathsf{SigBind}_{\smles{id}}]
+{\smle{S = SId} \stogsigbind \coqe{Module Type S := SId\\g}}
+{
+  \smle{SId} \stogsigid \coqe{SId\\g}
+}\\
+\infer[\mathsf{SigBind}_{\smles{where1}}]
+{\begin{gathered} \smle{S = SExp where type t = ty} 
+\stogsigbind \\ \coqe{Module Type S\\g := SExp\\g with Definition t\\g := ty\\g.}\end{gathered}
+}
+{\smle{S = SExp} \stogsigbind \coqe{Module Type S\\g := SExp\\g}&
+  \smle{t} \stogtycon \coqe{t\\g}&
+  \smle{ty} \stogty \coqe{ty\\g}
+}\\ \\
+\infer[\mathsf{SigBind}_{\smles{where2}}]
+{\begin{gathered} \smle{S = SExp where type tyvars t = ty} 
+\stogsigbind \\ \coqe{Module Type S\\g := SExp\\g with Definition t\\g := fun tyvars\\g => ty\\g.}\end{gathered}
+}
+{\begin{gathered}\smle{S = SExp} \stogsigbind \coqe{Module Type S\\g := SExp\\g}\\
+  \smle{t} \stogtycon \coqe{t\\g}\quad
+  \smle{ty} \stogty \coqe{ty\\g}\quad
+  \smle{tyvars} \stogtyvar \coqe{tyvars\\g}\end{gathered}
+}\\ \\
+\infer[\mathsf{SigBind}_{\smles{where3}}]
+{\begin{gathered} \smle{S = SExp where type t = ty} 
+\stogsigbind \\ \coqe{Module Type S\\g. SExp1\\g. Definition t\\g := ty\\g. SExp2\\g. End S\\g.}\end{gathered}
+}
+{\begin{gathered}\smle{S = SExp} \stogsigbind \\ \coqe{Module Type S\\g. SExp1\\g. Parameter t\\g : Type. SExp2\\g. End S\\g.}\\
+  \smle{t} \stogtycon \coqe{t\\g}\quad
+  \smle{ty} \stogty \coqe{ty\\g}
+\end{gathered}}\\ \\
+\infer[\mathsf{SigBind}_{\smles{where4}}]
+{\begin{gathered} \smle{S = SExp where type tyvars t = ty} 
+\stogsigbind \\ \coqe{Module Type S\\g. SExp1\\g. Definition t\\g tyvars\\g := ty\\g. SExp2\\g. End S\\g.}\end{gathered}
+}
+{\begin{gathered}\smle{S = SExp} \stogsigbind \\ \coqe{Module Type S\\g. SExp1\\g. Parameter t\\g : Type (-> Type)^n. SExp2\\g. End S\\g.}\\
+  \smle{t} \stogtycon \coqe{t\\g}\quad
+  \smle{ty} \stogty \coqe{ty\\g}\quad
+  \smle{tyvars} \stogtyvar \coqe{tyvars\\g}  \end{gathered}}
+\end{array}
+\]
 \subsubsection{Specification}
 
 \subsubsection{Value Descriptions}
