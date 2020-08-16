@@ -222,9 +222,11 @@ struct
                   val id = sigid2id(~sigid)
                   val gsignature = sigexp2signature(id, ~sigexp)
                   val sent = G.SignatureSentence gsignature
+                  val context = !cxt
+                  val _ = cxt := []
                   val sents = ?sigbind2sents sigbind2
               in
-                  sent :: sents
+                  context @ (sent :: sents)
               end
       in
           G.SeqSentences (sigbind2sents sigbind)
