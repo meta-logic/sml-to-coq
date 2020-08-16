@@ -675,7 +675,7 @@ struct
                                      binders = binders @ T.clearTyvars tyvarCtx, body = body}
                                     :: (?(valbind2fixbodies) valbind2)))
                                     else G.DefinitionSentence (G.DefinitionDef
-                                    {id = ident, localbool = false, binders = binders @ T.clearTyvars tyvarCtx, 
+                                     {id = ident, localbool = false, binders = binders @ T.clearTyvars tyvarCtx, 
                                      typ = typ, body = body})
                     in
                         !recordContext @ [sent]
@@ -693,8 +693,11 @@ struct
          *)
         and dec2sent ((TYPEDec(typbind)@@ _) : Dec): G.sentence = typbind2sent typbind
             | dec2sent (DATATYPEDec(datbind)@@_) = datbind2sent datbind
-            (* ignoring tyvarseq for now (function declarations) *)
+            | dec2sent (DATATYPE2Dec(tycon, ltycon)@@_) =
+              G.DefinitionSentence(
+                  G.DefinitionDef{localbool = false, id = tycon2id(~tycon), binders = [], typ = NONE,
+                               body = G.IdentTerm(ltycon2id(~ltycon))})
             | dec2sent (VALDec(tyvars, valbind)@@_) = (tyvarCtx := updateTyvarCtx (tyvars) (!tyvarCtx); valbind2sent valbind)
-            | dec2sent _ = raise Fail "Unimplemented declaration! \n"
+            | dec2sent (_) = raise Fail "Unimplemented declaration! \n"
     end 
 end
