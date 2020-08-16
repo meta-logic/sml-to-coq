@@ -1045,7 +1045,47 @@ TODO
 \subsection{In-binding vs. Inline Expressions}
 
 Structure and signature expressions in SML can either be found in a binding or
-inline (check the subsections below for elaboration). 
+inline. 
+
+\paragraph{Structure Expressions}
+
+In-binding structure expressions in SML have one format:
+
+\begin{sml}
+strid  = strexp
+\end{sml}
+
+\noindent
+and inline expressions have one format:
+
+\begin{sml}
+strid = funid(strexp)
+\end{sml}
+
+\noindent
+Note that \smle{strexp} stands for a complete structure declaration,
+and not only an identifier.
+
+
+\paragraph{Signature Expressions}
+
+In-binding signature expressions in SML have one format:
+
+\begin{sml}
+sigid  = sigexp
+\end{sml}
+
+\noindent
+while inline signature expressions can appear in five different formats:
+
+\begin{sml}
+strexp : sigexp
+strexp :> sigexp
+include sigexp
+structure strid : sigexp
+functor funid (strid : sigexp) = strexp
+\end{sml}
+
 
 In Gallina, inline modules and module types are not allowed; they must
 be replaced by identifiers:
@@ -1070,40 +1110,6 @@ while producing a -- possibly empty -- set of Gallina sentences
 precede the current sentence. Note that the normal transition
 judgement $\stog$ is equivalent to $\stoga{\Sigma}$ with $\Sigma$
 being empty.
-
-\subsubsection{Structure Expressions}
-
-In-binding structure expressions in SML have one format:
-
-\begin{sml}
-strid  = strexp
-\end{sml}
-
-\noindent
-and inline expressions have one format:
-
-\begin{sml}
-strid = funid(strexp)
-\end{sml}
-
-\subsubsection{Signature Expressions}
-
-In-binding signature expressions in SML have one format:
-
-\begin{sml}
-sigid  = sigexp
-\end{sml}
-
-\noindent
-while inline signatire expressions can appear in five different formats:
-
-\begin{sml}
-strexp : sigexp
-strexp :> sigexp
-include sigexp
-structure strid : sigexp
-functor funid (strid : sigexp) = strexp
-\end{sml}
 
 \subsection{Translation rules}
 
