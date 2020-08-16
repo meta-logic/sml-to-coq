@@ -126,6 +126,7 @@
 \newcommand\stogsigbind{\;\stog_\mathtt{SigBind}\;}
 
 \newcommand\stogspec{\;\stog_\mathtt{Spec}\;}
+\newcommand{\stogspeca}[1]{\;\stoga{#1}_\mathtt{Spec}\;}
 \newcommand\stogvaldesc{\;\stog_\mathtt{ValDesc}\;}
 \newcommand\stogtypdesc{\;\stog_\mathtt{TypDesc}\;}
 \newcommand\stogdatdesc{\;\stog_\mathtt{DatDesc}\;}
@@ -1305,9 +1306,9 @@ being empty.
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{cc}
 \infer[\mathsf{SigBind}_{\smles{sig}}]
-{\smle{S = sig Spec end} \stogsigbind \coqe{Module Type S. Spec\\g End S.}}
+{\smle{S = sig Spec end} \stogsigbind \coqe{\\Sigma. Module Type S. Spec\\g End S.}}
 {
-  \smle{Spec} \stogspec \coqe{Spec\\g}
+  \smle{Spec} \stogspeca{\Sigma} \coqe{Spec\\g}
 }\\
 \infer[\mathsf{SigBind}_{\smles{id}}]
 {\smle{S = SId} \stogsigbind \coqe{Module Type S := SId\\g}}
@@ -1350,11 +1351,71 @@ being empty.
 \end{array}
 \]
 \subsubsection{Specification}
-
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{Spec}_{\smles{val}}]{\smle{val VDesc} \stogspec \coqe{VDesc\\g}}{
+  \smle{VDesc} \stogvaldesc \coqe{VDesc\\g}
+}\\
+\infer[\mathsf{Spec}_{\smles{type}}]{\smle{type TDesc} \stogspec \coqe{TDesc\\g}}{
+  \smle{TDesc} \stogtypdesc \coqe{TDesc\\g}
+}\\
+\infer[\mathsf{Spec}_{\smles{eqtype}}]{\smle{eqtype TDesc} \stogspec \tbd}{
+  \tbd
+}\\
+\infer[\mathsf{Spec}_{\smles{datatype}}]{\smle{datatype DDesc} \stogspec \coqe{DDesc\\g}}{
+  \smle{DDesc} \stogdatdesc \coqe{DDesc\\g}
+}\\
+\infer[\mathsf{Spec}_{\smles{replication}}]{\smle{datatype d = datatype t} \stogspec \tbd}{
+  \tbd
+}\\
+\infer[\mathsf{Spec}_{\smles{exception}}]{\smle{exception EDesc} \stogspec \coqe{EDesc\\g}}{
+  \smle{EDesc} \stogexdesc \coqe{EDesc\\g}
+}\\
+\infer[\mathsf{Spec}_{\smles{structure}}]{\smle{structure SDesc} \stogspec \coqe{SDesc\\g}}{
+  \smle{SDesc} \stogstrdesc \coqe{SDesc\\g}
+}\\
+\infer[\mathsf{Spec}_{\smles{include}}]{\smle{include SExp} \stogspeca{\Sigma} \coqe{Include SId\\g}}{
+  \smle{SExp} \stogsigexpa{\Sigma} \coqe{SId\\g}
+}\\
+\infer[\mathsf{Spec}_{\smles{sequence}}]{\smle{Spec1; Spec2} \stogspec \coqe{Spec1\\g. Spec2\\g}}{
+  \smle{Spec1} \stogspec \coqe{Spec1\\g}&  
+  \smle{Spec2} \stogspec \coqe{Spec2\\g}
+}\\
+\infer[\mathsf{Spec}_{\smles{sharing}}]{\smle{spec sharing type t = t'} \stogspec \tbd}{\tbd
+}
+\end{array}
+\]
 \subsubsection{Value Descriptions}
-
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{ValDesc}_{\smles{ValDesc0}}]{\smle{val vid : ty} \stogvaldesc \coqe{Parameter vid\\g : ty\\g}}{
+  \smle{vid} \stogvid \coqe{vid\\g}&
+  \smle{ty} \stogty \coqe{ty\\g}
+}\\
+\infer[\mathsf{ValDesc}_{\smles{ValDesc1}}]{\smle{VDesc1 and VDesc2} \stogvaldesc \coqe{VDesc1\\g. VDesc2\\g}}{
+  \smle{VDesc1} \stogvaldesc \coqe{VDesc1\\g}&
+  \smle{VDesc2} \stogvaldesc \coqe{VDesc2\\g}
+}
+\end{array}
+\]
 \subsubsection{Type Descriptions}
-
+\[
+\arraycolsep=10pt\def\arraystretch{3}
+\begin{array}{cc}
+\infer[\mathsf{TypDesc}_{\smles{TypDesc0}}]{\smle{tycon} \stogtypdesc \coqe{Parameter tycon\\g : Type}}{
+  \smle{tycon} \stogtycon \coqe{tycon\\g}&
+}\\
+\infer[\mathsf{TypDesc}_{\smles{TypDesc1}}]{\smle{tyvars tycon} \stogtypdesc \coqe{Parameter tycon\\g : Type (-> Type)^n}}{
+  \smle{tycon} \stogtycon \coqe{tycon\\g}&
+  n = | tyvars |}\\
+\infer[\mathsf{TypDesc}_{\smles{TypDesc2}}]{\smle{TDesc1 and TDesc2} \stogtypdesc \coqe{TDesc1\\g. TDesc1\\g.}}{
+  \smle{TDesc1} \stogvaldesc \coqe{TDesc1\\g}&
+  \smle{TDesc2} \stogvaldesc \coqe{TDesc2\\g}}
+\\
+\end{array}
+\]
 \subsubsection{Datatype Descriptions}
 
 \subsubsection{Exception Descriptions}
