@@ -329,8 +329,7 @@ variables are typically denoted by \coqe{x\g}, so that the prime symbol \smle{'}
 is reserved for SML's type variables.
 
 Before presenting the derivation system defining the translation
-formally, we first explain the strategy used for some constructs that
-posed challenges.
+formally, we explain noteworthy points.
 
 \subsection{Overloaded Operators}
 
@@ -455,6 +454,53 @@ elaboration, and the pattern can be unfolded with all fields.
 \subsection{Type Variables}
 
 \subsection{Typed Patterns}
+
+\subsection{Basis Library}
+
+SML's basis library is included in most of its implementations and
+contains some of the more popular datatypes and functions. Since most
+SML programs will make use of some part of the basis library, we have
+provided a Coq implementation for:
+\smle{string},
+\smle{real},
+\smle{option},
+\smle{list},
+\smle{int},
+\smle{char},
+\smle{listPair},
+\smle{bool},
+\smle{stringCvt}, and
+\smle{IEEEReal}.
+
+The documentation of those libraries can be found at\giselle{TODO:
+make doc available somewhere}.
+They were renamed by adding the suffix \coqe{Sml}.
+
+Most of the functions could be translated directly, however a few of
+them needed special treatment for one of two reasons: (1)
+non-termination, and (2) non-structural recursion. 
+
+The (possibly) non-terminating functions are:
+\begin{sml}
+StringCvt.splitl : (char -> bool) -> (char, 'a) reader -> 'a -> string * 'a
+StringCvt.takel  : (char -> bool) -> (char, 'a) reader -> 'a -> string * 'a
+StringCvt.dropl  : (char -> bool) -> (char, 'a) reader -> 'a -> string * 'a
+StringCvt.skipWS : (char, 'a) reader -> 'a -> 'a
+\end{sml}
+
+The non-structurally recursive functions are:
+\begin{sml}
+Real.toIntl : IEEEReal.rounding_mode -> real -> int
+Real.toLargeInt : rounding_mode -> real -> LargeInt.int
+Real.floor : real -> int
+Real.ceil  : real -> int
+Real.trunc : real -> int
+Real.round : real -> int
+\end{sml}
+
+In both cases the function's signature is changed to accept
+one extra parameter: a natural number which is an upper-bound on the
+recursion.
 
 \subsection{Translation rules}
 
