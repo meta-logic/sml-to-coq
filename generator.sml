@@ -307,8 +307,8 @@ struct
 
   and ofModuleTypG (m: G.ofModuleTyp): string =
     case m of
-      G.TransparentSig(m') => ":" ^ moduleTypG(m')
-    | G.OpaqueSig(m')      => "<:" ^ moduleTypG(m')
+      G.TransparentSig(m') => "<:" ^ moduleTypG(m')
+    | G.OpaqueSig(m')      => ":" ^ moduleTypG(m')
 
 
   and moduleTypG (m: G.moduleTyp): string = 
