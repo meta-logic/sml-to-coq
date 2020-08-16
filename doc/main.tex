@@ -1063,36 +1063,47 @@ where inbinding expressions are interleaved with the translation rules
 of bindings.
 
 Moreover, for inline expressions we use the translation judgement:
-\smle{exp} $\stoga{\Sigma}$ \coqe{exp\\g} which states that SML's
-expression \smle{exp} translates to Gallina's expression \coqe{exp\\g}
-while producing a - possibly empty - set of Gallina sentences (either
-module or module type sentences to be precise) that need to precede
-the current sentence.\\ Note that the normal transition judgement
-$\stog$ is equivalent to $\stoga{\Sigma}$ with $\Sigma$ being empty.
+\smle{exp} $\stoga{\Sigma}$ \coqe{exp\g} which states that SML's
+expression \smle{exp} translates to Gallina's expression \coqe{exp\g}
+while producing a -- possibly empty -- set of Gallina sentences
+(either module or module type sentences to be precise) that need to
+precede the current sentence. Note that the normal transition
+judgement $\stog$ is equivalent to $\stoga{\Sigma}$ with $\Sigma$
+being empty.
 
 \subsubsection{Structure Expressions}
 
-In-binding structure expressions in SML have one format:\\
+In-binding structure expressions in SML have one format:
 
-\smle{strid  = strexp}\\
+\begin{sml}
+strid  = strexp
+\end{sml}
 
-and inline expressions have one format:\\
+\noindent
+and inline expressions have one format:
 
-\smle{strid = funid(strexp)}.
+\begin{sml}
+strid = funid(strexp)
+\end{sml}
 
 \subsubsection{Signature Expressions}
 
-In-binding signature expressions in SML have one format:\\
+In-binding signature expressions in SML have one format:
 
-\smle{sigid  = sigexp}\\
+\begin{sml}
+sigid  = sigexp
+\end{sml}
 
-while inline signatire expressions can appear in five different formats:\\
+\noindent
+while inline signatire expressions can appear in five different formats:
 
-\smle{strexp : sigexp}\\
-\smle{strexp :> sigexp}\\
-\smle{include sigexp}\\
-\smle{structure strid : sigexp}\\
-\smle{functor funid (strid : sigexp) = strexp}
+\begin{sml}
+strexp : sigexp
+strexp :> sigexp
+include sigexp
+structure strid : sigexp
+functor funid (strid : sigexp) = strexp
+\end{sml}
 
 \subsection{Translation rules}
 
