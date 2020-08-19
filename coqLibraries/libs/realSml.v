@@ -1,6 +1,5 @@
 Require Import Bool.
 Require Import intSml.
-Close Scope Z_scope.
 Require Import Ascii.
 Require Import stringSml.
 Require Export Floats.
@@ -10,6 +9,7 @@ Require Import IEEERealSml.
 
 Module Real.
 
+  Close Scope Z_scope.
   Open Scope float_scope.
 
   Axiom  DomainException : forall{a}, a.
@@ -901,5 +901,4 @@ Definition ceil (r:float) (nd:nat):Z := Real.ceil r nd.
     OverflowException, and DivException
 *)
 Definition round (r:float) (nd:nat):Z := Real.round r nd.
-
 (*----------------------------------------------------------------------------*)
