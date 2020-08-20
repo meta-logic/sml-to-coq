@@ -54,8 +54,8 @@ struct
     | G.ExplicitTerm(v1,tL) => "@ " ^ v1 ^" "^(concatListWith (" ", termG, tL)) 
     | G.InScopeTerm(v1,v2)  => termG(v1) ^ " % " ^ v2 
     | G.MatchTerm{matchItems=mL, body=eL} => 
-      "match " ^ (concatListWith (", ", matchItemG, mL)) ^ " with" ^ "\n  " ^
-      (S.concatWith ("  \n  | ") (List.map equationG eL)) ^ " end"
+      "\n  match " ^ (concatListWith (", ", matchItemG, mL)) ^ " with" ^ "\n  " ^
+      (S.concatWith ("  \n  | ") (List.map equationG eL)) ^ "\n  end"
     
     | G.IdentTerm(v)        => convertIdent(v)
     | G.IdentTypTerm(v)     => convertType(v)
@@ -65,7 +65,7 @@ struct
       
     | G.WildcardTerm        => "_"
     | G.ParensTerm(v)       => "(" ^ termG(v) ^ ")"
-    | G.RecordTerm(fL)      => "{| "^concatListWith(" ;\n", fieldDefG, fL)^" |}"
+    | G.RecordTerm(fL)      => "\n{|\n  "^concatListWith(";\n  ", fieldDefG, fL)^"\n|}"
     (*Additional terms to match sml built-in types. (!) *)  
     | G.WordTerm(v, b)      => (case b of 
                                   G.Dec => termG(G.NumTerm(v))
@@ -84,8 +84,8 @@ struct
     | G.AndTerm(v1, v2)     => termG(v1) ^ " && "  ^ termG(v2) 
     | G.Axiom(a)            => "patternFailure"
     | G.MatchNotationTerm{matchItem=mI, body=e, exhaustive=b} => 
-      "match " ^ matchItemG(mI) ^ " with" ^ "\n  " ^ equationG(e) ^
-      (case b of  true => "" | false => "\n  | _ => patternFailure" )^" end"
+      "\n  match " ^ matchItemG(mI) ^ " with" ^ "\n  " ^ equationG(e) ^
+      (case b of  true => "" | false => "\n  | _ => patternFailure" )^"\n  end"
 
     | G.UnitTerm            => "tt"
     | G.InfixTerm(t, aL)    =>  let
@@ -176,7 +176,7 @@ struct
     | G.WildcardPat      => "_"
     | G.NumPat(s)        => (if (S.isPrefix "~" s) then 
                             "(-"^S.substring(s, 1, S.size(s)-1)^ ")" else s)
-    | G.RecPat(fL)       => "{| "^concatListWith(" ;\n", fieldPatG, fL)^" |}"
+    | G.RecPat(fL)       => "\n{|\n  "^concatListWith(";\n  ", fieldPatG, fL)^"\n|}"
     | G.WordPat(s, b)    => (case b of 
                                G.Dec => patternG(G.NumPat(s))
                              | G.Hex => patternG(G.HexPat(s)))
@@ -228,11 +228,11 @@ struct
     convertIdent(i) ^ " " ^ concatListWith(" ", binderG, bL) ^ 
     (case sO of NONE => "" | SOME x => sortG(x)) ^ 
     " := " ^ (case iO of NONE => "" | SOME x => x) ^ 
-    "{ " ^ concatListWith(" ;\n", fieldG, fL) ^ "}" ^ "." 
+    "\n{\n  " ^ concatListWith(";\n  ", fieldG, fL) ^ "\n}" ^ "." 
 
 
   and fieldG (G.Field(itL)) = 
-    concatListWith(" \n  ; ", (fn (i,t)=> i ^ " : " ^ termG(t)), itL)
+    concatListWith(";\n  ", (fn (i,t)=> i ^ " : " ^ termG(t)), itL)
     
 
   and definitionG (def: G.definition): string  =
