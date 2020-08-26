@@ -555,7 +555,7 @@ struct
 
         and fnexp2funbody (FNExp(Match(Mrule(ATPat(IDAtPat(_, longvid)@@_)@@_, exp)@@_,_)@@_)) : G.binder list * G.term =
             let val (binders, body) = fnexp2funbody (~exp)
-                val binders = binders @ (T.clearTyvars tyvarCtx)
+                val binders = (T.clearTyvars tyvarCtx) @ binders
                 val name = mkName (lvid2id(~longvid))
                 val binder = G.SingleBinder {name = name, typ = NONE, inferred = false}
             in
@@ -665,17 +665,17 @@ struct
                     let
                         val recursive = isSome(valbind2) orelse F.checkExp(lvid2id (~longvid)) exp
                         val (binders, body) = fnexp2funbody (exp)
-                        val binders = binders @ (T.clearTyvars tyvarCtx)
+                        val binders =  (T.clearTyvars tyvarCtx) @ [binders]
                         val ident = lvid2id (~longvid)
                         val typ = NONE
                         val decArg = NONE
                         val sent = if recursive
                                     then G.FixpointSentence (G.Fixpoint(G.Fixbody
                                     {id = ident, typ = typ, decArg = decArg, 
-                                     binders = binders @ T.clearTyvars tyvarCtx, body = body}
+                                     binders = binders, body = body}
                                     :: (?(valbind2fixbodies) valbind2)))
                                     else G.DefinitionSentence (G.DefinitionDef
-                                     {id = ident, localbool = false, binders = binders @ T.clearTyvars tyvarCtx, 
+                                     {id = ident, localbool = false, binders = binders, 
                                      typ = typ, body = body})
                     in
                         !recordContext @ [sent]
