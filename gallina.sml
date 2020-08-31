@@ -121,6 +121,7 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
                 (* extra *)
               | TuplePat of pattern list
               | ListPat of pattern list 
+              (* G: this is possibly obsolete (08/2020) *)
               | ParPat of pattern
               | UnitPat
               | InfixPat of ident * pattern list
