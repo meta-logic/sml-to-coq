@@ -142,6 +142,8 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
                | IncludeSentence of inclusion
                 (* extra seq of sentences *)
                | SeqSentences of sentence list
+               (* equations *)
+               | EquationSentence of eprograms
 
   (* Gallina syntax extension *)             
   and recBody = RecordBody of 
@@ -218,4 +220,32 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
   and declaration = Declare of { id : ident, bindings : moduleBindings list, typ : moduleTyp }
 
   and inclusion = Include of moduleTyp
+
+  (* Equations grammar *)
+  and ebinder = 
+        ESingleBinder of {name : name, typ : term, inferred : bool}   
+      | ELetBinder of {names : name list, typ : term, body : term}
+
+  and econtext = EContext of ebinder list
+
+  and eprograms = EPrograms of eprogram * emutual list
+
+  and emutual = 
+      EWith of eprogram 
+      | EWhere of ewhere
+
+  and ewhere =
+      Ewherep of eprogram
+      | Ewheren of enot
+
+  and enot = Enot of string * term
+
+  and eprogram = EProgram of { id : ident, context : econtext, ret : term, body : eclauses }
+
+  and eclauses = EClauses of eclause list
+
+  and eclause = EClause of { pats : pattern list, body : term }
+              (* generator needs to take care of adding vid to initial clause *)
+
+
 end

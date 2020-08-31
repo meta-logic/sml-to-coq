@@ -2,6 +2,7 @@ Group
  structure Generator 
  structure Gallina
  structure ConvertorUtil
+ structure AnnotationExtractor
  structure Convertor
  structure ConvertorCore
  structure ConvertorModule
@@ -21,11 +22,15 @@ Group
  structure PPStaticEnv
  structure PrettyPrint
  structure PPType
+ structure OverloadingClass
  structure FunctionChecker
  structure TyvarResolver
  structure TyName
  structure Type
  structure TyVar
+ structure IdsCore
+ structure VIdMap 
+ structure LabMap
 
  structure Quicksort
  structure StringOrdered
@@ -44,8 +49,9 @@ Group
   (*gallina.sig*)
   generator.sml
   gallina.sml
-  convertor.sml
   convertorUtil.sml
+  annotationExtractor.sml
+  convertor.sml
   convertorCore.sml
   convertorModule.sml
   convertorProgram.sml
