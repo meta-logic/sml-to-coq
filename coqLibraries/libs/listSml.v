@@ -55,7 +55,7 @@ Module List.
     | _  => List.tl l
     end.
 
-  Local Fixpoint last' {A: Type} (l:list A):A := List.last l EmptyException.
+  Local Definition last' {A: Type} (l:list A):A := List.last l EmptyException.
 
   (*
     Sml: 'a list -> 'a
@@ -308,7 +308,7 @@ Definition append {A: Type} (l1:list A) (l2:list A):list A:= List.append l1 l2.
   Sml: ('a -> unit) -> 'a list -> unit
   Coq: (A -> unit) -> list A -> unit
 *)
-Fixpoint app {A: Type} (f:A->unit) (l:list A): unit:= List.app f l.
+Definition app {A: Type} (f:A->unit) (l:list A): unit:= List.app f l.
 
 (*
   Sml: ('a -> 'b) -> 'a list -> 'b list
@@ -320,14 +320,14 @@ Definition map {A B: Type} (f: A->B) (l:list A):list B := List.map f l.
   Sml: ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
   Coq: (A * B -> B) -> B -> list A -> B
 *)
-Fixpoint foldl {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
+Definition foldl {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
   List.foldl f b0 l.
 
 (*
   Sml: ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
   Coq: (A * B -> B) -> B -> list A -> B
 *)
-Fixpoint foldr {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
+Definition foldr {A B: Type} (f:A * B ->B) (b0:B) (l:list A):B :=
   List.foldr f b0 l.
 
 (* ---------------------------------------------------------------------------*)

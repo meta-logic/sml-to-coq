@@ -681,7 +681,7 @@ Module Real.
     Sml: string -> real option
     Coq: string -> option float
   *)
-  Fixpoint fromString (s: string): option float :=  
+  Definition fromString (s: string): option float :=  
     match s with
     | ""%string => None
     | String c s' => match Ascii.eqb c "-" with

@@ -219,6 +219,7 @@ struct
                 | G.DeclareModuleSentence(d) => declarationG(d)::sentenceG(ast)
                 | G.IncludeSentence(i)       => inclusionG(i)::sentenceG(ast)
                 | G.SeqSentences(n)          => sentenceG(n)@sentenceG(ast)
+                | G.EquationSentence(e)      => eprogramsG(e)::sentenceG(ast)
 
 
   and recordG (rL) = "Record " ^ concatListWith("with ", recBodyG, rL)
@@ -354,6 +355,62 @@ struct
 
 
   and inclusionG (G.Include (m)): string = "Include " ^ moduleTypG(m) ^ "."
+
+
+  and ebinderG (b: G.ebinder): string = 
+    case b of
+      G.ESingleBinder{name = n, typ = t, inferred = inf} => 
+        (case inf of 
+            false => "(" ^ nameG(n) ^ ": " ^ termG(t) ^ ")"
+          | true => "{" ^ nameG(n) ^ ": " ^ termG(t) ^ "}") 
+    | G.ELetBinder{names = nL, typ = t, body = b} => 
+        "(" ^ concatListWith(" ", nameG, nL) ^ ":= " ^ 
+        termG(b) ^ ": " ^ termG(t) ^ ")"
+
+
+  and econtextG (G.EContext(bL)): string = concatListWith(" ", ebinderG, bL)
+
+
+  and eprogramsG (G.EPrograms(e, eL)): string = 
+    eprogramG(e)  ^ concatListWith("\n", emutualG, eL) ^ "."
+
+
+  and emutualG (e: G.emutual): string = 
+    case e of
+      G.EWith(p)  => "with " ^ (eprogramG p)
+    | G.EWhere(p) => (ewhereG p)
+
+
+  and ewhereG (e: G.ewhere): string =
+    case e of
+      G.Ewherep(p) => "where " ^ (eprogramG p)
+    | G.Ewheren(p) => "where " ^ (enotG p) 
+
+
+  and enotG (G.Enot(s, t)) =  "\"" ^ s ^ "\" " ^ ":= " ^ termG(t) 
+
+
+  and eprogramG (G.EProgram{ id = i, context = econt, ret = t, body = ecls}) =
+    "Equations "^ convertIdent(i) ^ " " ^ econtextG(econt) ^ ": " ^ termG(t) ^
+     " :=\n" ^ eclausesG(ecls, i)
+
+
+  and eclausesG (G.EClauses(cl), id): string = 
+    let
+      val cs  = concatListWith("\n", fn x=> convertIdent(id) ^ " " ^ (eclauseG x), cl)
+      val lcs = S.size cs 
+    in
+      case lcs of
+        0 => cs
+      | _ => case S.sub(cs, lcs - 1) of
+              #";" => S.substring(cs, 0, lcs-1) 
+            | _ => cs
+    end 
+
+
+  and eclauseG (G.EClause{ pats = pL, body = t}): string = 
+    concatListWith(" ", patternG, pL) ^ " := " ^ termG(t) ^ ";"   
+
 
   and convertChar (s: string): string = 
     let
