@@ -456,7 +456,29 @@ elaboration, and the pattern can be unfolded with all fields.
 
 \subsection{Type Variables}
 
-Always explicit.
+In SML the programmer can leave types implicit most of the time, even
+when the type is polymorphic. For instance: \smle{val L = []}.
+%
+In contrast, Coq only allows type variables to be implicit if their
+instantiation can be inferred from context. Therefore, the declaration
+\coqe{Definition L := []} fails with \texttt{Cannot infer the implicit
+parameter A of nil whose type is "Type"}.
+
+As a result, type variables must be made explicit when translating SML
+declarations, and this is done using a type variable context
+$\mathcal{T}$. As the declaration is traversed, the types of its
+expressions can be found in the annotations (after elaboration). The
+type variables are collected in $\mathcal{T}$, and they are added as
+implicit arguments of the resulting Coq definition. The declaration's
+type is also made explicit as it might be polymorphic. 
+\giselle{Is that all that needs to be done?}
+
+As an example, the SML declaration \smle{val L = []} is translated as:
+
+\begin{coq}
+Definition L {_a} : list {_a} := [].
+\end{coq}
+
 
 \subsection{Typed Patterns}
 
