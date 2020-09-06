@@ -680,8 +680,12 @@ and valbind2sent(valbind: ValBind): G.sentence =
         val sent = G.SeqSentences(valbind2sents valbind)
     in (recordContext := []; sent) end
 
-and binder2ebinder(G.SingleBinder {name = name, typ = SOME typ, inferred = inferred}) =
-    G.ESingleBinder {name = name, typ = typ, inferred = inferred }
+and binders2ebinders(G.SingleBinder {name = name, typ = SOME typ, inferred = inferred} :: l) =
+    G.ESingleBinder {name = name, typ = typ, inferred = inferred } :: (binders2ebinders l)
+  | binders2ebinders (G.MultipleBinders {names = names, typ = typ, inferred = inferred} :: l) = 
+    (List.map (fn n => G.ESingleBinder{name = n, typ = typ, inferred = inferred}) names) @ (binders2ebinders l)
+  | binders2ebinders _ = []
+
 
 and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms = 
     let
@@ -691,8 +695,9 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                 val Match(FmruleX(pat@@A, ty_opt, _)@@_, _) = match
                 val typs = patannot2inputtyps (arity, tl A)
                 val ebinders = mkEbinders(1, typs)
+                val typBinders = T.clearTyvars tyvarCtx
             in
-                G.EContext ((List.map binder2ebinder tyvars) @ ebinders)
+                G.EContext (binders2ebinders(typBinders @ tyvars) @ ebinders)
             end
         fun match2eclauses(Match(fmrule, match2)@@_ : Match) : G.eclause list =
             let
@@ -715,8 +720,8 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                 val ret = case ty_opt of
                               SOME ty => ty2term (~ty)
                             | NONE => matchannot2outputtyp (tl A)
-                val context = match2econtext(~match, arity)
                 val body = G.EClauses (match2eclauses(match))
+                val context = match2econtext(~match, arity)
             in
                 G.EProgram { id = id, context = context, ret = ret, body = body } ::
                 (? fvalbind2eprogram valbind2)

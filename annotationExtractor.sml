@@ -36,10 +36,15 @@ and typ2typ(typ : S.Type) : G.term =
 fun patannot2inputtyps (arity : int, A : Pat_attr) : G.term list =
     let
         val SOME (_, typ) = !(hd A)
-        val (S.RowType(typs , _)) = !typ
-        val typs = LabMap.listItems typs
     in
-        if arity = 1 then [typ2typ typ] else (List.map typ2typ typs)
+        if arity = 1 then [typ2typ typ]
+        else
+            let
+                val (S.RowType(typs , _)) = !typ
+                val typs = LabMap.listItems typs
+            in
+                List.map typ2typ typs
+            end
     end
 
 fun matchannot2outputtyp (A : Mrule_attr) : G.term =
