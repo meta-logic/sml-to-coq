@@ -16,22 +16,30 @@ fun constyp2typ(typs, tyname) =
         (case terms of [] => G.IdentTypTerm tycon | _ => G.ExplicitTerm(tycon, terms))
     end
 
+and rowtyp2typ(labmap : S.Type' ref S.LabMap, _) =
+    let
+        val typs = LabMap.listItems labmap
+    in
+        G.InScopeTerm (G.ProductTerm (List.map typ2typ typs), "type") 
+    end
+
 and typ2typ(typ : S.Type) : G.term =
     case !typ of
         S.TyVar(tyvar) => (G.IdentTerm (#name tyvar))
-      (* | S.RowType(rowtyp) => rowtyp2term(rowtyp) *)
+      (* We'll assume this is tuples and not records for now *)
+      | S.RowType(rowtyp) => rowtyp2typ(rowtyp)
       | S.FunType(inp, out) => G.ArrowTerm(typ2typ inp, typ2typ out)
       | S.ConsType(constyp) => constyp2typ(constyp)
       | S.Determined typ => typ2typ typ
       | S.Overloaded typ => G.IdentTerm(checkLegal (TN.toString (O.default typ)))
 
-fun patannot2inputtyps (A : Pat_attr) : G.term list =
+fun patannot2inputtyps (arity : int, A : Pat_attr) : G.term list =
     let
         val SOME (_, typ) = !(hd A)
         val (S.RowType(typs , _)) = !typ
         val typs = LabMap.listItems typs
     in
-        List.map typ2typ typs
+        if arity = 1 then [typ2typ typ] else (List.map typ2typ typs)
     end
 
 fun matchannot2outputtyp (A : Mrule_attr) : G.term =

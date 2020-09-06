@@ -80,10 +80,8 @@ struct
                 List.map term2binder terms
             end
 
-        fun mkEbinders (0 :  int, typs : G.term list) : G.ebinder list = []
-          | mkEbinders (n, typ::typs) = G.ESingleBinder { name = mkName("x"^(Int.toString n)), typ = typ, inferred = false} :: mkEbinders(n-1, typs) 
-                                        
-          | mkEbinders _ = raise Fail "missing types!\n"
+        fun mkEbinders (_ :  int, [] : G.term list) : G.ebinder list = []
+          | mkEbinders (n, typ::typs) = G.ESingleBinder { name = mkName("x"^(Int.toString n)), typ = typ, inferred = false} :: mkEbinders(n+1, typs)
 
 
         fun extractTyp (G.SingleBinder {name = G.Name id, ...} : G.binder) : G.term = G.IdentTerm id

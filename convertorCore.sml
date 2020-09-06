@@ -689,8 +689,8 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
         fun match2econtext(match : Match', arity : int) : G.econtext =
             let
                 val Match(FmruleX(pat@@A, ty_opt, _)@@_, _) = match
-                val typs = patannot2inputtyps (tl A)
-                val ebinders = mkEbinders(arity, typs)
+                val typs = patannot2inputtyps (arity, tl A)
+                val ebinders = mkEbinders(1, typs)
             in
                 G.EContext ((List.map binder2ebinder tyvars) @ ebinders)
             end
