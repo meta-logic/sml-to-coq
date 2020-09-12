@@ -124,12 +124,14 @@ struct
 
         fun orderLabs labs = Sort.sort String.compare (labs)
 
+        fun augmentLabs ident labs = List.map (fn l => ident ^ "_" ^ l) labs
+
         fun labs2field (labs : G.ident list) (typs : G.binder list) : G.field =
             G.Field (ListPair.zip (labs, List.map extractTyp typs))
 
         fun mkRecord (labs : G.ident list, ident : G.ident, typs : G.binder list) : G.sentence =
             G.RecordSentence [G.RecordBody { id = ident, binders = typs, typ = NONE,
-                                             consName = NONE, body = [labs2field labs typs]}]
+                                             consName = NONE, body = [labs2field (augmentLabs ident labs) typs]}]
 
 
 
