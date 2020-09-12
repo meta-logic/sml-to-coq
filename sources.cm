@@ -25,12 +25,16 @@ Group
  structure OverloadingClass
  structure FunctionChecker
  structure TyvarResolver
+ functor PrecondsFinder
  structure TyName
  structure Type
  structure TyVar
  structure IdsCore
  structure VIdMap 
  structure LabMap
+ structure TyConMap
+ structure VId
+ structure TyCon
 
  structure Quicksort
  structure StringOrdered
@@ -57,6 +61,7 @@ Group
   convertorProgram.sml
   functionChecker.sml
   tyvarResolver.sml 
+  precondsFinder.sml
 
   cmlib/quicksort.sml
   cmlib/ordered.sml

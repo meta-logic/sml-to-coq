@@ -40,6 +40,8 @@ fun scon2term (SCon.STRING s : SCon.SCon) : G.term = G.StringTerm s
   (* Need to check what's a word constant *)
   | scon2term (SCon.WORD (b, s)) = if b = SCon.DEC then G.WordTerm (s, G.Dec) else G.WordTerm (s, G.Hex)
 
+structure PF = PrecondsFinder(struct val scon2term = scon2term end)
+
 (* FROM: Scon.sml: 15 -> 20
  * TO:   Gallina.sml : 97 -> 115
  * FROM SECTION: -
@@ -690,14 +692,17 @@ and binders2ebinders(G.SingleBinder {name = name, typ = SOME typ, inferred = inf
 and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms = 
     let
         val tyvars = tyvarseq2binder (List.map ~ ($(~tyvars)))
-        fun match2econtext(match : Match', arity : int) : G.econtext =
+        fun match2econtext(match@@Am : Match, arity : int) : G.econtext =
             let
                 val Match(FmruleX(pat@@A, ty_opt, _)@@_, _) = match
                 val typs = patannot2inputtyps (arity, tl A)
                 val ebinders = mkEbinders(1, typs)
                 val typBinders = T.clearTyvars tyvarCtx
+                val precondsBinders = case (try (exhaustive Am)) of 
+                                          SOME S.Exhaustive => []
+                                        | _ => [PF.findPreconds(match@@Am)]
             in
-                G.EContext (binders2ebinders(typBinders @ tyvars) @ ebinders)
+                G.EContext (binders2ebinders(typBinders @ tyvars) @ ebinders @ precondsBinders)
             end
         fun match2eclauses(Match(fmrule, match2)@@_ : Match) : G.eclause list =
             let
@@ -721,7 +726,7 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                               SOME ty => ty2term (~ty)
                             | NONE => matchannot2outputtyp (tl A)
                 val body = G.EClauses (match2eclauses(match))
-                val context = match2econtext(~match, arity)
+                val context = match2econtext(match, arity)
             in
                 G.EProgram { id = id, context = context, ret = ret, body = body } ::
                 (? fvalbind2eprogram valbind2)

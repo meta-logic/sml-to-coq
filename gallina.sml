@@ -20,8 +20,7 @@ struct
 
 
   datatype term =
-    ForallTerm of binder list * term (* forall *)
-  | FunTerm of binder list * term (* fun *)
+    FunTerm of binder list * term (* fun *)
   | FixTerm of fixbodies (* fix *)
   | CofixTerm of cofixbodies (* cofix *)
   (* let fun f x = 9 + x -> id = f , binders = [x]
@@ -63,6 +62,12 @@ struct
   | MatchNotationTerm of {matchItem : matchItem, body : equation, exhaustive: bool}
   | UnitTerm
   | InfixTerm of term * arg list (* always 2 args *)
+  (* Adding proposition terms for preconditions *)
+  | DisjunctTerm of term * term
+  | ConjunctTerm of term * term
+  | ForallTerm of binder list * term (* forall *)
+  | ExistsTerm of binder list * term
+  | EqualTerm of term * term
 
 and arg = Arg of term | NamedArg of ident * term
 
