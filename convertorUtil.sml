@@ -122,6 +122,7 @@ struct
                 update tyvars tyvarctx
             end
 
+        fun orderLabs labs = Sort.sort String.compare (labs)
 
         (*fun idFromFixbody (Fixbody (fixbody) : G.fixbody) : G.ident = #id fixbody*)
 

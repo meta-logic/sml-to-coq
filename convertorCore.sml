@@ -68,24 +68,26 @@ and expbody2fields body = let
     fun expbody2field (lab, exp) = G.FieldDef {id = checkLegal lab, binders = [], term = exp2term exp }
 in List.map expbody2field body end
 
-and patrow2body (FIELDPatRow(lab, pat, patrow') @@ _) =
+and patrow2body (labels : Lab.Lab list) (patrow) =
     let
-        val (lab, pat) = (~lab, pat2pattern (~pat))
-        val body = (lab, pat) :: ?patrow2body patrow'
-        val labs = patbody2labs body
-        val keys = LT.domain (!recordTracker)
+        fun patrow2body' (FIELDPatRow(lab, pat, patrow') @@ _) =
+            let
+                val (lab, pat) = (~lab, pat2pattern (pat))
+                val body = (lab, pat) :: (?patrow2body' patrow')
+            in
+                body
+            end
+          | patrow2body' _ = []
+        val body = LabMap.fromList (patrow2body' patrow)
+        val body' = LabMap.fromList (List.map (fn l => (l, G.WildcardPat)) labels)
+        val labs = orderLabs labels
     in
         case LT.find (!recordTracker) labs of
-            SOME _ => body
-          | NONE => case List.find (fn l => List.exists (fn x => x = lab) l) keys of
-                        NONE => raise Fail "Record pattern undefined \n"
-                      | SOME labs' => List.map (fn l => case List.find (fn x => #1(x) = l) body of
-                                                            SOME res => res
-                                                         |  _ => (l, G.WildcardPat)) labs'
+            SOME _ => LabMap.listItemsi (LabMap.unionWith (fn (a, _) => a) (body, body'))
+          | NONE => raise Fail "Record pattern undefined \n"
     end
-  | patrow2body  _ = []
 
-and patbody2labs body = Sort.sort String.compare (#1(ListPair.unzip body))
+
 
 and patbody2fields body = let
     fun patbody2field (lab, pat) = G.FieldPat {id = checkLegal lab, binders = [], pat = pat}
@@ -167,7 +169,7 @@ and ty2term ((VARTy tyvar) : Ty') : G.term =
 and mrule2equation (Mrule(pat, exp) : Mrule') : G.equation = 
     let
         val term = exp2term (~ exp)
-        val pattern = pat2pattern (~ pat)
+        val pattern = pat2pattern (pat)
     in
         G.Equation(pattern, term)
     end
@@ -288,11 +290,11 @@ and exp2term (ATExp atexp : Exp') : G.term = atexp2term (atexp)
     let
         val expand = (case (try (exhaustive A)) of SOME S.Exhaustive => false | _ => true)
         val ty = extractTypFromPat (~pat)
-        val binders = pat2binders (~pat)
+        val binders = pat2binders (pat)
     in
         (case (expand, ty) of
              (false, NONE) =>
-             let val binders = pat2binders (~pat)
+             let val binders = pat2binders (pat)
                  val body = exp2term (~exp)
              in G.FunTerm (binders, body) end
            | (false , SOME typ) =>
@@ -382,18 +384,18 @@ and extractTypFromPat (ATPat atpat) = extractTypFromAtPat (~atpat)
   | extractTypFromPat (INFIXPatX(_, _, atpat)) = extractTypFromAtPat (~atpat)
 
 
-and atpat2binders (WILDCARDAtPat : AtPat') : G.binder list =
+and atpat2binders (WILDCARDAtPat@@_ : AtPat) : G.binder list =
     [G.SingleBinder {name = G.WildcardName, typ = NONE, inferred = false}]
-  | atpat2binders (SCONAtPat scon) = raise Fail "Invalid Pattern!\n"
-  | atpat2binders (IDAtPat(_, longvid)) =
+  | atpat2binders ((SCONAtPat scon)@@_) = raise Fail "Invalid Pattern!\n"
+  | atpat2binders (IDAtPat(_, longvid)@@_) =
     [G.SingleBinder {name = mkName (lvid2id (~longvid)), typ = NONE, inferred = false}]
-  | atpat2binders (PARAtPat pat) = pat2binders (~pat)
+  | atpat2binders (PARAtPat(pat)@@_) = pat2binders (pat)
   | atpat2binders p = [G.PatternBinder (atpat2pattern p)]
 
 
-and pat2binders (ATPat(atpat) : Pat') : G.binder list =
-    atpat2binders (~atpat)
-  | pat2binders (COLONPat (pat, ty)) = pat2binders(~pat)
+and pat2binders (ATPat(atpat)@@_ : Pat) : G.binder list =
+    atpat2binders (atpat)
+  | pat2binders (COLONPat(pat, ty)@@_) = pat2binders(pat)
   | pat2binders (p) = [G.PatternBinder (pat2pattern p)]
 
 (* FROM: SyntaxCoreFn.sml: 144 -> 152
@@ -403,20 +405,24 @@ and pat2binders (ATPat(atpat) : Pat') : G.binder list =
  * TO SECTION: Section 4.1.3 Page 115
  * KEYWORD: pattern
  *)
-and atpat2pattern (WILDCARDAtPat : AtPat') : G.pattern = G.WildcardPat
-  | atpat2pattern (SCONAtPat scon) = scon2pattern (~scon)
+and atpat2pattern (WILDCARDAtPat@@_ : AtPat) : G.pattern = G.WildcardPat
+  | atpat2pattern (SCONAtPat(scon)@@_) = scon2pattern (~scon)
   (* ignoring Op for now *)
-  | atpat2pattern (IDAtPat (_, longvid)) = G.QualidPat (lvid2id (~longvid))
-  | atpat2pattern (RECORDAtPat recBody) = let
-      val body = ?patrow2body recBody
-  in
-      if List.length body = 0 then G.WildcardPat 
-      else G.RecPat (patbody2fields body)
-  end
-  | atpat2pattern (PARAtPat pat) = G.ParPat (pat2pattern (~pat))
-  | atpat2pattern UNITAtPatX = G.UnitPat
-  | atpat2pattern (TUPLEAtPatX pats) = G.TuplePat (% pat2pattern pats)
-  | atpat2pattern (LISTAtPatX pats) = G.ListPat (% pat2pattern pats)
+  | atpat2pattern (IDAtPat (_, longvid)@@_) = G.QualidPat (lvid2id (~longvid))
+  | atpat2pattern (RECORDAtPat(recBody)@@A) =
+    let
+        val SOME (_, labs) = !(hd (tl A))
+        val S.RowType (labs, _) = !labs
+        val labs = #1 (ListPair.unzip (LabMap.listItemsi labs))
+        val body = ?(patrow2body labs)  recBody
+    in
+        if List.length body = 0 then G.WildcardPat 
+        else G.RecPat (patbody2fields body)
+    end
+  | atpat2pattern (PARAtPat(pat)@@_) = G.ParPat (pat2pattern (pat))
+  | atpat2pattern (UNITAtPatX@@_) = G.UnitPat
+  | atpat2pattern (TUPLEAtPatX(pats)@@_) = G.TuplePat (List.map pat2pattern pats)
+  | atpat2pattern (LISTAtPatX(pats)@@_) = G.ListPat (List.map pat2pattern pats)
 
 (* FROM: SyntaxCoreFn.sml: 159 -> 163
  * TO:   Gallina.sml : 96 -> 114
@@ -425,18 +431,18 @@ and atpat2pattern (WILDCARDAtPat : AtPat') : G.pattern = G.WildcardPat
  * TO SECTION: Section 4.1.3 Page 115
  * KEYWORD: pattern
  *)
-and pat2pattern (ATPat atpat  : Pat') : G.pattern = atpat2pattern (~ atpat)
-  | pat2pattern (CONPat (opVal, longvid, atpat)) = G.ArgsPat (opetize opVal (lvid2id (~longvid)), [atpat2pattern (~ atpat)])
-  | pat2pattern (COLONPat (pat, ty)) = 
+and pat2pattern (ATPat(atpat)@@_ : Pat) : G.pattern = atpat2pattern atpat
+  | pat2pattern (CONPat (opVal, longvid, atpat)@@_) = G.ArgsPat (opetize opVal (lvid2id (~longvid)), [atpat2pattern (atpat)])
+  | pat2pattern (COLONPat (pat, ty)@@_) = 
     let val _ = print "Coq doesn't support type casting in patterns!\n" 
-    in pat2pattern(~pat) end
+    in pat2pattern(pat) end
   (* Can ASPat ever has a non-empty Op? *)
-  | pat2pattern (ASPat(_, vid, ty, pat)) = 
+  | pat2pattern (ASPat(_, vid, ty, pat)@@_) = 
     let val _ = if Option.isSome ty then print "Coq doesn't support type casting in patterns!\n" 
                 else () 
-    in G.AsPat(pat2pattern(~ pat), vid2id (~vid)) end
+    in G.AsPat(pat2pattern(pat), vid2id (~vid)) end
   (* Can INFIXPatX ever has a non-empty Op? *)
-  | pat2pattern (INFIXPatX (_, longvid, atpat)) = G.InfixPat (lvid2id (~longvid), [atpat2pattern (~atpat)])
+  | pat2pattern (INFIXPatX (_, longvid, atpat)@@_) = G.InfixPat (lvid2id (~longvid), [atpat2pattern (atpat)])
 
 (* Helper function doesn't have corresponding sections, check valBind2sent *)
 and patBody2sents (G.QualidPat ident : G.pattern, body : G.term) (_ : bool): G.sentence list = 
@@ -651,7 +657,7 @@ and valbind2sent(valbind: ValBind): G.sentence =
             let
                 val exhaustive = case try (exhaustive A) of SOME S.Exhaustive => true | _ => false
                 val body = exp2term (~exp)
-                val pat = pat2pattern (~pat)
+                val pat = pat2pattern (pat)
                 val sents = patBody2sents (pat, body) exhaustive
                 val sents' = ?valbind2sents valbind2
             in
@@ -709,7 +715,7 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                 fun fmrule2eclause (FmruleX(pat, _, exp)) : G.eclause =
                     let
                         val ATPat(TUPLEAtPatX(pats)@@_)@@_ = pat
-                        val pats = % pat2pattern pats
+                        val pats = List.map pat2pattern pats
                         val body = exp2term (~exp)
                     in
                         G.EClause { pats = pats, body = body }
