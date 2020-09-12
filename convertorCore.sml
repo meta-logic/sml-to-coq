@@ -81,10 +81,19 @@ and patrow2body (labels : Lab.Lab list) (patrow) =
         val body = LabMap.fromList (patrow2body' patrow)
         val body' = LabMap.fromList (List.map (fn l => (l, G.WildcardPat)) labels)
         val labs = orderLabs labels
+        val res = LabMap.listItemsi (LabMap.unionWith (fn (a, _) => a) (body, body'))
     in
         case LT.find (!recordTracker) labs of
-            SOME _ => LabMap.listItemsi (LabMap.unionWith (fn (a, _) => a) (body, body'))
-          | NONE => raise Fail "Record pattern undefined \n"
+            SOME _ => res
+          | NONE => let
+              val id = genIdent ()
+              val typs = gentyps (List.length labs)
+              val _ = recordTracker := LT.insert (!recordTracker) labs id
+              val _ = recordContext := mkRecord (labs, id, typs) :: !recordContext
+          in
+              res
+          end
+
     end
 
 
@@ -248,7 +257,7 @@ and atexp2term (SCONAtExp(scon)@@_ : AtExp) : G.term = scon2term (~scon)
             val id = genIdent ()
             val typs = gentyps (List.length labs)
             val _ = recordTracker := LT.insert (!recordTracker) labs id
-            val _ = recordContext := exprow2sent (labs, id, typs) :: !recordContext
+            val _ = recordContext := mkRecord (labs, id, typs) :: !recordContext
         in
             G.RecordTerm (expbody2fields body)
         end
@@ -550,13 +559,6 @@ and tyrow2sent (body : (G.ident * Ty') list, ident : G.ident) : G.sentence =
 and tyrow2field (body : (G.ident * Ty') list) : G.field =
     G.Field (List.map (fn (id, ty) => (checkLegal id, ty2term ty)) body)
 
-and exprow2sent (labs : G.ident list, ident : G.ident, typs : G.binder list) : G.sentence =
-    G.RecordSentence [G.RecordBody { id = ident, binders = typs, typ = NONE,
-                                     consName = NONE, body = [labs2field labs typs]}]
-
-
-and labs2field (labs : G.ident list) (typs : G.binder list) : G.field =
-    G.Field (ListPair.zip (labs, List.map extractTyp typs))
 
 and fnexp2funbody (FNExp(Match(Mrule(ATPat(IDAtPat(_, longvid)@@_)@@_, exp)@@_,_)@@_)) : G.binder list * G.term =
     let val (binders, body) = fnexp2funbody (~exp)
