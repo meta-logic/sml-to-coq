@@ -62,10 +62,8 @@ and tybody2labs (body : (G.ident * Ty') list) = Sort.sort String.compare (#1(Lis
 
 and exprow2body (ExpRow(lab, exp, exprow') @@ _) = (~lab, ~exp) :: ?exprow2body exprow'
 
-and expbody2labs body = Sort.sort String.compare (#1(ListPair.unzip body))
-
-and expbody2fields body = let
-    fun expbody2field (lab, exp) = G.FieldDef {id = checkLegal lab, binders = [], term = exp2term exp }
+and expbody2fields ident body = let
+    fun expbody2field (lab, exp) = G.FieldDef {id = ident ^ "_" ^ (checkLegal lab), binders = [], term = exp2term exp }
 in List.map expbody2field body end
 
 and patrow2body (labels : Lab.Lab list) (patrow) =
@@ -84,22 +82,22 @@ and patrow2body (labels : Lab.Lab list) (patrow) =
         val res = LabMap.listItemsi (LabMap.unionWith (fn (a, _) => a) (body, body'))
     in
         case LT.find (!recordTracker) labs of
-            SOME _ => res
+            SOME id => (id, res)
           | NONE => let
               val id = genIdent ()
               val typs = gentyps (List.length labs)
               val _ = recordTracker := LT.insert (!recordTracker) labs id
               val _ = recordContext := mkRecord (labs, id, typs) :: !recordContext
           in
-              res
+              (id, res)
           end
 
     end
 
 
 
-and patbody2fields body = let
-    fun patbody2field (lab, pat) = G.FieldPat {id = checkLegal lab, binders = [], pat = pat}
+and patbody2fields ident body = let
+    fun patbody2field (lab, pat) = G.FieldPat {id = ident ^ "_" ^ checkLegal lab, binders = [], pat = pat}
 in List.map patbody2field body end
 
 (* EXAMPLE: type class = (id, name) hashtable :(id, name) forms a tyseq
@@ -249,17 +247,17 @@ and atexp2term (SCONAtExp(scon)@@_ : AtExp) : G.term = scon2term (~scon)
        | SOME typ => G.HasTypeTerm(G.IdentTerm (opetize opVal (lvid2id (~longvid))), typ))
   | atexp2term (RECORDAtExp(recBody)@@_) = let
       val body = ?exprow2body recBody
-      val labs = expbody2labs body
+      val labs = orderLabs (#1 (ListPair.unzip body))
   in
       case LT.find (!recordTracker) labs of
-          SOME ident => G.RecordTerm (expbody2fields body)
+          SOME ident => G.RecordTerm (expbody2fields ident body)
         | NONE => let
             val id = genIdent ()
             val typs = gentyps (List.length labs)
             val _ = recordTracker := LT.insert (!recordTracker) labs id
             val _ = recordContext := mkRecord (labs, id, typs) :: !recordContext
         in
-            G.RecordTerm (expbody2fields body)
+            G.RecordTerm (expbody2fields id body)
         end
   end
   | atexp2term (LETAtExp(dec, exp)@@_) = 
@@ -423,10 +421,11 @@ and atpat2pattern (WILDCARDAtPat@@_ : AtPat) : G.pattern = G.WildcardPat
         val SOME (_, labs) = !(hd (tl A))
         val S.RowType (labs, _) = !labs
         val labs = #1 (ListPair.unzip (LabMap.listItemsi labs))
-        val body = ?(patrow2body labs)  recBody
+        val (ident, body) = case recBody of NONE => ("", [])
+                                          | SOME recBody => patrow2body labs recBody
     in
         if List.length body = 0 then G.WildcardPat 
-        else G.RecPat (patbody2fields body)
+        else G.RecPat (patbody2fields ident body)
     end
   | atpat2pattern (PARAtPat(pat)@@_) = G.ParPat (pat2pattern (pat))
   | atpat2pattern (UNITAtPatX@@_) = G.UnitPat
@@ -554,10 +553,10 @@ and conbind2clauses(cons @@ _ : ConBind) : G.clause list =
 
 and tyrow2sent (body : (G.ident * Ty') list, ident : G.ident) : G.sentence =
     G.RecordSentence [G.RecordBody {id = ident, binders = [], typ = NONE,
-                                    consName = NONE, body = [tyrow2field body] }]
+                                    consName = NONE, body = [tyrow2field ident body] }]
 
-and tyrow2field (body : (G.ident * Ty') list) : G.field =
-    G.Field (List.map (fn (id, ty) => (checkLegal id, ty2term ty)) body)
+and tyrow2field ident (body : (G.ident * Ty') list) : G.field =
+    G.Field (List.map (fn (id, ty) => (ident ^ "_" ^ checkLegal id, ty2term ty)) body)
 
 
 and fnexp2funbody (FNExp(Match(Mrule(ATPat(IDAtPat(_, longvid)@@_)@@_, exp)@@_,_)@@_)) : G.binder list * G.term =
