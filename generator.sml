@@ -24,9 +24,8 @@ struct
     end
 
   and termG (term: G.term): string =
-    case term of                              
-      G.ForallTerm(bL,t) => "forall "^(concatListWith (" ", binderG, bL))^" , " ^termG(t)
-    | G.FunTerm(bL,t)    => "fun "^(concatListWith (" ", binderG, bL))^" => "^termG(t)
+    case term of                               
+      G.FunTerm(bL,t)    => "fun "^(concatListWith (" ", binderG, bL))^" => "^termG(t)
     | G.FixTerm(fb)      => "fix "^ fixbodiesG(fb)
     | G.CofixTerm(fb)    => "cofix "^ cofixbodiesG(fb)
     | G.LetTerm{id=i, binders=bL, typ=tO, body=bT, inBody=inT} =>
@@ -94,6 +93,12 @@ struct
                                 in
                                    concatListWith (termG(t), termG, tL) 
                                 end
+    (* Adding proposition terms for preconditions *)
+    | G.DisjunctTerm(t1, t2) => termG(t1) ^ " \\/ " ^ termG(t2)
+    | G.ConjunctTerm(t1, t2) => termG(t1) ^ " /\\ " ^ termG(t2)
+    | G.ForallTerm(bL, t) => "forall "^(concatListWith (" ", binderG, bL))^" , " ^termG(t)
+    | G.ExistsTerm(bL, t) => "exists "^(concatListWith (" ", binderG, bL))^" , " ^termG(t) 
+    | EqualTerm(t1, t2) => termG(t1) ^ " = " ^ termG(t2) 
 
 
   and argG (G.Arg(t))        = termG(t)
