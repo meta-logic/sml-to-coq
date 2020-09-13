@@ -94,11 +94,11 @@ struct
                                    concatListWith (termG(t), termG, tL) 
                                 end
     (* Adding proposition terms for preconditions *)
-    | G.DisjunctTerm(t1, t2) => termG(t1) ^ " \\/ " ^ termG(t2)
-    | G.ConjunctTerm(t1, t2) => termG(t1) ^ " /\\ " ^ termG(t2)
-    | G.ForallTerm(bL, t) => "forall "^(concatListWith (" ", binderG, bL))^" , " ^termG(t)
-    | G.ExistsTerm(bL, t) => "exists "^(concatListWith (" ", binderG, bL))^" , " ^termG(t) 
-    | EqualTerm(t1, t2) => termG(t1) ^ " = " ^ termG(t2) 
+    | G.DisjunctTerm(t1, t2) => "(" ^ termG(t1) ^ " \\/ " ^ termG(t2) ^ ")"
+    | G.ConjunctTerm(t1, t2) => "(" ^ termG(t1) ^ " /\\ " ^ termG(t2) ^ ")"
+    | G.ForallTerm(bL, t) => "(" ^  "forall "^(concatListWith (" ", binderG, bL))^" , " ^ termG(t) ^ ")"
+    | G.ExistsTerm(bL, t) => "(" ^ "exists "^(concatListWith (" ", binderG, bL))^" , " ^termG(t) ^ ")" 
+    | G.EqualTerm(t1, t2) => termG(t1) ^ " = " ^ termG(t2)  
 
 
   and argG (G.Arg(t))        = termG(t)
