@@ -47,7 +47,7 @@ struct
     | G.IfTerm{test=tes, thenTerm=the,  elseTerm=els} => 
       "if "^termG(tes)^" then "^termG(the)^" else "^termG(els)
     
-    | G.HasTypeTerm(v1,v2)  => termG(v1) ^ " : " ^ termG(v2)
+    | G.HasTypeTerm(v1,v2)  => "(" ^ termG(v1) ^ " : " ^ termG(v2) ^ ")"
     | G.ArrowTerm(v1,v2)    => termG(v1) ^ " -> " ^ termG(v2) 
     | G.ApplyTerm(v1,aL)    => termG(v1) ^" "^(concatListWith (" ", argG, aL)) 
     | G.ExplicitTerm(v1,tL) => "@ " ^ v1 ^" "^(concatListWith (" ", termG, tL)) 
@@ -91,7 +91,7 @@ struct
                                   val G.Arg(t') = List.hd aL
                                   val G.TupleTerm(tL) = t'
                                 in
-                                   concatListWith (termG(t), termG, tL) 
+                                  concatListWith (termG(t), termG, tL) 
                                 end
     (* Adding proposition terms for preconditions *)
     | G.DisjunctTerm(t1, t2) => "(" ^ termG(t1) ^ " \\/ " ^ termG(t2) ^ ")"
@@ -199,7 +199,7 @@ struct
     | G.InfixPat(i, pL)  => let
                               val G.TuplePat(pL') = List.hd pL
                             in
-                              concatListWith (i, patternG, pL') 
+                              "(" ^ concatListWith (i, patternG, pL') ^ ")" 
                             end
 
 
@@ -382,7 +382,14 @@ struct
 
   and emutualG (e: G.emutual): string = 
     case e of
-      G.EWith(p)  => "with " ^ (eprogramG p)
+      G.EWith(p)  => ( let
+        val fbody = (eprogramG p)
+        val newFbody = if S.substring(fbody, 0, 10) = "Equations " 
+                      then S.substring(fbody, 10, S.size(fbody) - 10)
+                      else fbody
+      in
+        "\nwith " ^ newFbody
+      end )
     | G.EWhere(p) => (ewhereG p)
 
 
