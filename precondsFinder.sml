@@ -101,7 +101,11 @@ fun arg2cond (pos : int) (arg : arg) : G.term =
           | arg2rhs (Const(s, l)) = G.ApplyTerm(const s, List.map arg2Garg l)
           | arg2rhs (SCon(scon)) = scon2term scon
           | arg2rhs (ListConst(args)) = G.ListTerm (List.map arg2rhs args)
-          | arg2rhs (InfixConst(s, (arg1, arg2))) = G.InfixTerm(const s, [arg2Garg arg1, arg2Garg arg2])
+          (*| arg2rhs (InfixConst(s, (arg1, arg2))) = G.InfixTerm(const s, [arg2Garg arg1, arg2Garg arg2])*)
+          | arg2rhs (InfixConst(s, (arg1, arg2))) = 
+            G.InfixTerm(const s, 
+                        [G.Arg ( G.TupleTerm [arg2rhs arg1, arg2rhs arg2] ) ])
+
         and arg2Garg arg = G.Arg (arg2rhs arg)
         fun ctx2binders() = List.map (fn n => G.SingleBinder {name = n, typ = NONE, inferred = false}) (List.rev (!varCtx))
         val rhs = arg2rhs arg
