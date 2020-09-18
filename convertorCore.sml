@@ -419,7 +419,11 @@ and atpat2pattern (WILDCARDAtPat@@_ : AtPat) : G.pattern = G.WildcardPat
   | atpat2pattern (RECORDAtPat(recBody)@@A) =
     let
         val SOME (_, labs) = !(hd (tl A))
-        val S.RowType (labs, _) = !labs
+        val labs = (case !labs of
+            S.RowType (l, _) => l
+          | S.Determined (ref (S.RowType (l, _))) => l (* For {...} patterns *)
+          | _ => raise Fail "Error fetching labels from record patterns."
+        )
         val labs = #1 (ListPair.unzip (LabMap.listItemsi labs))
         val (ident, body) = case recBody of NONE => ("", [])
                                           | SOME recBody => patrow2body labs recBody
