@@ -53,8 +53,8 @@ struct
     | G.ExplicitTerm(v1,tL) => "@ " ^ v1 ^" "^(concatListWith (" ", termG, tL)) 
     | G.InScopeTerm(v1,v2)  => termG(v1) ^ " % " ^ v2 
     | G.MatchTerm{matchItems=mL, body=eL} => 
-      "\n  match " ^ (concatListWith (", ", matchItemG, mL)) ^ " with" ^ "\n  " ^
-      (S.concatWith ("  \n  | ") (List.map equationG eL)) ^ "\n  end"
+      "\n  match " ^ (concatListWith (", ", matchItemG, mL)) ^ " with" ^ "\n" ^
+      "  | " ^ (S.concatWith ("  \n  | ") (List.map equationG eL)) ^ "\n  end"
     
     | G.IdentTerm(v)        => convertIdent(v)
     | G.IdentTypTerm(v)     => convertType(v)
@@ -262,13 +262,13 @@ struct
   
 
   and indBodyG (G.IndBody{id=i, bind=bL, typ=t, clauses=cL}) =
-      convertIdent(i) ^" "^concatListWith(" ", binderG, bL) ^ " : " ^ termG(t) ^
-      " := " ^ "\n  " ^ concatListWith("  \n  | ", clauseG, cL)
+      convertIdent(i) ^ " " ^ concatListWith(" ", binderG, bL) ^ " : " ^ termG(t) ^
+      " := " ^ "\n  | " ^ concatListWith("  \n  | ", clauseG, cL)
 
 
   and clauseG (G.Clause(i, bL, tO)) = 
     i ^ concatListWith(" ", binderG, bL) ^ 
-    (case tO of NONE => "" | SOME x => " :" ^ termG(x))
+    (case tO of NONE => "" | SOME x => " : " ^ termG(x))
 
 
   and fixpointG (fp: G.fixpoint): string =
@@ -409,7 +409,7 @@ struct
 
   and eclausesG (G.EClauses(cl), id): string = 
     let
-      val cs  = concatListWith("\n", fn x=> convertIdent(id) ^ " " ^ (eclauseG x), cl)
+      val cs  = concatListWith("\n", fn x=> "  " ^ convertIdent(id) ^ " " ^ (eclauseG x), cl)
       val lcs = S.size cs 
     in
       case lcs of
