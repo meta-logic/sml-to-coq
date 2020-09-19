@@ -10,23 +10,27 @@
  *)
 structure ConvertorProgram = 
 struct
-    open SyntaxProgram    	
-	  open ConvertorModule
-    local 
-		structure G = Gallina
-		infix @@		
-	in
-	(* FROM: SyntaxProgramFn.sml: 28
-	 * TO:   Gallina.sml : 121 -> 128
-	 * FROM SECTION: Appendix C.2 page 106
-	 * KEYWORD: program
-	 * TO SECTION: Section 4.1.4 Page 120
-	 * KEYWORD: sentence
-	 *)	
-	fun program2sents prog : G.sentence list
-		  = let fun program2sents' (Program(prog, prog2) @@ _ : Program) =
-                (topDec2sents  prog) @ (? (program2sents') prog2)
-        in recordTracker := LT.empty; program2sents' prog
-        end
-	end
+open SyntaxProgram          
+open ConvertorModule
+local 
+  structure G = Gallina
+  infix @@                
+in
+  (* FROM: SyntaxProgramFn.sml: 28
+   * TO:   Gallina.sml : 121 -> 128
+   * FROM SECTION: Appendix C.2 page 106
+   * KEYWORD: program
+   * TO SECTION: Section 4.1.4 Page 120
+   * KEYWORD: sentence
+   *)     
+  fun program2sents prog : G.sentence list = 
+    let 
+      fun program2sents' (Program(prog, prog2) @@ _ : Program) =
+        (topDec2sents prog) @ (? (program2sents') prog2)
+    in 
+      recordTracker := LT.empty; program2sents' prog
+    end
+
+end
+
 end

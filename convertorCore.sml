@@ -230,7 +230,7 @@ and sentterm2letTerm ((G.DefinitionSentence (G.DefinitionDef sent)) : G.sentence
     in
         nested sents
     end    
-  | sentterm2letTerm _ =raise Fail "Translating this sentence to let is invalid/Unimplemented \n"        
+  | sentterm2letTerm _ = raise Fail "Translating this sentence to let is invalid/Unimplemented \n"        
 
 (* FROM: SyntaxCoreFn.sml: 71 -> 79
  * TO:   Gallina.sml: 21 -> 62
