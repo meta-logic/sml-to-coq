@@ -765,10 +765,16 @@ and dec2sent ((TYPEDec(typbind)@@ _) : Dec): G.sentence = typbind2sent typbind
         G.DefinitionDef{localbool = false, id = tycon2id(~tycon), binders = [], typ = NONE,
                         body = G.IdentTerm(ltycon2id(~ltycon))})
   | dec2sent (VALDec(tyvars, valbind)@@_) = (tyvarCtx := updateTyvarCtx (tyvars) (!tyvarCtx); valbind2sent valbind)
-  | dec2sent (FUNDecX(tyvars, fvalbind)@@_) = G.EquationSentence (fundec2eprograms(tyvars, fvalbind))
+  | dec2sent (FUNDecX(tyvars, fvalbind)@@_) = let
+      val sent = G.EquationSentence (fundec2eprograms(tyvars, fvalbind))
+      val recordC = !recordContext
+      val _ = recordContext := []
+    in
+        if recordC = [] then sent else G.SeqSentences (recordC @ [sent])
+    end
   | dec2sent (SEQDec(dec1, dec2)@@_) = G.SeqSentences [dec2sent dec1, dec2sent dec2]
   | dec2sent _ = raise Fail "Fail: unsupported"
-  (* For debugging purposes *)
+  (* For debuggin purposes *)
   (*| dec2sent d = (PPCore.ppDec (TextIO.stdOut, 0, d)  ; raise Fail "dec2sent" ) *)
 end
 
