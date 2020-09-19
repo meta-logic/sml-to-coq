@@ -63,7 +63,11 @@ struct
       (if (S.isPrefix "~" v) then "(-"^S.substring(v, 1, S.size(v)-1)^ ")" else v)
       
     | G.WildcardTerm        => "_"
-    | G.ParensTerm(v)       => "(" ^ termG(v) ^ ")"
+      (* All infext terms come inside a parens term even
+      if it's not needed, this is why it needs to be removed *)
+    | G.ParensTerm(v)       => (case v of
+                                  G.InfixTerm(_, _) => termG(v)  
+                                | _ => "(" ^ termG(v) ^ ")" )
     | G.RecordTerm(fL)      => "\n{|\n  "^concatListWith(";\n  ", fieldDefG, fL)^"\n|}"
     (*Additional terms to match sml built-in types. (!) *)  
     | G.WordTerm(v, b)      => (case b of 
