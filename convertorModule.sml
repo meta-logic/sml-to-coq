@@ -11,11 +11,11 @@
 structure ConvertorModule =
 struct
     open SyntaxModule
-	open ConvertorCore
+        open ConvertorCore
     local
-		structure G = Gallina
-		infix @@
-	in
+                structure G = Gallina
+                infix @@
+        in
 
   val cxt = ref [] : (G.sentence list) ref
 
@@ -274,14 +274,14 @@ struct
           G.SeqSentences (funbind2sents funbind)
       end
 
-	(* FROM: SyntaxModuleFn.sml: 72 -> 76
-	 * TO:   Gallina.sml : 121 -> 128
-	 * FROM SECTION: Appendix C.2 page 106
-	 * KEYWORD: strdec
-	 * TO SECTION: Section 3.1.4 Page 30
-	 * KEYWORD: sentence
-	 *)
-	and strDec2sents (DECStrDec(strDec) @@ _ : StrDec) : G.sentence = dec2sent strDec
+  (* FROM: SyntaxModuleFn.sml: 72 -> 76
+   * TO:   Gallina.sml : 121 -> 128
+   * FROM SECTION: Appendix C.2 page 106
+   * KEYWORD: strdec
+   * TO SECTION: Section 3.1.4 Page 30
+   * KEYWORD: sentence
+   *)
+  and strDec2sents (DECStrDec(strDec) @@ _ : StrDec) : G.sentence = dec2sent strDec
     | strDec2sents (STRUCTUREStrDec(strbnd)@@_) = strbind2sent strbnd
     | strDec2sents (EMPTYStrDec@@_) = G.SeqSentences []
     | strDec2sents (SEQStrDec(strdec1, strdec2)@@_) =
@@ -292,17 +292,19 @@ struct
   and funDec2sents (FunDec(funbind)@@_ : FunDec) : G.sentence = funbind2sent funbind
 
   (* FROM: SyntaxModuleFn.sml: 142 -> 145
-	 * TO:   Gallina.sml : 121 -> 128
+   * TO:   Gallina.sml : 121 -> 128
    * FROM SECTION: Appendix C.2 page 106
-	 * KEYWORD: topdec
-	 * TO SECTION: Section 3.1.4 Page 30
-	 * KEYWORD: sentence
-	 *)	
-	and topDec2sents (STRDECTopDec(strdec, topdec2) @@ _ : TopDec) : G.sentence list =
-	    (strDec2sents strdec) :: (?(topDec2sents) topdec2)
-		| topDec2sents (SIGDECTopDec(sigdec, topdec2)@@_) =
+   * KEYWORD: topdec
+   * TO SECTION: Section 3.1.4 Page 30
+   * KEYWORD: sentence
+   *)     
+  and topDec2sents (STRDECTopDec(strdec, topdec2) @@ _ : TopDec) : G.sentence list =
+      (strDec2sents strdec) :: (?(topDec2sents) topdec2)
+    | topDec2sents (SIGDECTopDec(sigdec, topdec2)@@_) =
       (sigDec2sents sigdec) :: (?(topDec2sents) topdec2)
     | topDec2sents (FUNDECTopDec(fundec, topdec2)@@_) =
       (funDec2sents fundec) :: ((?topDec2sents) topdec2)
-	end
+
+end
+
 end
