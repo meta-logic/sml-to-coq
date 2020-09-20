@@ -1,4 +1,4 @@
-structure AnnotationExtractor =
+functor AnnotationExtractor(val recordContext: (Gallina.sentence list) ref; val recordTracker: (Gallina.ident ConvertorUtil.LT.dict) ref) =
 struct
 open ConvertorUtil
 open SyntaxCore
@@ -16,11 +16,31 @@ fun constyp2typ(typs, tyname) =
         (case terms of [] => G.IdentTypTerm tycon | _ => G.ExplicitTerm(tycon, terms))
     end
 
+and rowtyp2sent (body, ident) =
+    let 
+        val field = G.Field (List.map (fn (id, ty) => (ident ^ "_" ^ checkLegal id, typ2typ ty)) body)
+    in
+        G.RecordSentence [G.RecordBody {id = ident, binders = [], typ = NONE, consName = NONE, body = [field] }]
+    end
+
 and rowtyp2typ(labmap : S.Type' ref S.LabMap, _) =
     let
-        val typs = LabMap.listItems labmap
+        val (labs, typs) = ListPair.unzip(LabMap.listItemsi labmap)
+        val body = ListPair.zip(labs, typs)
+        val labs = orderLabs labs
     in
-        G.InScopeTerm (G.ProductTerm (List.map typ2typ typs), "type") 
+        if (tupleLabs labs) then G.InScopeTerm (G.ProductTerm (List.map typ2typ typs), "type") 
+        else
+            case LT.find (!recordTracker) labs of
+                SOME ident => G.IdentTypTerm (ident)
+              | _ => let
+                  val id = genIdent ()
+                  val _ = recordTracker := LT.insert (!recordTracker) labs id
+                  val _ = recordContext := rowtyp2sent (body, id) :: !recordContext
+              in
+                  G.IdentTypTerm (id)
+              end
+
     end
 
 and typ2typ(typ : S.Type) : G.term =
