@@ -2,7 +2,7 @@ Group
  structure Generator 
  structure Gallina
  structure ConvertorUtil
- structure AnnotationExtractor
+ functor AnnotationExtractor
  structure Convertor
  structure ConvertorCore
  structure ConvertorModule

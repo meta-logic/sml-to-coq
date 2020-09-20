@@ -2,8 +2,7 @@ structure ConvertorUtil =
 struct
 
     structure G = Gallina
-    structure Sort = Quicksort
-    structure Key = ListOrdered(StringOrdered)
+    structure Sort = Quicksort structure Key = ListOrdered(StringOrdered)
     structure LT = SplayDict (structure Key = Key) (* LabelsTracker *)
     structure TT = SplaySet(structure Elem = StringOrdered) (* Tyvar tracker *)
     open Annotation;
@@ -132,6 +131,8 @@ struct
         fun mkRecord (labs : G.ident list, ident : G.ident, typs : G.binder list) : G.sentence =
             G.RecordSentence [G.RecordBody { id = ident, binders = typs, typ = NONE,
                                              consName = NONE, body = [labs2field (augmentLabs ident labs) typs]}]
+
+        fun tupleLabs (labs: LabMap.Key.ord_key list) : bool = labs = (List.tabulate (length labs, fn i => (Int.toString (i+1))))
 
 
 

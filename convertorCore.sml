@@ -12,7 +12,6 @@
  *)
 structure ConvertorCore = 
 struct
-open AnnotationExtractor
 structure D = DynamicObjectsCore
 structure F = FunctionChecker
 structure T = TyvarResolver
@@ -24,8 +23,11 @@ in
 exception WildCard
 
 val recordContext = ref [] : (G.sentence list) ref
-val recordTracker = ref (LT.empty) : (G.ident LT.dict) ref
-val tyvarCtx = ref (TT.empty)
+val recordTracker = ref (ConvertorUtil.LT.empty) : (G.ident ConvertorUtil.LT.dict) ref
+val tyvarCtx = ref (ConvertorUtil.TT.empty)
+
+structure AE = AnnotationExtractor(val recordContext = recordContext; val recordTracker = recordTracker)
+open AE
 
 (* FROM: Scon.sml: 15 -> 20
  * TO:   Gallina.sml : 16 -> 53 
