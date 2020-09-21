@@ -13,3 +13,4 @@ fun collatz 1 = [1]
   | collatz n = n :: (case n mod 2 of
       0 => collatz (n div 2)
     | _ => collatz (3*n + 1) )
+;

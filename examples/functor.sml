@@ -27,7 +27,7 @@ struct
     val compare = String.compare
 end
 		   
-functor Dict (K : KEY) :> DICT where type key=K.t =
+functor Dict (Key : KEY) :> DICT where type key=Key.t =
 struct
     structure K = Key;
 
@@ -54,5 +54,5 @@ end
 structure IntDict = Dict (IntKey)
 val id = IntDict.empty
 val id1 = IntDict.insert ((42,"answer"), id)
-val SOME "answer" = IntDict.lookup (1, id1)
-
+val SOME "answer" = IntDict.lookup (42, id1)
+;

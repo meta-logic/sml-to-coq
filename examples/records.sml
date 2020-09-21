@@ -5,3 +5,4 @@ type r = { name : string,
 
 fun isBob ({name = "Bob", ...}: r) = true
   | isBob {...} = false
+;
