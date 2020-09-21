@@ -95,7 +95,7 @@ struct
                                   val G.Arg(t') = List.hd aL
                                   val G.TupleTerm(tL) = t'
                                 in
-                                  concatListWith (termG(t), termG, tL) 
+                                  concatListWith (" " ^ termG(t) ^ " ", termG, tL) 
                                 end
     (* Adding proposition terms for preconditions *)
     | G.DisjunctTerm(t1, t2) => "(" ^ termG(t1) ^ " \\/ " ^ termG(t2) ^ ")"
@@ -203,7 +203,7 @@ struct
     | G.InfixPat(i, pL)  => let
                               val G.TuplePat(pL') = List.hd pL
                             in
-                              "(" ^ concatListWith (i, patternG, pL') ^ ")" 
+                              "(" ^ concatListWith (" " ^ i ^ " ", patternG, pL') ^ ")" 
                             end
 
 
@@ -231,7 +231,7 @@ struct
                 | G.EquationSentence(e)      => eprogramsG(e)::sentenceG(ast)
 
 
-  and recordG (rL) = "Record " ^ concatListWith("with ", recBodyG, rL)
+  and recordG (rL) = "\nRecord " ^ concatListWith("with ", recBodyG, rL)
 
 
   and recBodyG (G.RecordBody{id=i, binders=bL, typ=sO, consName=iO, body=fL}) =
@@ -248,7 +248,7 @@ struct
   and definitionG (def: G.definition): string  =
     case def of
       G.DefinitionDef{binders=bL, body=term ,id=i, localbool=loc ,typ=ty}    =>
-      (if loc then "Local" else "") ^ "Definition " ^ 
+      "\n" ^ (if loc then "Local" else "") ^ "Definition " ^ 
       convertIdent(i) ^ concatListWith(" ", binderG, bL) ^ 
       (case ty of NONE => "" | SOME x => " : " ^ termG(x)) ^
        " := " ^ termG(term) ^ "."
@@ -261,8 +261,8 @@ struct
 
   and inductiveG (ind: G.inductive): string  = 
     case ind of
-      G.Inductive(inbL)   => "Inductive "   ^ concatListWith("\nwith ", indBodyG, inbL)^"."
-    | G.CoInductive(inbL) => "CoInductive " ^ concatListWith("\nwith ", indBodyG, inbL)^"."
+      G.Inductive(inbL)   => "\nInductive "   ^ concatListWith("\nwith ", indBodyG, inbL)^"."
+    | G.CoInductive(inbL) => "\nCoInductive " ^ concatListWith("\nwith ", indBodyG, inbL)^"."
   
 
   and indBodyG (G.IndBody{id=i, bind=bL, typ=t, clauses=cL}) =
@@ -277,8 +277,8 @@ struct
 
   and fixpointG (fp: G.fixpoint): string =
     case fp of
-      G.Fixpoint(fL)   => "Fixpoint "   ^ concatListWith("\nwith ", fixbodyG, fL)^"."
-    | G.CoFixpoint(fL) => "CoFixpoint " ^ concatListWith("\nwith ", coFixbodyG, fL)^"."  
+      G.Fixpoint(fL)   => "\nFixpoint "   ^ concatListWith("\nwith ", fixbodyG, fL)^"."
+    | G.CoFixpoint(fL) => "\nCoFixpoint " ^ concatListWith("\nwith ", coFixbodyG, fL)^"."  
 
 
   and assumptionG (G.Assumption(ak, i, t)) = 
@@ -287,20 +287,20 @@ struct
 
   and assumKeywordG (a: G.assumKeyword) = 
     case a of 
-      G.Conjecture => "Conjecture"
-    | G.Parameter  => "Parameter"
-    | G.Parameters => "Parameters"
-    | G.Variable   => "Variable"
-    | G.Variables  => "Variables"
+      G.Conjecture => "\nConjecture"
+    | G.Parameter  => "\nParameter"
+    | G.Parameters => "\nParameters"
+    | G.Variable   => "\nVariable"
+    | G.Variables  => "\nVariables"
 
   and moduleG (m: G.module): string =
     case m of
       G.IModule{id=i, typ=oo, bindings=ml, body=mB} => 
-      "Module " ^ convertIdent(i) ^" "^ concatListWith("\n", moduleBindingsG, ml)
+      "\nModule " ^ convertIdent(i) ^" "^ concatListWith("\n", moduleBindingsG, ml)
       ^ " " ^ (case oo of NONE => "" | SOME x => ofModuleTypG(x)^" ") ^ ".\n" ^
       moduleBodyG(mB) ^ "\nEnd " ^ convertIdent(i) ^"."
     | G.Module{id=i, typ=oo, bindings=ml, body=mE} => 
-      "Module " ^ convertIdent(i) ^" "^ concatListWith("\n", moduleBindingsG, ml)
+      "\nModule " ^ convertIdent(i) ^" "^ concatListWith("\n", moduleBindingsG, ml)
       ^ " " ^ (case oo of NONE => "" | SOME x => ofModuleTypG(x)^" ")  ^ ".\n" ^
       moduleExpressionG(mE) ^ "\nEnd " ^ convertIdent(i) ^"."
 
@@ -345,11 +345,11 @@ struct
   and gsignatureG (g: G.gsignature): string =
     case g of
       G.ISignature{id=i, bindings=ml, body=s} => 
-      "Module Type " ^ convertIdent(i) ^" "^
+      "\nModule Type " ^ convertIdent(i) ^" "^
       concatListWith("\n", moduleBindingsG, ml) ^ ".\n" ^ 
       signatureBodyG(s) ^  "\nEnd " ^ convertIdent(i) ^"."
     | G.Signature{id=i, bindings=ml, body=m} =>
-      "Module Type " ^ convertIdent(i) ^" "^
+      "\nModule Type " ^ convertIdent(i) ^" "^
       concatListWith("\n", moduleBindingsG, ml) ^ ".\n" ^ 
       moduleTypG(m) ^  "\nEnd " ^ convertIdent(i) ^"."
 
@@ -359,7 +359,7 @@ struct
 
 
   and declarationG (G.Declare {id=i, bindings=ml, typ=mT}): string = 
-    "Declare Module " ^ convertIdent(i) ^ " " ^
+    "\nDeclare Module " ^ convertIdent(i) ^ " " ^
     concatListWith("\n", moduleBindingsG, ml) ^ " : " ^ moduleTypG(mT) ^ "."
 
 
@@ -388,7 +388,7 @@ struct
     case e of
       G.EWith(p)  => ( let
         val fbody = (eprogramG p)
-        val newFbody = if S.substring(fbody, 0, 10) = "Equations " 
+        val newFbody = if S.substring(fbody, 0, 10) = "\nEquations " 
                       then S.substring(fbody, 10, S.size(fbody) - 10)
                       else fbody
       in
@@ -407,7 +407,7 @@ struct
 
 
   and eprogramG (G.EProgram{ id = i, context = econt, ret = t, body = ecls}) =
-    "Equations "^ convertIdent(i) ^ " " ^ econtextG(econt) ^ ": " ^ termG(t) ^
+    "\nEquations "^ convertIdent(i) ^ " " ^ econtextG(econt) ^ ": " ^ termG(t) ^
      " :=\n" ^ eclausesG(ecls, i)
 
 
@@ -425,7 +425,7 @@ struct
 
 
   and eclauseG (G.EClause{ pats = pL, body = t}): string = 
-    concatListWith(" ", patternG, pL) ^ " := " ^ termG(t) ^ ";"   
+    "(" ^ concatListWith(" ", patternG, pL) ^ ") := " ^ termG(t) ^ ";"   
 
 
   and convertChar (s: string): string = 
