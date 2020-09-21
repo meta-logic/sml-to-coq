@@ -16,3 +16,4 @@ and odd [] = false
 (* "Fake" mutual recursion *)
 fun f x = (g x) + 10
 and g x = x * 10
+;

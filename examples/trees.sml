@@ -26,4 +26,4 @@ fun normalize (emptyS: treeS): treeS = emptyS
        of (emptyS, tR') => tR'
         | (tL', emptyS) => tL'
         | (tL', tR')    => nodeS (tL', tR'))
-
+;

@@ -26,3 +26,4 @@ fun permutations l = case l
       acc @ List.map (fn p => x :: p) ps
     end
     ) [] l
+;
