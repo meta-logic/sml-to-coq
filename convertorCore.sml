@@ -1,38 +1,54 @@
+(* (c) SMLtoCoq
+ * We refer to important sections in the following four documents:
+ * Documentation (doc): in the doc directory
+ * SML's Definition (def): https://smlfamily.github.io/sml97-defn.pdf
+ * Gallina's Documentation (gallina): https://coq.inria.fr/refman/language/core/index.html
+ * HaMLet's Documentation (hamlet): https://people.mpi-sws.org/~rossberg/hamlet/hamlet-2.0.0.pdf
+ *)
+
 (*
- * Converting hamlet/syntax/SyntaxCoreFn.sml and hamlet/syntax/TyVar.sml
- * For each function we provide the following:
+ * Converts SML abstract core syntax (doc, section 3).
+ * For each translation rule of the form s => g, we define a corresponding function s2g (some exceptions may apply).
+ * We make use of three contexts: record local context, record global context, and tyvar local context (doc, sections 3.2 and 3.3)
+ * The full grammar can be found in SML's Definition (def, appendix B)
+*)
+
+(*
+ * For each main translation function we provide the following:
  * EXAMPLE: an SML code example
- * FROM: hamlet file source code line numbers
- * TO:   gallina.sml source code line numbers
- * FROM SECTION: section and page number in Hamlet's documentation (if appliicable)
- * KEYWORD: keyword in Hamlet's documentation (if applicable)
- * TO SECTION: section and page number in Coq's documentation (if applicable)
- * KEYWORD: keyword in Coq's documentation (if applicable)
+ * FROM: Section/Figure number in SML's Definition
+ * TO SECTION: Section name in Gallina's documentation
  * NOTES: additional notes
  *)
-structure ConvertorCore = 
+
+
+
+structure ConvertorCore =
 struct
 structure D = DynamicObjectsCore
 structure F = FunctionChecker
 structure T = TyvarResolver
-local 
+local
     structure G = Gallina
     infix @@
     infix ==>
 in
 exception WildCard
 
+(* Local record context, doc: section 3.2 *)
 val recordContext = ref [] : (G.sentence list) ref
+(* Global record context, doc: section 3.2 *)
 val recordTracker = ref (ConvertorUtil.LT.empty) : (G.ident ConvertorUtil.LT.dict) ref
+(* Local tyvar context, doc: section 3.3 *)
 val tyvarCtx = ref (ConvertorUtil.TT.empty)
+
 
 structure AE = AnnotationExtractor(val recordContext = recordContext; val recordTracker = recordTracker)
 open AE
 
-(* FROM: Scon.sml: 15 -> 20
- * TO:   Gallina.sml : 16 -> 53 
- * FROM SECTION: -
- * TO SECTION: 4.1.3 page 115
+(* EXAMPLES: 5, "a", #'c'
+ * FROM: Section 2.2
+ * TO: Essential Vocabulary: term
  * KEYWORD: term
  *)
 fun scon2term (SCon.STRING s : SCon.SCon) : G.term = G.StringTerm s
@@ -717,7 +733,7 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
             in
                 G.EContext (binders2ebinders(typBinders @ tyvars) @ ebinders @ precondsBinders)
             end
-        fun match2eclauses(Match(fmrule, match2)@@_ : Match) : G.eclause list =
+        fun match2eclauses(arity: int) (Match(fmrule, match2)@@A : Match) : G.eclause list =
             let
                 fun fmrule2eclause (FmruleX(pat, _, exp)) : G.eclause =
                     let
@@ -727,8 +743,12 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                     in
                         G.EClause { pats = pats, body = body }
                     end
+                val wildCardClause = case (try (exhaustive A)) of
+                                         SOME S.Exhaustive => []
+                                       | _ => [G.EClause {pats = List.tabulate(arity, fn _ => G.WildcardPat),
+                                                        body = G.WildcardTerm}]
             in
-                fmrule2eclause(~fmrule) :: (? match2eclauses match2)
+                (fmrule2eclause(~fmrule) :: (? (match2eclauses arity) match2)) @ wildCardClause
             end
 
         fun fvalbind2eprogram(FValBindX(vid, match, arity, valbind2)@@_ : ValBind) : G.eprogram list =
@@ -738,7 +758,7 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                 val ret = case ty_opt of
                               SOME ty => ty2term (~ty)
                             | NONE => matchannot2outputtyp (tl A)
-                val body = G.EClauses (match2eclauses(match))
+                val body = G.EClauses (match2eclauses arity match)
                 val context = match2econtext(match, arity)
             in
                 G.EProgram { id = id, context = context, ret = ret, body = body } ::
