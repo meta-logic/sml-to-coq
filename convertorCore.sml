@@ -150,7 +150,7 @@ and ty2arg (ty : Ty') : G.arg = G.Arg (ty2term ty)
  * KEYWORD: term
  *)    
 (* VARty is type variable, e.g. 'a list  *)
-and ty2term ((VARTy tyvar) : Ty') : G.term = 
+and ty2term ((VARTy tyvar) : Ty') : G.term =
     G.IdentTypTerm (checkLegal(TyVar.toString (~tyvar)))
   (* in scope term because the operator "*" is overloaded *)
   | ty2term (TUPLETyX (tys)) = 
