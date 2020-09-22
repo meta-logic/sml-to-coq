@@ -55,7 +55,7 @@ struct
        "functor",
        "id",
        "mutual_rec",
-       (*"non_terminating",*)
+       "non_terminating",
        "partial",
        "records",
        (*"terminating",*)
