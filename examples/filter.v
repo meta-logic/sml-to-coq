@@ -9,10 +9,11 @@ Require Import listPairSml.
 Require Import notationsSml.
 From Equations Require Import Equations.
 
-Equations filter {_'13436: Type} (x1: @ list _'13436) (x2: _'13436 -> bool): @ list _'13436 :=
-  filter [] _ := ([] : @ list _'13436);
+Equations filter {_'13425: Type} (x1: @ list _'13425) (x2: _'13425 -> bool): @ list _'13425 :=
+  filter [] _ := ([] : @ list _'13425);
   filter (x :: l) p := 
   match ((p x)) with
   | true => x :: (((filter l) p))  
   | false => ((filter l) p)
-  end.
+  end;
+  filter _ _ := _.

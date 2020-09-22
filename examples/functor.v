@@ -46,11 +46,11 @@ Definition t := string.
 Definition compare := String.compare.
 End StringKey.
 
-Module Dict ( Key : KEY ) : DICT with 
+Module Dict ( Key : KEY ) : DICT with
 Definition key := Key.t.
 
 Module K.
-Key
+(*Key*)
 End K.
 
 Definition key := K.t.

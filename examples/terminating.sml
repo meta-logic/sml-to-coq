@@ -7,7 +7,6 @@ fun treeListSum ([]: tree list): int = 0
   | treeListSum (Leaf(y)::xs) = y + treeListSum xs
   | treeListSum (Node(l,r)::xs) = treeListSum (l::r::xs)
 
-
 fun remove (x: int, y::l: int list): int list = 
   if x = y then l else y :: remove (x, l)
 
