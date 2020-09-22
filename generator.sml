@@ -295,14 +295,32 @@ struct
 
   and moduleG (m: G.module): string =
     case m of
-      G.IModule{id=i, typ=oo, bindings=ml, body=mB} => 
-      "\nModule " ^ convertIdent(i) ^" "^ concatListWith("\n", moduleBindingsG, ml)
-      ^ " " ^ (case oo of NONE => "" | SOME x => ofModuleTypG(x)^" ") ^ ".\n" ^
-      moduleBodyG(mB) ^ "\nEnd " ^ convertIdent(i) ^"."
-    | G.Module{id=i, typ=oo, bindings=ml, body=mE} => 
-      "\nModule " ^ convertIdent(i) ^" "^ concatListWith("\n", moduleBindingsG, ml)
-      ^ " " ^ (case oo of NONE => "" | SOME x => ofModuleTypG(x)^" ")  ^ ".\n" ^
-      moduleExpressionG(mE) ^ "\nEnd " ^ convertIdent(i) ^"."
+      G.IModule{id=i, typ=oo, bindings=ml, body=mB} => let
+        val id = convertIdent i
+        val modBinds = concatListWith("\n", moduleBindingsG, ml)
+        val binds = case modBinds of "" => ""
+                                   | _  => " " ^ modBinds
+        val modType = case oo of NONE => "" 
+                               | SOME x => " " ^ (ofModuleTypG x)
+        val modBody = moduleBodyG mB
+      in
+        "\nModule " ^ id ^ binds ^ modType ^ ".\n" ^
+        modBody ^ 
+        "\nEnd " ^ id ^ "."
+      end
+    | G.Module{id=i, typ=oo, bindings=ml, body=mE} => let
+        val id = convertIdent i
+        val modBinds = concatListWith("\n", moduleBindingsG, ml)
+        val binds = case modBinds of "" => ""
+                                   | _  => " " ^ modBinds
+        val modType = case oo of NONE => "" 
+                               | SOME x => " " ^ (ofModuleTypG x)
+        val modExp = moduleExpressionG mE
+      in
+        "\nModule " ^ id ^ binds ^ modType ^ ".\n" ^
+        modExp ^ 
+        "\nEnd " ^ id ^ "."
+      end
 
 
   and moduleBodyG (G.ModuleBody(sL)): string = 
@@ -317,18 +335,24 @@ struct
 
   and ofModuleTypG (m: G.ofModuleTyp): string =
     case m of
-      G.TransparentSig(m') => "<:" ^ moduleTypG(m')
-    | G.OpaqueSig(m')      => ":" ^ moduleTypG(m')
+      G.TransparentSig(m') => "<: " ^ moduleTypG(m')
+    | G.OpaqueSig(m')      => ": " ^ moduleTypG(m')
 
 
   and moduleTypG (m: G.moduleTyp): string = 
     case m of
-      G.SigName(i) => i
+      G.SigName(i) => i ^ ""
     | G.SigParens(mT) => "( " ^ moduleTypG(mT) ^ " )"
-    | G.SigType(mT, w) => moduleTypG(mT) ^" "^ withDeclG(w)
+    | G.SigType(mT, w) => moduleTypG(mT) ^ " " ^ withDeclG(w)
 
 
-  and withDeclG (G.WithTyp(d)): string = "with " ^ definitionG(d)
+  and withDeclG (G.WithTyp(d)): string = let 
+    val defWithPeriod = definitionG d
+    val len = S.size defWithPeriod
+    val def = S.substring (defWithPeriod, 0, len-1)
+  in
+    "with " ^ def
+  end
 
 
   and moduleBindingsG(G.ModuleBinding(iO, iL, mT)): string =
@@ -344,15 +368,28 @@ struct
   
   and gsignatureG (g: G.gsignature): string =
     case g of
-      G.ISignature{id=i, bindings=ml, body=s} => 
-      "\nModule Type " ^ convertIdent(i) ^" "^
-      concatListWith("\n", moduleBindingsG, ml) ^ ".\n" ^ 
-      signatureBodyG(s) ^  "\nEnd " ^ convertIdent(i) ^"."
-    | G.Signature{id=i, bindings=ml, body=m} =>
-      "\nModule Type " ^ convertIdent(i) ^" "^
-      concatListWith("\n", moduleBindingsG, ml) ^ ".\n" ^ 
-      moduleTypG(m) ^  "\nEnd " ^ convertIdent(i) ^"."
-
+      G.ISignature{id=i, bindings=ml, body=s} => let
+        val id = convertIdent i
+        val modBinds = concatListWith("\n", moduleBindingsG, ml) 
+        val binds = case modBinds of "" => ".\n" 
+                                   | _  => " " ^ modBinds ^ ".\n"
+        val sigBody = signatureBodyG s
+      in
+        "\nModule Type " ^ id ^ binds ^
+        sigBody ^ 
+        "\nEnd " ^ id ^ "."
+      end
+    | G.Signature{id=i, bindings=ml, body=m} => let
+        val id = convertIdent i
+        val modBinds = concatListWith("\n", moduleBindingsG, ml) 
+        val binds = case modBinds of "" => ".\n" 
+                                   | _  => " " ^ modBinds ^ ".\n"
+        val modType = moduleTypG m
+      in
+        "\nModule Type " ^ id ^ binds ^
+        modType ^
+        "\nEnd " ^ id ^ "."
+      end
 
   and signatureBodyG (G.SigBody(sL)): string = 
     concatListWith("\n", fn x => x , sentenceG(sL))
