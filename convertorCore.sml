@@ -723,7 +723,7 @@ and binders2ebinders(G.SingleBinder {name = name, typ = SOME typ, inferred = inf
 
 and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms = 
     let
-        val tyvars = tyvarseq2binder (List.map ~ ($(~tyvars)))
+        (* val tyvars = tyvarseq2binder (List.map ~ ($(~tyvars))) *) (* probably not needed *)
         fun match2econtext(match@@Am : Match, arity : int) : G.econtext =
             let
                 val Match(FmruleX(pat@@A, ty_opt, _)@@_, _) = match
@@ -733,7 +733,7 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                 val precondsBinders = if isExhaustive Am then []
                                       else [PF.findPreconds(match@@Am)]
             in
-                G.EContext (binders2ebinders(typBinders @ tyvars) @ ebinders @ precondsBinders)
+                G.EContext (binders2ebinders(typBinders) @ ebinders @ precondsBinders)
             end
         fun match2eclauses(arity: int) (Match(fmrule, match2)@@A : Match) : G.eclause list =
             let

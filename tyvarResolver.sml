@@ -49,7 +49,6 @@ and resolveType (tyvarCtx : TT.set) (typ : S.Type) =
 fun resolveTyvars (tyvarCtx : TT.set ref) (SOME typ : S.Type option) : G.term option =
     let
         val (tyvarContext, typ) = resolveType (!tyvarCtx) typ
-        val _ =  print (List.foldl (fn (a, b) => a ^ " +- " ^ b) "" (TT.listItems(tyvarContext)))
     in
         if (TT.isEmpty tyvarContext) orelse not (isSome typ) orelse (TT.isSubset (tyvarContext, !tyvarCtx'))
         then NONE
@@ -57,7 +56,7 @@ fun resolveTyvars (tyvarCtx : TT.set ref) (SOME typ : S.Type option) : G.term op
     end
   | resolveTyvars _ _ = NONE
 
-fun isInvented id = String.sub(id, 0) = (print ("ttt:  " ^ id ^ "\n") ;#"_")
+fun isInvented id = String.sub(id, 0) = #"_"
 
 fun union' (ctx' : TT.set) (ctx : TT.set) : TT.set =
     TT.union (ctx', TT.filter isInvented ctx)
