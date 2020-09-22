@@ -759,12 +759,14 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                 val ret = case ty_opt of
                               SOME ty => ty2term (~ty)
                             | NONE => matchannot2outputtyp tyvarCtx (tl A)
+                val (G.EContext(binders)) = match2econtext(match, arity)
                 val eclauses = match2eclauses arity match
+                val typBinders = T.clearTyvars tyvarCtx
+                val context = G.EContext(binders2ebinders(typBinders) @ binders)
                 val wildCardClause = if isExhaustive Am
                                      then []
                                      else [G.EClause {pats = List.tabulate(arity, fn _ => G.WildcardPat), body = G.WildcardTerm}]
                 val body = G.EClauses (eclauses @ wildCardClause)
-                val context = match2econtext(match, arity)
             in
                 G.EProgram { id = id, context = context, ret = ret, body = body } ::
                 (? fvalbind2eprogram valbind2)
