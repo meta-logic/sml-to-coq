@@ -2,11 +2,13 @@
 
 val z = 5
 
-val L = [8]
+val L = ["hello"]
 
 val x :: l = [1,2,3]
 
 val (a, b) = (5.5, 3.2)
+
+val [y::l'] = [[4,3,2]]
 
 fun six x = let val x = 6 in x end
 

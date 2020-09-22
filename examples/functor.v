@@ -24,11 +24,11 @@ Definition entry {_a : Type} := (key * _a) % type.
 
 Parameter dict : Type -> Type.
 
-(*Parameter empty : @ dict _a.
+Parameter empty : (forall  {_a : Type} , @ dict _a).
 
-Parameter lookup : (key * @ dict _a) % type -> @ option _a.
+Parameter lookup : (forall  {_a : Type} , (key * @ dict _a) % type -> @ option _a).
 
-Parameter insert : (@ entry _a * @ dict _a) % type -> @ dict _a.*)
+Parameter insert : (forall  {_a : Type} , (@ entry _a * @ dict _a) % type -> @ dict _a).
 End DICT.
 
 Module IntKey : KEY with 
@@ -46,12 +46,10 @@ Definition t := string.
 Definition compare := String.compare.
 End StringKey.
 
-Module Dict ( Key : KEY ) : DICT with
+Module Dict ( Key : KEY ) : DICT with 
 Definition key := Key.t.
 
-Module K.
-(*Key*)
-End K.
+Module K := Key.
 
 Definition key := K.t.
 
@@ -59,34 +57,37 @@ Definition entry {_a : Type} := (key * _a) % type.
 
 Definition dict {_a : Type} := key -> @ option _a.
 
-Definition empty {_'13421 : Type} := fun  _ => (None : @ option _'13421).
+Definition empty {_'13510 : Type} := fun  _id13608 => 
+  match _id13608 with
+  | _ => (None : @ option _'13510)
+  end.
 
-Equations empty {_'13431: Type} (x1: _'13430): @ option _'13431 :=
-  empty (_) := (None : @ option _'13431).
+Equations empty {_'13519: Type} {_'13520: Type} (x1: _'13519): @ option _'13520 :=
+  empty _ := None.
 
-Equations lookup (x1: (t * t -> @ option 'a) % type): @ option _a :=
-  lookup ((k, f)) := (f k).
+Equations lookup {_a: Type} {_a: Type} (x1: (t * t -> @ option _a) % type): @ option _a :=
+  lookup (k, f) := ((f : t -> @ option _a) k).
 
-Equations insert {'a: Type} (x1: ((t * 'a) % type * t -> @ option 'a) % type): key -> @ option _a :=
-  insert (((k, v), f)) := (fun  k' => 
+Equations insert {_a: Type} {_a: Type} (x1: ((t * _a) % type * t -> @ option _a) % type): key -> @ option _a :=
+  insert ((k, v), f) := (fun  _id13609 => 
+  match _id13609 with
+  | k' => 
   match (K.compare (k, k')) with
-  | Eq => (Some (v : 'a))  
+  | Eq => ((Some : _a -> @ option _a) v)  
   | _ => (f k')
+  end
   end).
 
-Equations insert (x1: ((t * 'a) % type * t -> @ option 'a) % type) (x2: t): @ option _a :=
-  insert (((k, v), f) k') := 
+Equations insert {_a: Type} {_a: Type} (x1: ((t * _a) % type * t -> @ option _a) % type) (x2: t): @ option _a :=
+  insert ((k, v), f) k' := 
   match (K.compare (k, k')) with
-  | Eq => (Some v)  
+  | Eq => ((Some : _a -> @ option _a) v)  
   | _ => (f k')
   end.
 End Dict.
 
-Module IntDict.
-!Dict IntKey
-End IntDict.
+Module IntDict := !Dict IntKey.
 
-Definition id {_'13509 : Type} := (IntDict.empty : @ dict _'13509).
+Definition id {_'13598 : Type} := (IntDict.empty : @ dict _'13598).
 
 Definition id1 := (IntDict.insert ((42, "answer"), id)).
-

@@ -9,5 +9,5 @@ Require Import listPairSml.
 Require Import notationsSml.
 From Equations Require Import Equations.
 
-Equations id {_'13406: Type} (x1: _'13406): _'13406 :=
-  id x := (x : _'13406).
+Equations id {_'13619: Type} (x1: _'13619): _'13619 :=
+  id x := x.
