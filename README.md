@@ -1,3 +1,17 @@
+# sml-to-coq
+A tool that translates SML code to Coq
+
+# Installation
+### Sml-to-coq uses:
+- [coq 8.12.0](https://coq.inria.fr/download)
+- [SML/NJ](https://www.smlnj.org/)
+- [Equations](https://github.com/mattam82/Coq-Equations)
+
+### Clone the project:
+```
+ $ git clone https://github.com/meta-logic/sml-to-coq.git
+```
+
 ### Building the coqLibraries
 Since most SML programs will make use of some part of `SML's basis library`, we have implemented Coq equivalents to them.
 - [coqLibraries Documantation](https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/coqLibraries/doc)
