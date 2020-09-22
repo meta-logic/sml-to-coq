@@ -14,8 +14,8 @@ val tyvarCtx' = ref (TT.empty)
 
 
 fun resolveType' (tyvarCtx : TT.set) (S.TyVar tyvar : S.Type') : TT.set * G.term option =
-    if not (TT.member (!tyvarCtx') (#name tyvar)) then
-        (TT.insert tyvarCtx (#name tyvar), SOME (G.IdentTerm (checkLegal (#name tyvar))))
+    if not (TT.member((!tyvarCtx'), (#name tyvar))) then
+        (TT.add(tyvarCtx, (#name tyvar)), SOME (G.IdentTerm (checkLegal (#name tyvar))))
     else
         (tyvarCtx, SOME (G.IdentTerm (checkLegal (#name tyvar))))
   | resolveType' tyvarCtx (S.ConsType ([], tycon)) =
@@ -39,7 +39,7 @@ fun resolveType' (tyvarCtx : TT.set) (S.TyVar tyvar : S.Type') : TT.set * G.term
     let
         val tyvar = TV.invent false
     in
-        ((TT.insert tyvarCtx (#name tyvar), SOME (G.IdentTerm (checkLegal (#name tyvar)))))
+        ((TT.add(tyvarCtx, (#name tyvar)), SOME (G.IdentTerm (checkLegal (#name tyvar)))))
     end
   | resolveType' tyvarCtx _ = (tyvarCtx, NONE)
 
@@ -49,20 +49,26 @@ and resolveType (tyvarCtx : TT.set) (typ : S.Type) =
 fun resolveTyvars (tyvarCtx : TT.set ref) (SOME typ : S.Type option) : G.term option =
     let
         val (tyvarContext, typ) = resolveType (!tyvarCtx) typ
+        val _ =  print (List.foldl (fn (a, b) => a ^ " +- " ^ b) "" (TT.listItems(tyvarContext)))
     in
-        if (TT.isEmpty tyvarContext) orelse not (isSome typ) orelse (TT.subset (tyvarContext, !tyvarCtx'))
+        if (TT.isEmpty tyvarContext) orelse not (isSome typ) orelse (TT.isSubset (tyvarContext, !tyvarCtx'))
         then NONE
-        else (tyvarCtx' := TT.union (!tyvarCtx') tyvarContext; tyvarCtx := tyvarContext; typ)
+        else (tyvarCtx' := TT.union((!tyvarCtx'), tyvarContext); tyvarCtx := tyvarContext; typ)
     end
   | resolveTyvars _ _ = NONE
 
+fun isInvented id = String.sub(id, 0) = (print ("ttt:  " ^ id ^ "\n") ;#"_")
+
+fun union' (ctx' : TT.set) (ctx : TT.set) : TT.set =
+    TT.union (ctx', TT.filter isInvented ctx)
+
 fun clearTyvars (tyvarCtx : TT.set ref) : G.binder list =
     let
-        val names = List.map (fn n => G.Name (checkLegal n)) (TT.toList (!tyvarCtx))
+        val names = List.map (fn n => G.Name (checkLegal n)) (TT.listItems (!tyvarCtx))
     in
         case names of
             [] => []
-         | _ => (tyvarCtx := TT.empty;
+          | _ => (tyvarCtx' := union' (!tyvarCtx') (!tyvarCtx); tyvarCtx := TT.empty;
                  [G.MultipleBinders { names = names, typ = G.IdentTerm ("Type"), inferred = true }])
     end
 end

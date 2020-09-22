@@ -262,7 +262,6 @@ and sentterm2letTerm ((G.DefinitionSentence (G.DefinitionDef sent)) : G.sentence
  * KEYWORD: term
  *)
 and atexp2term (SCONAtExp(scon)@@_ : AtExp) : G.term = scon2term (~scon)
-  (* ignoring Op for now *)
   | atexp2term (IDAtExp(opVal, longvid)@@A) = 
     (case T.resolveTyvars tyvarCtx (!(elab A)) of
          NONE => G.IdentTerm (opetize opVal (lvid2id (~longvid)))
@@ -728,7 +727,7 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
         fun match2econtext(match@@Am : Match, arity : int) : G.econtext =
             let
                 val Match(FmruleX(pat@@A, ty_opt, _)@@_, _) = match
-                val typs = patannot2inputtyps (arity, tl A)
+                val typs = patannot2inputtyps tyvarCtx (arity, tl A)
                 val ebinders = mkEbinders(1, typs)
                 val typBinders = T.clearTyvars tyvarCtx
                 val precondsBinders = if isExhaustive Am then []
@@ -756,7 +755,7 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                 val Match(FmruleX(pat, ty_opt, _)@@A, _)@@Am = match
                 val ret = case ty_opt of
                               SOME ty => ty2term (~ty)
-                            | NONE => matchannot2outputtyp (tl A)
+                            | NONE => matchannot2outputtyp tyvarCtx (tl A)
                 val eclauses = match2eclauses arity match
                 val wildCardClause = if isExhaustive Am
                                      then []
