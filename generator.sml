@@ -462,7 +462,7 @@ struct
 
 
   and eclauseG (G.EClause{ pats = pL, body = t}): string = 
-    "(" ^ concatListWith(" ", patternG, pL) ^ ") := " ^ termG(t) ^ ";"   
+     concatListWith(" ", patternG, pL) ^ " := " ^ termG(t) ^ ";"   
 
 
   and convertChar (s: string): string = 
