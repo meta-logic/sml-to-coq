@@ -43,6 +43,7 @@ Group
  structure SplayTree 
  functor DictFun
  functor SplaySet
+ functor FinSetFn
 
 
  is

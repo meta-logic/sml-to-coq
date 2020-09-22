@@ -4,7 +4,8 @@ struct
     structure G = Gallina
     structure Sort = Quicksort structure Key = ListOrdered(StringOrdered)
     structure LT = SplayDict (structure Key = Key) (* LabelsTracker *)
-    structure TT = SplaySet(structure Elem = StringOrdered) (* Tyvar tracker *)
+    structure TT = FinSetFn(type ord_key = string; val compare = String.compare)
+(* (structure Elem = StringOrdered) (* Tyvar tracker *) *)
     open Annotation;
 
     local
@@ -40,6 +41,7 @@ struct
         fun ~ (x @@ y) = x
 
         fun % f l = List.map (fn a => f(~a)) l
+
 
         fun mkMatchNotationTerm (matcher : G.matchItem,  matchees: G.pattern) (body : G.term, exhaustive : bool) =
             G.MatchNotationTerm {matchItem = matcher, body = G.Equation(matchees, body), exhaustive = exhaustive}
@@ -116,7 +118,7 @@ struct
                 fun tyvarseq2strings (tyvars: TyVar.TyVar list) : string list = List.map TyVar.toString tyvars
                 val tyvars = tyvarseq2strings (List.map ~ ($(~tyvars)))
                 fun update [] ctx = ctx
-                  | update (tyvar::tyvars) ctx = TT.insert (update tyvars ctx) tyvar
+                  | update (tyvar::tyvars) ctx = TT.add ((update tyvars ctx), tyvar)
             in
                 update tyvars tyvarctx
             end
