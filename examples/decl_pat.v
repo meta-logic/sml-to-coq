@@ -11,7 +11,7 @@ From Equations Require Import Equations.
 
 Definition z := 5.
 
-Definition L := [8].
+Definition L := ["hello"].
 
 Definition x := 
   match [1; 2; 3] with
@@ -35,20 +35,31 @@ Definition b :=
   (a, b) => b
   end.
 
-Equations six (x1: _'13426): Z :=
-  six (x) := 
+Definition y := 
+  match [[4; 3; 2]] with
+  [(y :: l')] => y
+  | _ => patternFailure
+  end.
+
+Definition l' := 
+  match [[4; 3; 2]] with
+  [(y :: l')] => l'
+  | _ => patternFailure
+  end.
+
+Equations six {_'13441: Type} (x1: _'13441): Z :=
+  six x := 
   let x := 6 in x.
 
-Equations head (x1: @ list _'13437): _'13437 :=
-  head (x) := 
-  let h {_'13437 : Type} := 
-  match (x : @ list _'13437) with
+Equations head {_'13452: Type} (x1: @ list _'13452): _'13452 :=
+  head x := 
+  let h := 
+  match x with
   (h :: t) => h
   | _ => patternFailure
   end in 
   let t := 
-  match (x : @ list _'13437) with
+  match x with
   (h :: t) => t
   | _ => patternFailure
   end in h.
-

@@ -15,23 +15,20 @@ Inductive evenList  {_a : Type} : Type :=
 with oddList  {_a : Type} : Type := 
   | OCons : (_a * @ evenList _a) % type -> @ oddList _a.
 
-Equations lengthE {'a: Type} (x1: @ evenList 'a): Z :=
-  lengthE (ENil) := 0;
-  lengthE (ECons (_, l)) := (lengthO (l : @ oddList 'a));
-  lengthE (_) := _
-with lengthO (x1: @ oddList 'a): Z :=
-  lengthO (OCons (_, l)) := (lengthE l).
+Equations lengthE {_a: Type} {_a: Type} (x1: @ evenList _a): Z :=
+  lengthE ENil := 0;
+  lengthE (ECons (_, l)) := ((lengthO : @ oddList _a -> int) l)
+with lengthO {_a: Type} {_a: Type} (x1: @ oddList _a): Z :=
+  lengthO (OCons (_, l)) := ((lengthE : @ evenList _a -> int) l).
 
-Equations even {_'13456: Type} (x1: @ list _'13456): bool :=
-  even ([]) := true;
-  even ((x :: l)) := (odd (l : @ list _'13456));
-  even (_) := _
-with odd (x1: @ list _'13456): bool :=
-  odd ([]) := false;
-  odd ((x :: l)) := (even l);
-  odd (_) := _.
+Equations even {_'13680: Type} (x1: @ list _'13680): bool :=
+  even [] := true;
+  even (x :: l) := (odd l)
+with odd {_'13680: Type} (x1: @ list _'13680): bool :=
+  odd [] := false;
+  odd (x :: l) := (even l).
 
 Equations f (x1: Z): Z :=
-  f (x) := ((g x)) + 10
+  f x := ((g x)) + 10
 with g (x1: Z): Z :=
-  g (x) := x * 10.
+  g x := x * 10.
