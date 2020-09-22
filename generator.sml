@@ -46,6 +46,21 @@ struct
     in
       writeFile output ((S.concatWith ("\n") codeList)^ "\n") 
     end
+  
+  and genAllExamples () = List.map (
+    fn name => generate("examples/" ^ name ^ ".sml", "examples/" ^ name ^ ".v")
+    ) ["decl_pat",
+       "filter",
+       "functor",
+       "id",
+       "mutual_rec",
+       (*"non_terminating",*)
+       "partial",
+       "records",
+       (*"terminating",*)
+       "trees"
+      ]
+
 
   
   and termG (term: G.term): string =
@@ -202,7 +217,7 @@ struct
 
   and patternG (pattern: G.pattern): string =
     case pattern of
-      G.ArgsPat(i, pL)   => i ^ " " ^ concatListWith (" ", patternG, pL)
+      G.ArgsPat(i, pL)   => "(" ^ i ^ " " ^ concatListWith (" ", patternG, pL) ^ ")"
     | G.AtArgsPat(i, pL) => "@" ^ i ^ " " ^ concatListWith (" ", patternG, pL)
     | G.AsPat(p, i)      => patternG(p) ^ " as " ^ i
     | G.ScopePat(p, i)   => patternG(p) ^ " % " ^ i 
