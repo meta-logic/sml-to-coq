@@ -15,9 +15,9 @@ val tyvarCtx' = ref (TT.empty)
 
 fun resolveType' (tyvarCtx : TT.set) (S.TyVar tyvar : S.Type') : TT.set * G.term option =
     if not (TT.member (!tyvarCtx') (#name tyvar)) then
-        (TT.insert tyvarCtx (#name tyvar), SOME (G.IdentTerm (#name tyvar)))
+        (TT.insert tyvarCtx (#name tyvar), SOME (G.IdentTerm (checkLegal (#name tyvar))))
     else
-        (tyvarCtx, SOME (G.IdentTerm (#name tyvar)))
+        (tyvarCtx, SOME (G.IdentTerm (checkLegal (#name tyvar))))
   | resolveType' tyvarCtx (S.ConsType ([], tycon)) =
     (tyvarCtx, SOME (G.IdentTerm (#tycon tycon)))
   | resolveType' tyvarCtx (S.ConsType (tyseq, tycon))  =
@@ -39,7 +39,7 @@ fun resolveType' (tyvarCtx : TT.set) (S.TyVar tyvar : S.Type') : TT.set * G.term
     let
         val tyvar = TV.invent false
     in
-        ((TT.insert tyvarCtx (#name tyvar), SOME (G.IdentTerm (#name tyvar))))
+        ((TT.insert tyvarCtx (#name tyvar), SOME (G.IdentTerm (checkLegal (#name tyvar)))))
     end
   | resolveType' tyvarCtx _ = (tyvarCtx, NONE)
 
@@ -58,7 +58,7 @@ fun resolveTyvars (tyvarCtx : TT.set ref) (SOME typ : S.Type option) : G.term op
 
 fun clearTyvars (tyvarCtx : TT.set ref) : G.binder list =
     let
-        val names = List.map (fn n => G.Name n) (TT.toList (!tyvarCtx))
+        val names = List.map (fn n => G.Name (checkLegal n)) (TT.toList (!tyvarCtx))
     in
         case names of
             [] => []

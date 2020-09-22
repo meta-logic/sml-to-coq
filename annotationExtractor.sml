@@ -45,7 +45,7 @@ and rowtyp2typ(labmap : S.Type' ref S.LabMap, _) =
 
 and typ2typ(typ : S.Type) : G.term =
     case !typ of
-        S.TyVar(tyvar) => (G.IdentTerm (#name tyvar))
+        S.TyVar(tyvar) => (G.IdentTerm (checkLegal (#name tyvar)))
       (* We'll assume this is tuples and not records for now *)
       | S.RowType(rowtyp) => rowtyp2typ(rowtyp)
       | S.FunType(inp, out) => G.ArrowTerm(typ2typ inp, typ2typ out)
