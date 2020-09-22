@@ -5,24 +5,49 @@ struct
     structure S = String;
 
 
+  (* concatListWith: string * 'a -> string * 'a list -> string
+   * ENSURES: concatListWith(p, f, l) =  (S.concatWith p (List.map f l))
+   *)
   fun concatListWith (p, f, l) = (S.concatWith p (List.map f l))
 
-  (* generate: string -> string
-   * ENSURES: generate(source) = code, where code is the string that represents 
-   *          the equivelant Gallina code to the SML code from the source
+
+  (* writeFile: string -> unit
+   * ENSURES: create a file with the name filename
    *)
-  fun generate(source: string): string =
+  fun writeFile filename content =
+    let 
+      val fd = TextIO.openOut filename
+      val _  = TextIO.output (fd, content) handle e => (TextIO.closeOut fd; raise e)
+      val _  = TextIO.closeOut fd
+    in 
+      () 
+    end
+
+
+  (* generate: string -> unit
+   * ENSURES: generate(source) = generate a file witht the generated Gallina code
+   *)
+  fun generate(source: string, output: string ): unit =
     let
       
       val ast        = C.convert source
       val codeList   = sentenceG(ast)
-      val codeList   = "\n" :: codeList
-      
-      val () = print((S.concatWith ("\n") codeList)^ "\n" ) (*To see the result*)
+      val imports    = ["Require Import intSml.",
+                        "Require Import listSml.",
+                        "Require Import realSml.",
+                        "Require Import stringSml.",
+                        "Require Import charSml.",
+                        "Require Import boolSml.",
+                        "Require Import optionSml.",
+                        "Require Import listPairSml.",
+                        "Require Import notationsSml.", 
+                        "From Equations Require Import Equations."]
+      val codeList = imports @ codeList      
     in
-      (S.concatWith ("\n") codeList)^ "\n" 
+      writeFile output ((S.concatWith ("\n") codeList)^ "\n") 
     end
 
+  
   and termG (term: G.term): string =
     case term of                               
       G.FunTerm(bL,t)    => "fun "^(concatListWith (" ", binderG, bL))^" => "^termG(t)
