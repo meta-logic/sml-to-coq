@@ -60,6 +60,11 @@ fun scon2term (SCon.STRING s : SCon.SCon) : G.term = G.StringTerm s
 
 structure PF = PrecondsFinder(struct val scon2term = scon2term end)
 
+fun isExhaustive A : bool =
+    case (try (exhaustive A)) of
+        SOME S.Exhaustive => true
+      | _ => false
+
 (* FROM: Scon.sml: 15 -> 20
  * TO:   Gallina.sml : 97 -> 115
  * FROM SECTION: -
@@ -219,9 +224,8 @@ and match2equations (Match(mrule, match2) @@ A : Match) : G.equation list =
     let
         fun match2equations' (Match(mrule, match2)@@_ : Match) =
             (mrule2equation (~mrule)) :: (?match2equations' match2)
-        val equation2 = case (try (exhaustive A)) of 
-                            SOME S.Exhaustive => []
-                          | _ => [G.Equation(G.WildcardPat, G.Axiom G.PatternFailure)]
+        val equation2 = if isExhaustive A then []
+                        else [G.Equation(G.WildcardPat, G.Axiom G.PatternFailure)]
         val equations = (mrule2equation (~mrule)) :: (?match2equations' match2) @ equation2
     in
         equations
@@ -313,7 +317,7 @@ and exp2term (ATExp atexp : Exp') : G.term = atexp2term (atexp)
     in G.HasTypeTerm(exp, typ) end
   | exp2term (FNExp(match as Match(Mrule(pat, exp)@@_, _)@@A)) = 
     let
-        val expand = (case (try (exhaustive A)) of SOME S.Exhaustive => false | _ => true)
+        val expand = isExhaustive A 
         val ty = extractTypFromPat (~pat)
         val binders = pat2binders (pat)
     in
@@ -678,7 +682,7 @@ and datbind2sent(datbind : DatBind) : G.sentence =
 and valbind2sent(valbind: ValBind): G.sentence = 
     let fun valbind2sents (PLAINValBind(pat, exp, valbind2) @@ A) = 
             let
-                val exhaustive = case try (exhaustive A) of SOME S.Exhaustive => true | _ => false
+                val exhaustive = isExhaustive A
                 val body = exp2term (~exp)
                 val pat = pat2pattern (pat)
                 val sents = patBody2sents (pat, body) exhaustive
@@ -727,9 +731,8 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                 val typs = patannot2inputtyps (arity, tl A)
                 val ebinders = mkEbinders(1, typs)
                 val typBinders = T.clearTyvars tyvarCtx
-                val precondsBinders = case (try (exhaustive Am)) of 
-                                          SOME S.Exhaustive => []
-                                        | _ => [PF.findPreconds(match@@Am)]
+                val precondsBinders = if isExhaustive Am then []
+                                      else [PF.findPreconds(match@@Am)]
             in
                 G.EContext (binders2ebinders(typBinders @ tyvars) @ ebinders @ precondsBinders)
             end
@@ -743,22 +746,22 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                     in
                         G.EClause { pats = pats, body = body }
                     end
-                val wildCardClause = case (try (exhaustive A)) of
-                                         SOME S.Exhaustive => []
-                                       | _ => [G.EClause {pats = List.tabulate(arity, fn _ => G.WildcardPat),
-                                                        body = G.WildcardTerm}]
             in
-                (fmrule2eclause(~fmrule) :: (? (match2eclauses arity) match2)) @ wildCardClause
+                fmrule2eclause(~fmrule) :: (? (match2eclauses arity) match2)
             end
 
         fun fvalbind2eprogram(FValBindX(vid, match, arity, valbind2)@@_ : ValBind) : G.eprogram list =
             let
                 val id = vid2id (~vid)
-                val Match(FmruleX(pat, ty_opt, _)@@A, _) = ~match
+                val Match(FmruleX(pat, ty_opt, _)@@A, _)@@Am = match
                 val ret = case ty_opt of
                               SOME ty => ty2term (~ty)
                             | NONE => matchannot2outputtyp (tl A)
-                val body = G.EClauses (match2eclauses arity match)
+                val eclauses = match2eclauses arity match
+                val wildCardClause = if isExhaustive Am
+                                     then []
+                                     else [G.EClause {pats = List.tabulate(arity, fn _ => G.WildcardPat), body = G.WildcardTerm}]
+                val body = G.EClauses (eclauses @ wildCardClause)
                 val context = match2econtext(match, arity)
             in
                 G.EProgram { id = id, context = context, ret = ret, body = body } ::
