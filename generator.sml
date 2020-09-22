@@ -64,7 +64,7 @@ struct
 
 
   (*--------------------------------------------------------------------------*)
-  (* This part uses Gallina's Grammer to Generate Gallina's code from the AST *)
+  (* This part uses Gallina's Grammar to Generate Gallina's code from the AST *)
   (* -------------------------------------------------------------------------*)
   
 
