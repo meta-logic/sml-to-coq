@@ -388,8 +388,8 @@ struct
     case e of
       G.EWith(p)  => ( let
         val fbody = (eprogramG p)
-        val newFbody = if S.substring(fbody, 0, 10) = "\nEquations " 
-                      then S.substring(fbody, 10, S.size(fbody) - 10)
+        val newFbody = if S.substring(fbody, 0, 11) = "\nEquations " 
+                      then S.substring(fbody, 11, S.size(fbody) - 11)
                       else fbody
       in
         "\nwith " ^ newFbody
