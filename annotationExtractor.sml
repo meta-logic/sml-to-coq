@@ -45,13 +45,13 @@ and rowtyp2typ ctx (labmap : S.Type' ref S.LabMap, _) =
 
 and typ2typ (ctx : TT.set ref) (typ : S.Type) : G.term =
     case !typ of
-        S.TyVar(tyvar) => (ctx := TT.add(!ctx, (#name tyvar));(G.IdentTerm (checkLegal (#name tyvar))))
+        S.TyVar(tyvar) => (ctx := TT.add(!ctx, (#name tyvar));(G.IdentTypTerm (checkLegal (#name tyvar))))
       (* We'll assume this is tuples and not records for now *)
       | S.RowType(rowtyp) => rowtyp2typ ctx (rowtyp)
       | S.FunType(inp, out) => G.ArrowTerm(typ2typ ctx inp, typ2typ ctx out)
       | S.ConsType(constyp) => constyp2typ ctx (constyp)
       | S.Determined typ => typ2typ ctx typ
-      | S.Overloaded typ => G.IdentTerm(checkLegal (TN.toString (O.default typ)))
+      | S.Overloaded typ => G.IdentTypTerm(checkLegal (TN.toString (O.default typ)))
 
 fun patannot2inputtyps (ctx : TT.set ref) (arity : int, A : Pat_attr) : G.term list =
     let

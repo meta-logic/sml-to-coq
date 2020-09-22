@@ -792,7 +792,7 @@ and dec2sent ((TYPEDec(typbind)@@ _) : Dec): G.sentence = typbind2sent typbind
   | dec2sent (DATATYPE2Dec(tycon, ltycon)@@_) =
     G.DefinitionSentence(
         G.DefinitionDef{localbool = false, id = tycon2id(~tycon), binders = [], typ = NONE,
-                        body = G.IdentTerm(ltycon2id(~ltycon))})
+                        body = G.IdentTypTerm(ltycon2id(~ltycon))})
   | dec2sent (VALDec(tyvars, valbind)@@_) = (tyvarCtx := updateTyvarCtx (tyvars) (!tyvarCtx); valbind2sent valbind)
   | dec2sent (FUNDecX(tyvars, fvalbind)@@_) = let
       val sent = G.EquationSentence (fundec2eprograms(tyvars, fvalbind))

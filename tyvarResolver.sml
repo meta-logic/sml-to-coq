@@ -15,11 +15,11 @@ val tyvarCtx' = ref (TT.empty)
 
 fun resolveType' (tyvarCtx : TT.set) (S.TyVar tyvar : S.Type') : TT.set * G.term option =
     if not (TT.member((!tyvarCtx'), (#name tyvar))) then
-        (TT.add(tyvarCtx, (#name tyvar)), SOME (G.IdentTerm (checkLegal (#name tyvar))))
+        (TT.add(tyvarCtx, (#name tyvar)), SOME (G.IdentTypTerm (checkLegal (#name tyvar))))
     else
-        (tyvarCtx, SOME (G.IdentTerm (checkLegal (#name tyvar))))
+        (tyvarCtx, SOME (G.IdentTypTerm (checkLegal (#name tyvar))))
   | resolveType' tyvarCtx (S.ConsType ([], tycon)) =
-    (tyvarCtx, SOME (G.IdentTerm (#tycon tycon)))
+    (tyvarCtx, SOME (G.IdentTypTerm (#tycon tycon)))
   | resolveType' tyvarCtx (S.ConsType (tyseq, tycon))  =
     let
         fun resolveTySeq (_ : S.Type' ref, (tyvarCtx : TT.set, NONE : (G.term list) option))
@@ -39,7 +39,7 @@ fun resolveType' (tyvarCtx : TT.set) (S.TyVar tyvar : S.Type') : TT.set * G.term
     let
         val tyvar = TV.invent false
     in
-        ((TT.add(tyvarCtx, (#name tyvar)), SOME (G.IdentTerm (checkLegal (#name tyvar)))))
+        ((TT.add(tyvarCtx, (#name tyvar)), SOME (G.IdentTypTerm (checkLegal (#name tyvar)))))
     end
   | resolveType' tyvarCtx (S.FunType(typ1, typ2)) =
     let
@@ -93,7 +93,7 @@ fun clearTyvars (tyvarCtx : TT.set ref) : G.binder list =
         case names of
             [] => []
           | _ => (tyvarCtx' := union' (!tyvarCtx') (!tyvarCtx); tyvarCtx' := clear (!tyvarCtx'); tyvarCtx := TT.empty;
-                 [G.MultipleBinders { names = names, typ = G.IdentTerm ("Type"), inferred = true }])
+                 [G.MultipleBinders { names = names, typ = G.IdentTypTerm ("Type"), inferred = true }])
     end
 end
 end

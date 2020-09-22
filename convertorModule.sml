@@ -31,7 +31,7 @@ struct
                   val SOME A = (!(elab A))
                   val typ = case T.getTyvars' (!A) of
                                 [] => typ
-                              | l => G.ForallTerm(List.map (fn n => G.SingleBinder {name = n, typ = SOME (G.IdentTerm "Type"), inferred = true}) (isolate l), typ)
+                              | l => G.ForallTerm(List.map (fn n => G.SingleBinder {name = n, typ = SOME (G.IdentTypTerm "Type"), inferred = true}) (isolate l), typ)
                   val sent = G.AssumptionSentence (G.Assumption (G.Parameter, vid2id(~vid), typ))
                   val sents = sent :: ? (fn x => valdesc2sents(~x)) (valdesc2)
               in
