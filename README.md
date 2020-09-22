@@ -56,3 +56,10 @@ Convertor.convert(inputFile): string -> Gallina.sentence list
 Convertor.convert("smlCode.sml"): 
 ```
 Returns Gallina's AST of the sml code in `smlCode.sml`, and also it prints it.
+
+
+# Important Directories
+- [examples](https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/examples) : Examples of the translation
+- [doc](https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/doc) : The documentation of the translation
+- [coqLibraries](https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/coqLibraries)
+- [hamlet](https://github.com/meta-logic/hamlet/tree/836f39ac50121640720be4f642fe2adcfbdac686)
