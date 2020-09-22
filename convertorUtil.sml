@@ -62,6 +62,8 @@ struct
 
         fun mkExplicitTerm ((G.IdentTerm term1): G.term) (terms : G.term list) : G.term =
             G.ExplicitTerm (term1, terms)
+          | mkExplicitTerm (G.IdentTypTerm term1) terms =
+            G.ExplicitTerm (term1, terms)
 
         fun updateTerm (_ : G.ident) (_: G.binder list) (clause as G.Clause(_, _, NONE) : G.clause) : G.clause
             = clause
@@ -138,9 +140,9 @@ struct
 
         fun tupleLabs (labs: LabMap.Key.ord_key list) : bool = labs = (List.tabulate (length labs, fn i => (Int.toString (i+1))))
 
-
         fun isolate [] = []
           | isolate (x::xs) = x::isolate(List.filter (fn y => y <> x) xs)
+
         (*fun idFromFixbody (Fixbody (fixbody) : G.fixbody) : G.ident = #id fixbody*)
 
     end    	
