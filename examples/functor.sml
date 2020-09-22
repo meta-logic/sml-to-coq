@@ -51,8 +51,8 @@ struct
 	| _ => f k';
 end
 
-structure IntDict = Dict (IntKey)
+structure IntDict = Dict (IntKey) 
 val id = IntDict.empty
 val id1 = IntDict.insert ((42,"answer"), id)
-val SOME "answer" = IntDict.lookup (42, id1)
+(*val SOME "answer" = IntDict.lookup (42, id1)*)
 ;
