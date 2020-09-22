@@ -51,7 +51,7 @@ Proof.
       * auto.
       * auto.
       * intros. eapply (canonical'_elim).
-        admit.
+        admit
         auto.
         intros. rewrite H1. rewrite H2. auto.
 Qed.
