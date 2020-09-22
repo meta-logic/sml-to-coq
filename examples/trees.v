@@ -47,4 +47,11 @@ Proof.
   + case p. intros. eapply (normalize_elim).
     - auto.
     - auto.
-    - intros.
+    - intros. eapply (canonical_elim).
+      * auto.
+      * auto.
+      * intros. eapply (canonical'_elim).
+        admit.
+        auto.
+        intros. rewrite H1. rewrite H2. auto.
+Qed.
