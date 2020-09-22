@@ -17,9 +17,9 @@ with oddList  {_a : Type} : Type :=
 
 Equations lengthE {_a: Type} {_a: Type} (x1: @ evenList _a): Z :=
   lengthE ENil := 0;
-  lengthE (ECons (_, l)) := ((lengthO : @ oddList _a -> int) l)
+  lengthE (ECons (_, l)) := ((lengthO : @ oddList _a -> Z) l)
 with lengthO {_a: Type} {_a: Type} (x1: @ oddList _a): Z :=
-  lengthO (OCons (_, l)) := ((lengthE : @ evenList _a -> int) l).
+  lengthO (OCons (_, l)) := ((lengthE : @ evenList _a -> Z) l).
 
 Equations even {_'13680: Type} (x1: @ list _'13680): bool :=
   even [] := true;
