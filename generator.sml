@@ -46,7 +46,8 @@ struct
     in
       writeFile output ((S.concatWith ("\n") codeList)^ "\n") 
     end
-  
+
+
   and genAllExamples () = List.map (
     fn name => generate("examples/" ^ name ^ ".sml", "examples/" ^ name ^ ".v")
     ) ["decl_pat",
@@ -62,13 +63,18 @@ struct
       ]
 
 
+  (*--------------------------------------------------------------------------*)
+  (* This part uses Gallina's Grammer to Generate Gallina's code from the AST *)
+  (* -------------------------------------------------------------------------*)
   
+
   and termG (term: G.term): string =
     case term of                               
       G.FunTerm(bL,t)    => "fun "^(concatListWith (" ", binderG, bL))^" => "^termG(t)
     | G.FixTerm(fb)      => "fix "^ fixbodiesG(fb)
     | G.CofixTerm(fb)    => "cofix "^ cofixbodiesG(fb)
     | G.LetTerm{id=i, binders=bL, typ=tO, body=bT, inBody=inT} =>
+      
       "\n" ^ "  let " ^ i ^ (concatListWith (" ", binderG, bL)) ^
       (case tO of NONE => "" | SOME t => " : "^termG(t))^
       " := " ^ termG(bT) ^ " in " ^ termG(inT)
@@ -76,10 +82,12 @@ struct
     | G.LetFixTerm(fb, t)   => "\n"^"  let fix "^fixbodyG(fb)^" in "^termG(t)
     | G.LetCofixTerm(cb, t) => "\n"^"  let cofix "^coFixbodyG(cb)^" in "^termG(t)
     | G.LetTupleTerm{names=nL, body=bT, inBody=inT} =>
+      
       "\n" ^ " let " ^ "(" ^ (concatListWith (", ", nameG, nL)) ^ ")" ^
       " := " ^ termG(bT) ^ " in " ^ termG(inT)
     
     | G.LetPatternTerm{pat=patt, inTerm=tO, body=bT, inBody=inT} => 
+      
       "\n"^" let "^" ' "^ patternG(patt)^
       (case tO of NONE => "" | SOME t => " in "^termG(t))^
       " := " ^ termG(bT) ^ " in " ^ termG(inT)
@@ -93,29 +101,35 @@ struct
     | G.ExplicitTerm(v1,tL) => "@ " ^ v1 ^" "^(concatListWith (" ", termG, tL)) 
     | G.InScopeTerm(v1,v2)  => termG(v1) ^ " % " ^ v2 
     | G.MatchTerm{matchItems=mL, body=eL} => 
+      
       "\n  match " ^ (concatListWith (", ", matchItemG, mL)) ^ " with" ^ "\n" ^
       "  | " ^ (S.concatWith ("  \n  | ") (List.map equationG eL)) ^ "\n  end"
     
     | G.IdentTerm(v)        => convertIdent(v)
     | G.IdentTypTerm(v)     => convertType(v)
     | G.SortTerm(v)         => sortG(v) 
-    | G.NumTerm(v)          => 
-      (if (S.isPrefix "~" v) then "(-"^S.substring(v, 1, S.size(v)-1)^ ")" else v)
-      
+    | G.NumTerm(v)          => (if (S.isPrefix "~" v) 
+                                then "(-"^S.substring(v, 1, S.size(v)-1)^ ")" 
+                                else v)
+    
     | G.WildcardTerm        => "_"
-      (* All infext terms come inside a parens term even
-      if it's not needed, this is why it needs to be removed *)
-    | G.ParensTerm(v)       => (case v of
-                                  G.InfixTerm(_, _) => termG(v)  
-                                | _ => "(" ^ termG(v) ^ ")" )
+      
+      (* All infext terms come inside an uneeded parens term,
+         this is why it needs to be removed *)
+    | G.ParensTerm(v)       => 
+
+      (case v of G.InfixTerm(_, _) => termG(v) | _ => "(" ^ termG(v) ^ ")" )
+
     | G.RecordTerm(fL)      => "\n{|\n  "^concatListWith(";\n  ", fieldDefG, fL)^"\n|}"
+    
     (*Additional terms to match sml built-in types. (!) *)  
     | G.WordTerm(v, b)      => (case b of 
                                   G.Dec => termG(G.NumTerm(v))
                                 | G.Hex => termG(G.HexTerm(v)))
-    | G.RealTerm(v)         =>(if (S.isPrefix "~" v) 
-                               then "(-"^S.substring(v, 1, S.size(v)-1)^ ")%float" 
-                               else v ^ "%float")
+
+    | G.RealTerm(v)         => (if (S.isPrefix "~" v) 
+                                then "(-"^S.substring(v, 1, S.size(v)-1)^ ")%float" 
+                                else v ^ "%float")
     | G.StringTerm(v)       => "\"" ^ v ^ "\"" 
     | G.CharTerm(v)         => (convertChar v) 
     | G.HexTerm(v)          => "\"" ^ "0x"^ S.map Char.toLower v ^ "\""
@@ -127,6 +141,7 @@ struct
     | G.AndTerm(v1, v2)     => termG(v1) ^ " && "  ^ termG(v2) 
     | G.Axiom(a)            => "patternFailure"
     | G.MatchNotationTerm{matchItem=mI, body=e, exhaustive=b} => 
+      
       "\n  match " ^ matchItemG(mI) ^ " with" ^ "\n  " ^ equationG(e) ^
       (case b of  true => "" | false => "\n  | _ => patternFailure" )^"\n  end"
 
@@ -333,32 +348,33 @@ struct
     | G.Variable   => "\nVariable"
     | G.Variables  => "\nVariables"
 
+
   and moduleG (m: G.module): string =
     case m of
       G.IModule{id=i, typ=oo, bindings=ml, body=mB} => let
-        val id = convertIdent i
-        val modBinds = concatListWith("\n", moduleBindingsG, ml)
-        val binds = case modBinds of "" => ""
-                                   | _  => " " ^ modBinds
-        val modType = case oo of NONE => "" 
-                               | SOME x => " " ^ (ofModuleTypG x)
-        val modBody = moduleBodyG mB
-      in
-        "\nModule " ^ id ^ binds ^ modType ^ ".\n" ^
-        modBody ^ 
-        "\nEnd " ^ id ^ "."
-      end
+          val id = convertIdent i
+          val modBinds = concatListWith("\n", moduleBindingsG, ml)
+          val binds = case modBinds of "" => ""
+                                     | _  => " " ^ modBinds
+          val modType = case oo of NONE => "" 
+                                 | SOME x => " " ^ (ofModuleTypG x)
+          val modBody = moduleBodyG mB
+        in
+          "\nModule " ^ id ^ binds ^ modType ^ ".\n" ^
+          modBody ^ 
+          "\nEnd " ^ id ^ "."
+        end
     | G.Module{id=i, typ=oo, bindings=ml, body=mE} => let
-        val id = convertIdent i
-        val modBinds = concatListWith("\n", moduleBindingsG, ml)
-        val binds = case modBinds of "" => ""
-                                   | _  => " " ^ modBinds
-        val modType = case oo of NONE => "" 
-                               | SOME x => " " ^ (ofModuleTypG x)
-        val modExp = moduleExpressionG mE
-      in
-        "\nModule " ^ id ^ binds ^ modType ^ " := " ^ modExp ^ "."
-      end
+          val id = convertIdent i
+          val modBinds = concatListWith("\n", moduleBindingsG, ml)
+          val binds = case modBinds of "" => ""
+                                     | _  => " " ^ modBinds
+          val modType = case oo of NONE => "" 
+                                 | SOME x => " " ^ (ofModuleTypG x)
+          val modExp = moduleExpressionG mE
+        in
+          "\nModule " ^ id ^ binds ^ modType ^ " := " ^ modExp ^ "."
+        end
 
 
   and moduleBodyG (G.ModuleBody(sL)): string = 
@@ -384,13 +400,14 @@ struct
     | G.SigType(mT, w) => moduleTypG(mT) ^ " " ^ withDeclG(w)
 
 
-  and withDeclG (G.WithTyp(d)): string = let 
-    val defWithPeriod = definitionG d
-    val len = S.size defWithPeriod
-    val def = S.substring (defWithPeriod, 0, len-1)
-  in
-    "with " ^ def
-  end
+  and withDeclG (G.WithTyp(d)): string = 
+    let 
+      val defWithPeriod = definitionG d
+      val len = S.size defWithPeriod
+      val def = S.substring (defWithPeriod, 0, len-1)
+    in
+      "with " ^ def
+    end
 
 
   and moduleBindingsG(G.ModuleBinding(iO, iL, mT)): string =
@@ -407,25 +424,25 @@ struct
   and gsignatureG (g: G.gsignature): string =
     case g of
       G.ISignature{id=i, bindings=ml, body=s} => let
-        val id = convertIdent i
-        val modBinds = concatListWith("\n", moduleBindingsG, ml) 
-        val binds = case modBinds of "" => ".\n" 
-                                   | _  => " " ^ modBinds ^ ".\n"
-        val sigBody = signatureBodyG s
-      in
-        "\nModule Type " ^ id ^ binds ^
-        sigBody ^ 
-        "\nEnd " ^ id ^ "."
-      end
+          val id = convertIdent i
+          val modBinds = concatListWith("\n", moduleBindingsG, ml) 
+          val binds = case modBinds of "" => ".\n" 
+                                     | _  => " " ^ modBinds ^ ".\n"
+          val sigBody = signatureBodyG s
+        in
+          "\nModule Type " ^ id ^ binds ^
+          sigBody ^ 
+          "\nEnd " ^ id ^ "."
+        end
     | G.Signature{id=i, bindings=ml, body=m} => let
-        val id = convertIdent i
-        val modBinds = concatListWith("\n", moduleBindingsG, ml) 
-        val binds = case modBinds of "" => "" 
-                                   | _  => "(" ^ modBinds ^ ")"
-        val modType = moduleTypG m
-      in
-        "\nModule Type " ^ id ^ binds ^ " := " ^ modType ^ "."
-      end
+          val id = convertIdent i
+          val modBinds = concatListWith("\n", moduleBindingsG, ml) 
+          val binds = case modBinds of "" => "" 
+                                     | _  => "(" ^ modBinds ^ ")"
+          val modType = moduleTypG m
+        in
+          "\nModule Type " ^ id ^ binds ^ " := " ^ modType ^ "."
+        end
 
   and signatureBodyG (G.SigBody(sL)): string = 
     concatListWith("\n", fn x => x , sentenceG(sL))
@@ -501,6 +518,9 @@ struct
      concatListWith(" ", patternG, pL) ^ " := " ^ termG(t) ^ ";"   
 
 
+  (* convertChar(t): string -> string
+   * ENSURES: Change char to its representation in Gallina.
+   *)
   and convertChar (s: string): string = 
     let
       val c = ord(Option.valOf ( Char.fromString(s) ))
@@ -518,8 +538,14 @@ struct
     in
       "#\"" ^ r ^ "\""
     end
+(*----------------------------------------------------------------------------*)
+(*----------------------------------------------------------------------------*)
 
 
+  (* convertType(t): Gallina.ident -> string
+   * ENSURES: Change the types (int, char, real, and order) 
+   *          to their Gallina equivalent.
+   *)
   and convertType (t: G.ident): string =
     case t of 
       "int" => "Z"
@@ -529,6 +555,9 @@ struct
     | _ => t
 
 
+  (* convertType(t): Gallina.ident -> string
+   * ENSURES: Change these special idents to their representation in Gallina.
+   *)
   and convertIdent (i: G.ident): string =  
     case i of 
       "LESS" => "Lt"
