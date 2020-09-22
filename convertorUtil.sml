@@ -67,8 +67,8 @@ struct
             = clause
             | updateTerm name parametersVal (clause as G.Clause(id, bL, SOME typ)) =
             let
-                val terms = List.map (fn (G.SingleBinder{name = G.Name name, ...} )=> G.IdentTerm name) parametersVal
-                val output = mkExplicitTerm (G.IdentTerm name) terms
+                val terms = List.map (fn (G.SingleBinder{name = G.Name name, ...} )=> G.IdentTypTerm name) parametersVal
+                val output = mkExplicitTerm (G.IdentTypTerm name) terms
             in
                 G.Clause (id, bL, SOME(mkArrowTerm (typ, output) ) )
             end
@@ -76,7 +76,9 @@ struct
         fun mkBinders (terms : G.term list) : G.binder list =
             let
                 fun term2binder (G.IdentTerm id) =
-                    G.SingleBinder {name = G.Name id, typ = SOME (G.IdentTerm "Type"), inferred = true}
+                    G.SingleBinder {name = G.Name id, typ = SOME (G.IdentTypTerm "Type"), inferred = true}
+                  | term2binder (G.IdentTypTerm id) = 
+                    G.SingleBinder {name = G.Name id, typ = SOME (G.IdentTypTerm "Type"), inferred = true}
             in
                 List.map term2binder terms
             end
@@ -85,7 +87,7 @@ struct
           | mkEbinders (n, typ::typs) = G.ESingleBinder { name = mkName("x"^(Int.toString n)), typ = typ, inferred = false} :: mkEbinders(n+1, typs)
 
 
-        fun extractTyp (G.SingleBinder {name = G.Name id, ...} : G.binder) : G.term = G.IdentTerm id
+        fun extractTyp (G.SingleBinder {name = G.Name id, ...} : G.binder) : G.term = G.IdentTypTerm id
           | extractTyp _ = raise Fail "Unexpected binder \n"
 
         fun genIdent () = (rid_ctr := !rid_ctr + 1; "rid_" ^ (Int.toString (!rid_ctr)))
@@ -93,7 +95,7 @@ struct
         fun gentyps (n : int) = let 
             fun mkSingleBinder i =
                 G.SingleBinder {name = G.Name ("_ty"^ (Int.toString i)),
-                                 typ = SOME (G.IdentTerm "Type"), inferred = true}
+                                 typ = SOME (G.IdentTypTerm "Type"), inferred = true}
         in
             List.tabulate (n, mkSingleBinder)
         end
