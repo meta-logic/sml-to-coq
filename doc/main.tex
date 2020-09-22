@@ -88,10 +88,8 @@
 \renewcommand{\lstlistlistingname}{List of \lstlistingname s}% List of Listings -> List of Algorithms
 
 \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
-\newcommand{\giselle}[1]{\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum]{G: #1}}
-
-
-\newcommand{\laila}[1]{\todo[linecolor=Green,backgroundcolor=Green!40,bordercolor=Green]{L: #1}}
+\newcommand{\gr}[1]{\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum]{G: #1}}
+\newcommand{\leb}[1]{\todo[linecolor=Green,backgroundcolor=Green!40,bordercolor=Green]{L: #1}}
 
 % Macros for translation
 \newcommand\stog{\boldsymbol{\Longrightarrow}}
@@ -156,11 +154,10 @@
 \begin{document}
 \maketitle
 
-The goal of this document is to define formally the translation of SML programs,
-represented by their abstract syntax tree (AST) into Coq programs, represented
-by Gallina's AST. Before defining the translation, we specify the two ASTs in
-question.
-\giselle{TODO: better introduction, mention the tools we used and motivation.}
+The goal of this document is to define formally the translation of SML
+programs, represented by their abstract syntax tree (AST) into Coq
+programs, represented by Gallina's AST. Before defining the
+translation, we specify the two ASTs in question.
 
 % Testing environments:
 % 
@@ -179,21 +176,21 @@ question.
 
 \section{HaMLet}
 
-HaMLet~\cite{hamlet} is an SML implementation whose goal is to be an accurate
-implementation of the language definition~\cite{smldef}, and a platform for
-experimentation. There are two main reasons why we chose it for this work. First
-of all, it is faithful to SML's definition, and all bugs and ``grey areas'' and
-well documented. Secondly, it is easy to access various steps of the compilation
-process. Particularly, the abstract syntax tree from the elaboration phase was
-readily available.
+HaMLet~\cite{hamlet} is an SML implementation whose goal is to be an
+accurate implementation of the language definition~\cite{smldef}, and
+a platform for experimentation. There are two main reasons why we
+chose it for this work. First of all, it is faithful to SML's
+definition, and all bugs and ``grey areas'' and well documented.
+Secondly, it is easy to access various steps of the compilation
+process. Particularly, the abstract syntax tree from the elaboration
+phase was readily available.
 
 In order to have a translation as precise as possible, we needed a few
-modifications in HaMLet. All changes were related to derived
-forms.\giselle{check if this is still the case at the end.}\laila{ + changing the opacity of some structures}
-Derived forms are SML expressions that can be replaced by equivalent forms
-during parsing, resulting in SML parse trees that are formed by only a subset of
-the constructs in syntax trees. For example, boolean operators can be replaced by
-the equivalent \smle{if ... then ... else}:
+modifications in HaMLet. Most changes were related to derived forms.
+Derived forms are SML expressions that can be replaced by equivalent
+forms during parsing, resulting in SML parse trees that are formed by
+only a subset of the constructs in syntax trees. For example, boolean
+operators can be replaced by the equivalent \smle{if ... then ... else}:
 
 \begin{center}
 \begin{tabular}{rcl}
@@ -444,15 +441,11 @@ time a record type, expression, or pattern is found, either its type
 is found in the record context, or a new type is created. In both
 situations we are able to tell what this prefix is, and rename the
 labels accordingly.
-\giselle{I do not know how the context works, but it might make sense
-to have it with the original label names, and add the prefix only when
-translating.}
 
 Ellipsis on record patterns are resolved by looking into the
 annotations after SML's elaboration phase. Since the record type must
 be able to be inferred, this information can be extracted after
 elaboration, and the pattern can be unfolded with all fields.
-\giselle{Is this done?}
 
 \subsection{Type Variables}
 
@@ -471,7 +464,6 @@ expressions can be found in the annotations (after elaboration). The
 type variables are collected in $\mathcal{T}$, and they are added as
 implicit arguments of the resulting Coq definition. The declaration's
 type is also made explicit as it might be polymorphic. 
-\giselle{Is that all that needs to be done?}
 
 As an example, the SML declaration \smle{val L = []} is translated as:
 
@@ -501,8 +493,9 @@ provided a Coq implementation for:
 \smle{stringCvt}, and
 \smle{IEEEReal}.
 
-The documentation of those libraries can be found at\giselle{TODO:
-make doc available somewhere}.
+The documentation of those libraries can be found at\\
+\url{https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/coqLibraries/doc}
+
 They were renamed by adding the suffix \coqe{Sml}.
 
 Most of the functions could be translated directly, however a few of
@@ -628,7 +621,7 @@ Coq. Therefore, we prefix type variables in Coq by \coqe{_}.
 }
 \end{array}
 \]
-\laila{actually record are unique because in addition to this translation and depending on the context a record declaration might be added to the context}
+\leb{Add record context to the record rule}
 
 Tuples need to be explicitly annotated as a type (\%\coqe{type}) so
 that they are not interpreted as \coqe{nat} multiplication. For
@@ -649,7 +642,7 @@ must consist of at least one type
 Type bindings are translated into Coq definitions. In case they are 
 mutually recursive, we need to use \coqe{Fixpoint}, thus the
 \coqe{end with} in rule $\mathsf{TyBind}$.
-\laila{Can we have mutually recursive types in SML}
+
 \[
 \arraycolsep=10pt\def\arraystretch{3}
 \begin{array}{c}
@@ -747,8 +740,6 @@ functions.
 \infer[\mathsf{VId}_{\smles{ListPair.exists}}]{\smle{ListPair.exists} \stogvid \coqe{ListPair.existsb}}{}
 \end{array}
 \]
-\giselle{Are there other identifiers in SML that need special care?
-What do we do with Coq keywords? Are identifiers using dot considered as VId?}
 
 % A more extensive explanation on why we did not change SML's AST and
 % went with the special case instead. Leaving it here for posterity.
@@ -770,7 +761,7 @@ What do we do with Coq keywords? Are identifiers using dot considered as VId?}
 
 
 \subsubsection{Atomic Expressions}
-\laila{Need to take special care of expressions with uninstantiated type variables (e.g. NONE)}
+\leb{Need to take special care of expressions with uninstantiated type variables (e.g. NONE)}
 
 \setlength{\jot}{0.5pt} 
 \[
@@ -827,7 +818,7 @@ What do we do with Coq keywords? Are identifiers using dot considered as VId?}
 }
 \end{array}
 \]
-\giselle{add translations for op VId and check translation for Records.}
+\gr{Use record contexts in the record rules.}
 
 The declarations \smle{d} inside SML let-expressions are translated as
 ``top-level'' Coq declarations (that is why the \coqe{Definition} keyword is
@@ -836,7 +827,8 @@ definition.
 
 
 \subsubsection{Expressions}
-\laila{for the "match" rule, do we need to mention here that non-exhaustive matches have an additional case for pattern failure?}
+\leb{for the "match" rule, we need to mention here that
+non-exhaustive matches have an additional case for pattern failure.}
 
 \[
 \arraycolsep=10pt\def\arraystretch{3}
@@ -1008,7 +1000,9 @@ in Coq's \coqe{Bool} library.
 
 \subsubsection{Patterns}
 
-\laila{Update: we allow types in patterns as long as they're not nested, and we move the type cast to the expression being matched against}
+\leb{We allow types in patterns as long as they're not
+nested, and we move the type cast to the expression being matched
+against.}
 
 \[
 \arraycolsep=10pt\def\arraystretch{3}
@@ -1455,26 +1449,26 @@ being empty.
 \subsubsection{Top-Level Declarations}
 
 
-\section{Simulation}
-
-\giselle{This is *very* preliminary. Just some ideas to see where it goes.}
-
-Let $\rightsquigarrow_s$ and $\rightsquigarrow_g$ denote the evaluation
-semantics of SML and Gallina, respectively. Then a simulation theorem would look
-like this:
-
-\begin{theorem}
-Let $S$ be an SML expression(?) such that $S \stog G$, and 
-$S \rightsquigarrow_s S'$. Then, there exists $G'$ such that
-$S' \stog G'$ and $G \rightsquigarrow_g G'$.
-\end{theorem}
-
-Relation $\rightsquigarrow_g$ is probably the conversion rules of calculus of
-constructions, defined at
-\url{https://coq.inria.fr/refman/language/cic.html#conversion-rules}.
-
-Relation $\rightsquigarrow_s$ is probably SML's dynamic semantics, defined in
-section 6.7 (page 60) in \url{https://smlfamily.github.io/sml97-defn.pdf}.
+%  \section{Simulation}
+%  
+%  \gr{This is *very* preliminary. Just some ideas to see where it goes.}
+%  
+%  Let $\rightsquigarrow_s$ and $\rightsquigarrow_g$ denote the evaluation
+%  semantics of SML and Gallina, respectively. Then a simulation theorem would look
+%  like this:
+%  
+%  \begin{theorem}
+%  Let $S$ be an SML expression(?) such that $S \stog G$, and 
+%  $S \rightsquigarrow_s S'$. Then, there exists $G'$ such that
+%  $S' \stog G'$ and $G \rightsquigarrow_g G'$.
+%  \end{theorem}
+%  
+%  Relation $\rightsquigarrow_g$ is probably the conversion rules of calculus of
+%  constructions, defined at
+%  \url{https://coq.inria.fr/refman/language/cic.html#conversion-rules}.
+%  
+%  Relation $\rightsquigarrow_s$ is probably SML's dynamic semantics, defined in
+%  section 6.7 (page 60) in \url{https://smlfamily.github.io/sml97-defn.pdf}.
 
 \appendix
 
@@ -1703,23 +1697,6 @@ clause ::= ident [binder ... binder] [:term]
 fixpoint ::= Fixpoint fix_body with ... with fix_body .
            | CoFixpoint cofix_body with ... with cofix_body .
 \end{grm}
-
-Note that types \coqe{int}, \coqe{string}, \coqe{real}, \coqe{char}, and
-\coqe{word} are defined in external libraries:\giselle{Some of these libraries
-we need to implement/extend. Ammar is looking into this. Update this list as
-this is developed.}
-
-\begin{itemize}
-  \item \coqe{int} is defined in \texttt{ZArith}.
-  \item \coqe{string} is defined in \texttt{String}
-  \item \coqe{real} is defined in \texttt{Reals}
-  \item \coqe{char} is defined in (our own char lib?)
-  \item \coqe{word} is defined in (our own word lib?)
-\end{itemize}
-
-\giselle{Reminder: Once all changes to the ASTs are stable, we should probably
-argue how our modified ASTs are correct w.r.t. the orginal ones.}
-
 
 \bibliography{references}{}
 \bibliographystyle{abbrv}
