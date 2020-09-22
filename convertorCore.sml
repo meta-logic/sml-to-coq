@@ -156,7 +156,10 @@ and ty2arg (ty : Ty') : G.arg = G.Arg (ty2term ty)
  *)    
 (* VARty is type variable, e.g. 'a list  *)
 and ty2term ((VARTy tyvar) : Ty') : G.term =
-    G.IdentTypTerm (checkLegal(TyVar.toString (~tyvar)))
+    let val typ = (checkLegal(TyVar.toString (~tyvar)))
+    in
+        G.IdentTypTerm (typ)
+    end
   (* in scope term because the operator "*" is overloaded *)
   | ty2term (TUPLETyX (tys)) = 
     if List.length(tys) > 1 then

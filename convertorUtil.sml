@@ -137,7 +137,8 @@ struct
         fun tupleLabs (labs: LabMap.Key.ord_key list) : bool = labs = (List.tabulate (length labs, fn i => (Int.toString (i+1))))
 
 
-
+        fun isolate [] = []
+          | isolate (x::xs) = x::isolate(List.filter (fn y => y <> x) xs)
         (*fun idFromFixbody (Fixbody (fixbody) : G.fixbody) : G.ident = #id fixbody*)
 
     end    	

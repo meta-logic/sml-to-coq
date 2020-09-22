@@ -26,9 +26,13 @@ struct
       in sigid end
 
   and valdesc2sent(valdesc : ValDesc') : G.sentence =
-      let fun valdesc2sents(ValDesc(vid, ty, valdesc2)) =
-              let
-                  val sent = G.AssumptionSentence (G.Assumption (G.Parameter, vid2id(~vid), ty2term(~ty)))
+      let fun valdesc2sents(ValDesc(vid, ty@@A, valdesc2)) =
+              let val typ = ty2term ty
+                  val SOME A = (!(elab A))
+                  val typ = case T.getTyvars' (!A) of
+                                [] => typ
+                              | l => G.ForallTerm(List.map (fn n => G.SingleBinder {name = n, typ = SOME (G.IdentTerm "Type"), inferred = true}) (isolate l), typ)
+                  val sent = G.AssumptionSentence (G.Assumption (G.Parameter, vid2id(~vid), typ))
                   val sents = sent :: ? (fn x => valdesc2sents(~x)) (valdesc2)
               in
                   sents

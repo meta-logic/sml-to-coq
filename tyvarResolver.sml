@@ -41,6 +41,15 @@ fun resolveType' (tyvarCtx : TT.set) (S.TyVar tyvar : S.Type') : TT.set * G.term
     in
         ((TT.add(tyvarCtx, (#name tyvar)), SOME (G.IdentTerm (checkLegal (#name tyvar)))))
     end
+  | resolveType' tyvarCtx (S.FunType(typ1, typ2)) =
+    let
+        val (ctx, typ1) = resolveType' tyvarCtx (!typ1)
+        val (ctx', typ2) = resolveType' ctx (!typ2)
+        val typ = case (typ1, typ2) of (SOME typ1, SOME typ2) => SOME (G.ArrowTerm(typ1, typ2))
+                                     | _ => NONE
+    in
+        (ctx', typ)
+    end
   | resolveType' tyvarCtx _ = (tyvarCtx, NONE)
 
 and resolveType (tyvarCtx : TT.set) (typ : S.Type) = 
@@ -56,10 +65,26 @@ fun resolveTyvars (tyvarCtx : TT.set ref) (SOME typ : S.Type option) : G.term op
     end
   | resolveTyvars _ _ = NONE
 
+
+fun getTyvars (SOME typ) =
+    getTyvars' typ
+
+and getTyvars' (S.TyVar tyvar) = [G.Name (checkLegal (#name tyvar))]
+  | getTyvars' (S.ConsType ([], _)) = []
+  | getTyvars' (S.ConsType(tyvars, _)) = List.foldl op@ [] (List.map getTyvars' (List.map ! tyvars))
+  | getTyvars' (S.Undetermined _) = []
+  | getTyvars' (S.Overloaded _) = []
+  | getTyvars' (S.Determined typ) = getTyvars' (!typ)
+  | getTyvars' (S.FunType(typ1, typ2)) = (getTyvars' (!typ1)) @ (getTyvars' (!typ2))
+  | getTyvars' (S.RowType(typs, _)) = List.foldl op@ [] (List.map getTyvars' (List.map ! (LabMap.listItems typs)))
+
+
 fun isInvented id = String.sub(id, 0) = #"_"
 
 fun union' (ctx' : TT.set) (ctx : TT.set) : TT.set =
     TT.union (ctx', TT.filter isInvented ctx)
+
+fun clear (ctx : TT.set) : TT.set = TT.filter isInvented ctx
 
 fun clearTyvars (tyvarCtx : TT.set ref) : G.binder list =
     let
@@ -67,7 +92,7 @@ fun clearTyvars (tyvarCtx : TT.set ref) : G.binder list =
     in
         case names of
             [] => []
-          | _ => (tyvarCtx' := union' (!tyvarCtx') (!tyvarCtx); tyvarCtx := TT.empty;
+          | _ => (tyvarCtx' := union' (!tyvarCtx') (!tyvarCtx); tyvarCtx' := clear (!tyvarCtx'); tyvarCtx := TT.empty;
                  [G.MultipleBinders { names = names, typ = G.IdentTerm ("Type"), inferred = true }])
     end
 end
