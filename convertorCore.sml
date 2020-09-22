@@ -529,7 +529,9 @@ and patBody2sents' (matchees : G.pattern, matcher : G.term, exhaustive : bool) (
   | patBody2sents' _ G.WildcardPat = []
   | patBody2sents' (matchees, matcher, exhaustive) (G.InfixPat(id, pats)) =
     List.concat (List.map (patBody2sents' (matchees, matcher, exhaustive)) pats)
-  | patBody2sents' _ _ = raise Fail "Invalid pattern!\n"
+  | patBody2sents' _ (G.NumPat s) = []
+  | patBody2sents' _ _ = raise Fail "Invalid pattern!"
+
 
 (* EXAMPLE: type ('a, 'b) age = 'a * 'b  (the lhs ('a, 'b))
  * FROM: TyVar.sml: 25 -> 29
