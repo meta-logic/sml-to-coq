@@ -342,9 +342,7 @@ struct
                                | SOME x => " " ^ (ofModuleTypG x)
         val modExp = moduleExpressionG mE
       in
-        "\nModule " ^ id ^ binds ^ modType ^ ".\n" ^
-        modExp ^ 
-        "\nEnd " ^ id ^ "."
+        "\nModule " ^ id ^ binds ^ modType ^ " := " ^ modExp ^ "."
       end
 
 
@@ -407,13 +405,11 @@ struct
     | G.Signature{id=i, bindings=ml, body=m} => let
         val id = convertIdent i
         val modBinds = concatListWith("\n", moduleBindingsG, ml) 
-        val binds = case modBinds of "" => ".\n" 
-                                   | _  => " " ^ modBinds ^ ".\n"
+        val binds = case modBinds of "" => "" 
+                                   | _  => "(" ^ modBinds ^ ")"
         val modType = moduleTypG m
       in
-        "\nModule Type " ^ id ^ binds ^
-        modType ^
-        "\nEnd " ^ id ^ "."
+        "\nModule Type " ^ id ^ binds ^ " := " ^ modType ^ "."
       end
 
   and signatureBodyG (G.SigBody(sL)): string = 
