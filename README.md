@@ -11,7 +11,6 @@ A tool that translates SML code to Coq
 ```
  $ git clone https://github.com/meta-logic/sml-to-coq.git
 ```
-
 ### Building the coqLibraries
 Since most SML programs will make use of some part of `SML's basis library`, we have implemented Coq equivalents to them.
 - [coqLibraries Documantation](https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/coqLibraries/doc)
@@ -27,17 +26,17 @@ At the top level directory, run:
 ```
 
 ### Generator
-The main function for generating the Coq code is `Generator.generate()` in `generator.sml`. 
+The main function for generating the Coq code is `Generator.generate()` in `generator.sml`. It generates a `.v` file from the passed `.sml` file.
 ``` 
 generate(inputFile, outputFile): string * string -> unit
 ```
-It generates a `.v` file named `outputFile` from the passed `.sml` file named `inputFile`.
 
-For example:
+
+##### For example:
 ```
 Generator.generate("smlCode.sml", "gallinaCode.v"); 
 ```
-will generate the file `galllinaCode.v` from the file `smlCode.sml` . The file  `galllinaCode.v` will be located at the top level directory.
+Generates the file `galllinaCode.v` from the file `smlCode.sml` . The file  `galllinaCode.v` will be located at the top level directory.
 
 To run `gallinaCode.v` using [coqide](https://coq.inria.fr/download):
 1. From the top level go to `coqLibraries/libs`
@@ -46,13 +45,13 @@ To run `gallinaCode.v` using [coqide](https://coq.inria.fr/download):
 4. Run the file
 
 ### Convertor
-The main function for translating SML code is `Convertor.convert()` in `convertor.sml`. 
+The main function for translating SML code is `Convertor.convert()` in `convertor.sml`. It takes as a parameter a `.sml` file path to the SML program to be translated, and returns the corresponding Gallina AST. 
 ```
-Generator.generate(inputFile): string -> Gallina.sentence list
+Convertor.convert(inputFile): string -> Gallina.sentence list
 ```
-It takes as a parameter a `.sml` file path to the SML program to be translated, and returns the corresponding Gallina AST. 
 
-For example:
+##### For example:
+
 ```
 Convertor.convert("smlCode.sml"): 
 ```
