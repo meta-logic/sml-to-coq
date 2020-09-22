@@ -1,27 +1,45 @@
-# sml-to-coq
+### Building the coqLibraries
+Since most SML programs will make use of some part of `SML's basis library`, we have implemented Coq equivalents to them.
+- [coqLibraries Documantation](https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/coqLibraries/doc)
 
-A tool that translates SML code to Coq
+To compile the coqLibraries:
+1. From the top level directory, go to `coqLibraries/libs` 
+2. Then run: ``` $ make ```
 
-## How to use
-
+# Using the tool
 At the top level directory, run:
-
 ```
-sml -m sources.cm
+ $ sml -m sources.cm
 ```
 
-The main function for translating SML code is `Convertor.convert()` in `convertor.sml`. It takes as a parameter a file path to the SML program to be translated as a string, and returns the corresponding Gallina AST. Its type is `string -> Gallina.sentence list`. A list of `Gallina.sentence` is returned in case the SML code is composed of several expressions (e.g. separated by a `;`).
+### Generator
+The main function for generating the Coq code is `Generator.generate()` in `generator.sml`. 
+``` 
+generate(inputFile, outputFile): string * string -> unit
+```
+It generates a `.v` file named `outputFile` from the passed `.sml` file named `inputFile`.
 
 For example:
-
 ```
-Convertor.convert("test.sml");
+Generator.generate("smlCode.sml", "gallinaCode.v"); 
 ```
+will generate the file `galllinaCode.v` from the file `smlCode.sml` . The file  `galllinaCode.v` will be located at the top level directory.
 
-The main function for generating the Coq code is `Generator.generate()` in `generator.sml`. It takes as a parameter a file path to the SML program to be translated as a string, and returns the corresponding Gallina code. Its type is `string -> string`. 
+To run `gallinaCode.v` using [coqide](https://coq.inria.fr/download):
+1. From the top level go to `coqLibraries/libs`
+2. Then run: ``` $ coqide ```
+3. From coqide's GUI open `gallinaCode.v`
+4. Run the file
+
+### Convertor
+The main function for translating SML code is `Convertor.convert()` in `convertor.sml`. 
+```
+Generator.generate(inputFile): string -> Gallina.sentence list
+```
+It takes as a parameter a `.sml` file path to the SML program to be translated, and returns the corresponding Gallina AST. 
 
 For example:
-
 ```
-Generator.generate("test.sml");
+Convertor.convert("smlCode.sml"): 
 ```
+Returns Gallina's AST of the sml code in `smlCode.sml`, and also it prints it.
