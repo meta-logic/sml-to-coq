@@ -81,19 +81,25 @@ and getTyvars' (S.TyVar tyvar) = [G.Name (checkLegal (#name tyvar))]
 
 fun isInvented id = String.sub(id, 0) = #"_"
 
-fun union' (ctx' : TT.set) (ctx : TT.set) : TT.set =
+fun union' (ctx' : TT.set, ctx : TT.set) : TT.set =
     TT.union (ctx', TT.filter isInvented ctx)
 
-fun clear (ctx : TT.set) : TT.set = TT.filter isInvented ctx
+fun clear (ctx : TT.set ref) : unit = ctx := TT.filter isInvented (!ctx)
 
-fun clearTyvars (tyvarCtx : TT.set ref) : G.binder list =
+fun clearTyvars (discard : bool) (tyvarCtx : TT.set ref) : G.binder list =
     let
         val names = List.map (fn n => G.Name (checkLegal n)) (TT.listItems (!tyvarCtx))
+        val union = if discard then union' else TT.union
     in
         case names of
             [] => []
-          | _ => (tyvarCtx' := union' (!tyvarCtx') (!tyvarCtx); tyvarCtx' := clear (!tyvarCtx'); tyvarCtx := TT.empty;
+          | _ => (tyvarCtx' := union (!tyvarCtx', !tyvarCtx); tyvarCtx := TT.empty;
+                  if discard then clear (tyvarCtx') else ();
                  [G.MultipleBinders { names = names, typ = G.IdentTypTerm ("Type"), inferred = true }])
     end
+
+fun rememberTyvars (tyvarCtx : TT.set ref) : unit =
+    tyvarCtx' := union' (!tyvarCtx', !tyvarCtx)
+
 end
 end

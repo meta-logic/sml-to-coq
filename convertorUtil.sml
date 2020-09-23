@@ -143,6 +143,30 @@ struct
         fun isolate [] = []
           | isolate (x::xs) = x::isolate(List.filter (fn y => y <> x) xs)
 
+        fun getTyps' ty2term (TUPLEAtPatX(ts)) =
+            let
+                val typs = %(getTyps'' ty2term) ts
+            in
+                if List.all isSome typs then SOME (G.ProductTerm (List.map valOf typs))
+                else NONE
+            end
+          | getTyps' ty2term (PARAtPat pat) = getTyps'' ty2term (~pat)
+          | getTyps' _ _ = NONE
+
+        and getTyps'' ty2term (ATPat atpat) = getTyps' ty2term (~atpat)
+          | getTyps'' _ (CONPat(_)) = NONE
+          | getTyps'' ty2term (COLONPat(_, ty)) =  SOME (ty2term (~ty))
+          | getTyps'' ty2term (ASPat(_, _, SOME ty, _)) = SOME (ty2term(~ty))
+          | getTyps'' ty2term (ASPat(_, _, _, pat)) = getTyps'' ty2term (~pat)
+          | getTyps'' _ _ = NONE
+
+        fun getTyps ty2term (ATPat(TUPLEAtPatX(pats)@@A) : Pat') =
+            let
+                val typs = %(getTyps'' ty2term) pats
+            in
+                if List.all isSome typs then SOME (List.map valOf typs) else NONE
+            end
+          | getTyps _ _ = NONE
         (*fun idFromFixbody (Fixbody (fixbody) : G.fixbody) : G.ident = #id fixbody*)
 
     end    	

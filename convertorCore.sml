@@ -484,7 +484,7 @@ and pat2pattern (ATPat(atpat)@@_ : Pat) : G.pattern = atpat2pattern atpat
 and patBody2sents (G.QualidPat ident : G.pattern, body : G.term) (_ : bool): G.sentence list = 
     [G.DefinitionSentence
          (G.DefinitionDef
-              {localbool = false, id = ident, binders = T.clearTyvars tyvarCtx, typ = NONE, body = body})]
+              {localbool = false, id = ident, binders = T.clearTyvars true tyvarCtx, typ = NONE, body = body})]
   (* As patterns are split into two definitions:
          val x as y = 1 becomes Defintion x := 1; Definition y := 1 *)
   | patBody2sents (G.AsPat (pat, id), body) exhaustive = 
@@ -591,7 +591,7 @@ and tyrow2field ident (body : (G.ident * Ty') list) : G.field =
 
 and fnexp2funbody (FNExp(Match(Mrule(ATPat(IDAtPat(_, longvid)@@_)@@_, exp)@@_,_)@@_)) : G.binder list * G.term =
     let val (binders, body) = fnexp2funbody (~exp)
-        val binders = (T.clearTyvars tyvarCtx) @ binders
+        val binders = (T.clearTyvars true tyvarCtx) @ binders
         val name = mkName (lvid2id(~longvid))
         val binder = G.SingleBinder {name = name, typ = NONE, inferred = false}
     in
@@ -701,7 +701,7 @@ and valbind2sent(valbind: ValBind): G.sentence =
             let
                 val recursive = isSome(valbind2) orelse F.checkExp(lvid2id (~longvid)) exp
                 val (binders, body) = fnexp2funbody (exp)
-                val binders =  (T.clearTyvars tyvarCtx) @ binders
+                val binders =  (T.clearTyvars true tyvarCtx) @ binders
                 val ident = lvid2id (~longvid)
                 val typ = NONE
                 val decArg = NONE
@@ -732,13 +732,14 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
         fun match2econtext(match@@Am : Match, arity : int) : G.econtext =
             let
                 val Match(FmruleX(pat@@A, ty_opt, _)@@_, _) = match
-                val typs = patannot2inputtyps tyvarCtx (arity, tl A)
+                val typ' = patannot2inputtyps tyvarCtx (arity, tl A)
+                val typs = case getTyps ty2term(pat) of NONE => typ'
+                                                      | SOME l => l
                 val ebinders = mkEbinders(1, typs)
-                val typBinders = T.clearTyvars tyvarCtx
                 val precondsBinders = if isExhaustive Am then []
                                       else [PF.findPreconds(match@@Am)]
             in
-                G.EContext (binders2ebinders(typBinders) @ ebinders @ precondsBinders)
+                G.EContext (ebinders @ precondsBinders)
             end
         fun match2eclauses(arity: int) (Match(fmrule, match2)@@A : Match) : G.eclause list =
             let
@@ -762,8 +763,9 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                               SOME ty => ty2term (~ty)
                             | NONE => matchannot2outputtyp tyvarCtx (tl A)
                 val (G.EContext(binders)) = match2econtext(match, arity)
+                val typBinders = T.clearTyvars false tyvarCtx
                 val eclauses = match2eclauses arity match
-                val typBinders = T.clearTyvars tyvarCtx
+                val typBinders = (T.clearTyvars true tyvarCtx) @ typBinders
                 val context = G.EContext(binders2ebinders(typBinders) @ binders)
                 val wildCardClause = if isExhaustive Am
                                      then []
