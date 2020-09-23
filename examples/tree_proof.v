@@ -53,7 +53,6 @@ Proof.
       * rewrite inorder_equation_3. rewrite H0. rewrite H. auto.
 Qed.
 
-(* This lemma is supposed to help in the proof below, at least on paper *)
 Lemma non_empty_normal : forall T t x, (eq (normalize T) (nodeS t)) \/ (eq (normalize T) (leafS x))
   -> normal' (normalize T) = true.
 Proof.
