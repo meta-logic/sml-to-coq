@@ -98,7 +98,9 @@ fun arg2cond (pos : int) (arg : arg) : G.term =
                 G.IdentTerm ident
             end
           | arg2rhs (Const(s, [])) = const(s)
-          | arg2rhs (Const(s, l)) = G.ApplyTerm(const s, List.map arg2Garg l)
+          | arg2rhs (Const(s, l)) = (case s of 
+              "tuple" => G.TupleTerm (List.map arg2rhs l)
+            | _ => G.ApplyTerm(const s, List.map arg2Garg l) )
           | arg2rhs (SCon(scon)) = scon2term scon
           | arg2rhs (ListConst(args)) = G.ListTerm (List.map arg2rhs args)
           (*| arg2rhs (InfixConst(s, (arg1, arg2))) = G.InfixTerm(const s, [arg2Garg arg1, arg2Garg arg2])*)
