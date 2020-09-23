@@ -11,10 +11,10 @@ From Equations Require Import Equations.
 
 Inductive treeS  : Type := 
   | emptyS  
-  | leafS : string -> @ treeS   
-  | nodeS : (treeS * treeS) % type -> @ treeS .
+  | leafS : string -> (@ treeS )  
+  | nodeS : (treeS * treeS) % type -> (@ treeS ).
 
-Equations inorder (x1: treeS): @ list string :=
+Equations inorder (x1: treeS): (@ list string) :=
   inorder emptyS := nil;
   inorder (leafS x) := [x];
   inorder (nodeS (tL, tR)) := ((inorder tL)) @ ((inorder tR)).

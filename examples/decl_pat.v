@@ -51,7 +51,7 @@ Equations six {_'13441: Type} (x1: _'13441): Z :=
   six x := 
   let x := 6 in x.
 
-Equations head {_'13452: Type} (x1: @ list _'13452): _'13452 :=
+Equations head {_'13452: Type} (x1: (@ list _'13452)): _'13452 :=
   head x := 
   let h := 
   match x with

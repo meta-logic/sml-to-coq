@@ -17,8 +17,8 @@ fun isPermutation ([]: int list, []: int list): bool = true
 
 fun permutations l = case l 
   of [] => []
-  | [x] => [x]
-  | _ => List.foldl (fn (acc, x) => let
+  | [x] => [[x]]
+  | _ => List.foldl (fn (x, acc) => let
       val l_no_x = List.filter (fn e => e <> x) l
       val ps = permutations l_no_x
     in
