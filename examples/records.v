@@ -18,7 +18,7 @@ Record rid_1  :=
 
 Definition r := rid_1.
 
-Equations isBob (x1: rid_1): bool :=
+Equations isBob (x1: r): bool :=
   isBob 
 {|
   rid_1_age  := _;
