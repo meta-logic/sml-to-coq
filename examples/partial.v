@@ -9,7 +9,7 @@ Require Import listPairSml.
 Require Import notationsSml.
 From Equations Require Import Equations.
 
-Equations p_head {_'13801: Type} (x1: (@ list _'13801)) {H: (exists  y1  y2 , eq (x1) (y1 :: y2))}: _'13801 :=
+Equations p_head {_'13769: Type} (x1: (@ list _'13769)) {H: (exists  y1  y2 , eq (x1) (y1 :: y2))}: _'13769 :=
   p_head (x :: _) := x;
   p_head _ := _.
 
