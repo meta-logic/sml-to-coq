@@ -232,8 +232,8 @@ struct
 
   and patternG (pattern: G.pattern): string =
     case pattern of
-      G.ArgsPat(i, pL)   => "(" ^ i ^ " " ^ concatListWith (" ", patternG, pL) ^ ")"
-    | G.AtArgsPat(i, pL) => "@" ^ i ^ " " ^ concatListWith (" ", patternG, pL)
+      G.ArgsPat(i, pL)   => "(" ^ (convertIdent i) ^ " " ^ concatListWith (" ", patternG, pL) ^ ")"
+    | G.AtArgsPat(i, pL) => "@" ^ (convertIdent i) ^ " " ^ concatListWith (" ", patternG, pL)
     | G.AsPat(p, i)      => patternG(p) ^ " as " ^ i
     | G.ScopePat(p, i)   => patternG(p) ^ " % " ^ i 
     | G.QualidPat(i)     => convertIdent(i)
