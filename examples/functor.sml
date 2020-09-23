@@ -26,7 +26,7 @@ struct
     type t = string
     val compare = String.compare
 end
-		   
+
 functor Dict (Key : KEY) :> DICT where type key=Key.t =
 struct
     structure K = Key;
@@ -35,24 +35,24 @@ struct
     type 'a entry = key * 'a;
     type 'a dict = key -> 'a option;
 
-    val empty = fn _ => NONE;
-    fun empty _ = NONE;
-   
+    fun empty (k : key) = NONE;
+
     fun lookup (k: key, f: key -> 'a option): 'a option = f k;
 
-    fun insert ((k, v): 'a entry, f: key -> 'a option): key -> 'a option =
+
+    fun insert ((k, v): 'a entry, f: key -> 'a option) (k': key): 'a option =
+        case K.compare (k, k')
+         of EQUAL => SOME v
+	        | _ => f k';
+    fun insert' ((k, v): 'a entry, f: key -> 'a option): key -> 'a option =
       (fn k' => case K.compare (k, k')
     		 of EQUAL => SOME v
 		  | _ => f k');
 
-    fun insert ((k, v): 'a entry, f: key -> 'a option) (k': key): 'a option =
-      case K.compare (k, k')
-       of EQUAL => SOME v
-	| _ => f k';
+
 end
 
 structure IntDict = Dict (IntKey) 
-val id = IntDict.empty
-val id1 = IntDict.insert ((42,"answer"), id)
-(*val SOME "answer" = IntDict.lookup (42, id1)*)
+val id1 = IntDict.insert ((42,"answer"), IntDict.empty)
+(* val SOME "answer" = IntDict.lookup (42, id1) *)
 ;
