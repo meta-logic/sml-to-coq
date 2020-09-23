@@ -96,9 +96,9 @@ struct
       "if "^termG(tes)^" then "^termG(the)^" else "^termG(els)
     
     | G.HasTypeTerm(v1,v2)  => "(" ^ termG(v1) ^ " : " ^ termG(v2) ^ ")"
-    | G.ArrowTerm(v1,v2)    => termG(v1) ^ " -> " ^ termG(v2) 
-    | G.ApplyTerm(v1,aL)    => termG(v1) ^" "^(concatListWith (" ", argG, aL)) 
-    | G.ExplicitTerm(v1,tL) => "(@ " ^ v1 ^" "^(concatListWith (" ", termG, tL)) ^ ")"
+    | G.ArrowTerm(v1,v2)    => "(" ^ termG(v1) ^ " -> " ^ termG(v2) ^ ")"
+    | G.ApplyTerm(v1,aL)    => "(" ^ termG(v1) ^" "^(concatListWith (" ", argG, aL)) ^ ")"
+    | G.ExplicitTerm(v1,tL) => "(" ^ "@ " ^ v1 ^" "^(concatListWith (" ", termG, tL)) ^ ")"
     | G.InScopeTerm(v1,v2)  => termG(v1) ^ " % " ^ v2 
     | G.MatchTerm{matchItems=mL, body=eL} => 
       
