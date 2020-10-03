@@ -800,7 +800,7 @@ and dec2sent ((TYPEDec(typbind)@@ _) : Dec): G.sentence = typbind2sent typbind
         G.DefinitionDef{localbool = false, id = tycon2id(~tycon), binders = [], typ = NONE,
                         body = G.IdentTypTerm(ltycon2id(~ltycon))})
   | dec2sent (VALDec(tyvars, valbind)@@_) = (tyvarCtx := updateTyvarCtx (tyvars) (!tyvarCtx); valbind2sent valbind)
-  | dec2sent (FUNDecX(tyvars, fvalbind)@@_) = let
+  | dec2sent (FUNDecX(_,tyvars, fvalbind)@@_) = let
       val sent = G.EquationSentence (fundec2eprograms(tyvars, fvalbind))
       val recordC = !recordContext
       val _ = recordContext := []
