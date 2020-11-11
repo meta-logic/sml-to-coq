@@ -785,6 +785,47 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
         end
     end
 
+and conts2proofObligation(def: ValBind list, cont: Exp list): G.proofObligation = 
+  let
+
+    (* Extract information *)
+    val [FValBindX(vid, match, arity, valbind2)@@_] = def
+    val Match(FmruleX(pat, ty_opt, _)@@A, _)@@Am = match
+
+    (* pL: list that has the patterns and the last element is the result *)
+    val ATPat(TUPLEAtPatX(pL)@@TA)@@PA = pat
+    
+    (* vars represents variables in the def. res represents the result in the def*)
+    val vars = ATPat(TUPLEAtPatX( List.take(pL, (List.length pL) - 1) )@@TA)@@PA
+    val [res]  = List.drop(pL, (List.length pL) - 1) 
+
+    (* vars binders and res binder *)
+    val funBinders = pat2binders pat
+    val varBinders = pat2binders vars
+    val [resBinder]  = pat2binders res
+    
+    (* requires and ensures expressions *)
+    val req@@RA = List.hd cont
+    val ens@@EA = List.hd (List.tl cont)
+
+    (* function name *)
+    val id = (vid2id (~vid))
+
+    (* defintion of the function, (id varBinders = resBinder) is (funName vars = res)*)
+    val defTerm = G.DefTerm( id, varBinders, resBinder)
+
+    (* We need to convert these bool exps to props *)
+    val reqT = exp2term req 
+    val ensT = exp2term ens
+
+    (* Construct the theorem term *)
+    val sentTerm = G.ArrowTerm(G.ConjunctTerm(defTerm, reqT) , ensT)
+    val sent = G.ForallTerm(funBinders, sentTerm)
+  in
+    G.Theorem(id ^ "_THM", sent)
+  end
+
+
 (* FROM: SyntaxCoreFn.sml: 104 -> 114
  * TO:   Gallina.sml : 100 -> 108
  * FROM SECTION: Appendix C.1 page 104
@@ -800,12 +841,13 @@ and dec2sent ((TYPEDec(typbind)@@ _) : Dec): G.sentence = typbind2sent typbind
         G.DefinitionDef{localbool = false, id = tycon2id(~tycon), binders = [], typ = NONE,
                         body = G.IdentTypTerm(ltycon2id(~ltycon))})
   | dec2sent (VALDec(tyvars, valbind)@@_) = (tyvarCtx := updateTyvarCtx (tyvars) (!tyvarCtx); valbind2sent valbind)
-  | dec2sent (FUNDecX(_,tyvars, fvalbind)@@_) = let
+  | dec2sent (FUNDecX((def, conts), tyvars, fvalbind)@@_) = let
+      val proofObl = case conts of nil => nil | _ => [G.ProofObligationSentence (conts2proofObligation(def, conts))]
       val sent = G.EquationSentence (fundec2eprograms(tyvars, fvalbind))
       val recordC = !recordContext
       val _ = recordContext := []
     in
-        if recordC = [] then sent else G.SeqSentences (recordC @ [sent])
+        if recordC = [] then sent else G.SeqSentences (recordC @ (sent::proofObl))
     end
   | dec2sent (SEQDec(dec1, dec2)@@_) = G.SeqSentences [dec2sent dec1, dec2sent dec2]
   | dec2sent _ = raise Fail "Fail: unsupported"
