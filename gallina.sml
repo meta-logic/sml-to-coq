@@ -68,6 +68,8 @@ struct
   | ForallTerm of binder list * term (* forall *)
   | ExistsTerm of binder list * term
   | EqualTerm of term * term
+  (* Proof obligations def*)
+  | DefTerm of ident * binder list * binder
 
 and arg = Arg of term | NamedArg of ident * term
 
@@ -150,6 +152,8 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
                | SeqSentences of sentence list
                (* equations *)
                | EquationSentence of eprograms
+               (* Theorems *)
+               | ProofObligationSentence of proofObligation
 
   (* Gallina syntax extension *)             
   and recBody = RecordBody of 
@@ -253,5 +257,8 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
   and eclause = EClause of { pats : pattern list, body : term }
               (* generator needs to take care of adding vid to initial clause *)
 
+  (* Proof Obligations grammer *)
+  (* the term is always going to be (ForallTerm of binder list * term) *)
+  and proofObligation = Theorem of ident * term   
 
 end
