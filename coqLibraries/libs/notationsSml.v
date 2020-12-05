@@ -148,6 +148,44 @@ Instance eqInfixesInt : eqInfixes Z :=
   neq := fun a b => if Z.eqb a b then false else true
 }.
 
+(* Added during the proof obligations project*)
+
+Local Fixpoint list_eqrec {A: Type} (X Y : list A) (eq_A : A -> A -> bool) {struct X} : bool :=
+  match X with
+  | [] => match Y with
+          | [] => true
+          | _ :: _ => false
+          end
+  | x :: x0 => match Y with
+               | [] => false
+               | x1 :: x2 => eq_A x x1 && list_eqrec x0 x2 eq_A
+               end
+  end.
+
+Instance eqInfixesListBool: eqInfixes (list bool) :=
+{
+  eqb := fun a b => list_eqrec a b Bool.eqb;
+  neq := fun a b => list_eqrec a b Bool.eqb
+}.
+
+Instance eqInfixesListZ: eqInfixes (list Z) :=
+{
+  eqb := fun a b => list_eqrec a b Z.eqb;
+  neq := fun a b => list_eqrec a b Z.eqb
+}.
+
+Instance eqInfixesListString: eqInfixes (list string) :=
+{
+  eqb := fun a b => list_eqrec a b String.eqb;
+  neq := fun a b => list_eqrec a b String.eqb
+}.
+
+Instance eqInfixesListAscii: eqInfixes (list ascii) :=
+{
+  eqb := fun a b => list_eqrec a b Ascii.eqb;
+  neq := fun a b => list_eqrec a b Ascii.eqb
+}.
+
 (*---------------------------------------------------------------------------*)
 
 (* + , * , - *)
