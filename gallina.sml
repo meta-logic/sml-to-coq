@@ -69,7 +69,7 @@ struct
   | ExistsTerm of binder list * term
   | EqualTerm of term * term
   (* Proof obligations def*)
-  | DefTerm of ident * binder list * binder
+  | DefTerm of ident * pattern list * ident option * pattern
 
 and arg = Arg of term | NamedArg of ident * term
 
