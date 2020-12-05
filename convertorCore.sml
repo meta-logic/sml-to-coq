@@ -44,7 +44,8 @@ val tyvarCtx = ref (ConvertorUtil.TT.empty)
 
 (* functions' names that use obligations *)
 val funH = ref [] : (string list) ref
-val exFNum= ref 0  : int ref
+val exFNum = ref 0  : int ref
+val inThm = ref false : bool ref
 
 structure AE = AnnotationExtractor(val recordContext = recordContext; val recordTracker = recordTracker)
 open AE
@@ -320,7 +321,10 @@ and exp2term (ATExp atexp : Exp') : G.term = atexp2term (atexp)
         case exp of
           ATExp(IDAtExp(opr, lvid)@@_)@@_ => 
             (case List.find (fn x => x = (lvid2id (~lvid))) (!funH) of
-              SOME x => G.ExplicitTerm(x, (atexp2term atexp)::[G.IdentTerm("H")]) before (exFNum := 1 + !exFNum)
+              SOME x => 
+               (if (!inThm) 
+                then G.ExplicitTerm(x, (atexp2term atexp)::[G.IdentTerm("H")]) before (exFNum := 1 + !exFNum)
+                else G.ApplyTerm(exp2term (~exp), atexp2args (atexp)))
             | NONE => G.ApplyTerm(exp2term (~exp), atexp2args (atexp)))
         | _ => G.ApplyTerm(exp2term (~exp), atexp2args (atexp))
 
@@ -827,8 +831,10 @@ and conts2proofObligation(def: ValBind list, cont: Exp list): G.proofObligation 
     
     (* We need to convert these bool exps to props *)
     val cHCheck = !exFNum
+    val _ = (inThm := true) 
     val reqT = bool2Prop (exp2term req) 
     val ensT = bool2Prop (exp2term ens)
+    val _ = (inThm := false)
 
     (* Check whether the function is exhaustive or not and add Hs to the req and ens*)
     val fHCheck = case List.find (fn x => x = id) (!funH) of SOME x => true | NONE   => false
