@@ -180,7 +180,7 @@ HaMLet~\cite{hamlet} is an SML implementation whose goal is to be an
 accurate implementation of the language definition~\cite{smldef}, and
 a platform for experimentation. There are two main reasons why we
 chose it for this work. First of all, it is faithful to SML's
-definition, and all bugs and ``grey areas'' and well documented.
+definition, and all bugs and ``grey areas'' are well documented.
 Secondly, it is easy to access various steps of the compilation
 process. Particularly, the abstract syntax tree from the elaboration
 phase was readily available.
@@ -206,28 +206,38 @@ speaking -- however, the resulting Coq code will look very different: an
 expression. Therefore, we decided to keep the original grammatical form and
 translate that to Gallina.
 
-Even though the translation is done on the abstract syntax tree with the derived
-forms, we still need to make sure that the code type checks and runs.
-Additionally, the elaboration phase provides crucial information for the
-translation, such as non-exhaustive match warnings. These two phases do not
-consider the derived forms. This problem is solved by one of two approaches,
-depending on the construct: (1) the derived form is replaced by the equivalent
-form, and we interpret any needed information in the context of the derived
-form; or (2) we implement an extra case for the derived form when it is
+Even though the translation is done on the abstract syntax tree with
+the derived forms, we still need to make sure that the code type
+checks and runs.  Additionally, the elaboration phase provides crucial
+information for the translation, such as non-exhaustive match
+warnings. These two phases do not consider the derived forms. This
+problem is solved by one of two approaches, depending on the
+construct: (1) the derived form is replaced by the equivalent form
+(using functions from \texttt{parse/DerivedFormsCore.sml}), and we
+interpret any needed information in the context of the derived form;
+or (2) we implement an extra case for the derived form when it is
 straighforward.
 
-% all modifications are sound.
+Option (2) is much less redundant, but harder to implement, and we now
+need to reason about the correctness of the new syntax and semantics
+checks (note that even SML's definition does not have elaboration or
+evaluation rules for the derived forms because it assumes that they are
+equivalent to their equivalent form and it only has rules for the
+equivalent forms). So, if SML does not have rules for these forms, how can
+we guarantee correctness?? I guess, however, correctness is
+straightforward, because we are basically doing the same checks that
+we've been doing on equivalent forms but on the derived forms.
 
 \subsection{Changes in HaMLet}
 
 The following tables are taken from SML's documentation but in our case, we
 restore the original forms (left column) from their equivalent forms (right
-column). The reason we do this step is because (while the semantics do not
+column). The reason we do this step is because (while the semantics does not
 change) the code looks very foreign after derivation (and hence does the
 translation).
 
 Note that some derivations are not restored because the output doesn't affect
-the translation (see discussion on $fvalbind$ below). 
+the translation (see discussion on \emph{fvalbind} below). 
 
 \newcommand\changedto{\Longrightarrow}
 
@@ -287,10 +297,11 @@ the translation (see discussion on $fvalbind$ below).
 
 \subsubsection{Useful Derived Forms}
 
-The derivation of function-value bindings $fvalbind$ is the one case where we
-need to keep the derivation because it simplifies translation. The syntax in
-Gallina doesn't allow for pattern-matching on function arguments, so the
-derivation (which ) solves the problem.
+The derivation of function-value bindings \emph{fvalbind} is the one case where we
+need to keep the equivalent form because it simplifies translation. The syntax in
+Gallina does not allow for pattern-matching on function arguments, so the
+equivalent form (which transforms the function pattern matching into a
+case statement) solves the problem.
 
 \noindent
 \begin{tabularx}{1.0\textwidth} { 
@@ -396,7 +407,7 @@ however these are not built-in types and must be declared using
 
 \begin{coq}
 Record rec := { name : string; age : Z }.
-Definition getAge (r : rec1) := match r with 
+Definition getAge (r : rec) := match r with 
   {| name := _; age := x |} => x.
 \end{coq}
 
