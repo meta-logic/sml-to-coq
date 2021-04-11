@@ -45,14 +45,14 @@ struct
 
   fun getAST(source: string) = 
     let
-        val ins = TextIO.openIn source 
-        fun loop ins = 
-            case TextIO.inputLine ins of 
-                SOME line => line :: loop ins 
-              | NONE      => [] 
-        val codeList = loop ins before TextIO.closeIn ins 
-        val source = String.concat codeList  
-     val ((J, B_BIND), _, _) =  Sml.lib()
+      val ins = TextIO.openIn source 
+      fun loop ins = 
+        case TextIO.inputLine ins of 
+            SOME line => line :: loop ins 
+          | NONE      => [] 
+      val codeList = loop ins before TextIO.closeIn ins 
+      val source = String.concat codeList  
+      val ((J, B_BIND), _, _) =  Sml.lib()
       val parseArgs = (J, B_BIND)
       val (J', program) = Sml.parse1 parseArgs (NONE, source)
     in
@@ -61,14 +61,14 @@ struct
 
   fun getElabAST(source: string) = 
     let
-        val ins = TextIO.openIn source 
-        fun loop ins = 
-            case TextIO.inputLine ins of 
-                SOME line => line :: loop ins 
-              | NONE      => [] 
-        val codeList = loop ins before TextIO.closeIn ins 
-        val source = String.concat codeList  
-     val ((J, B_BIND), (B_STAT, B_DYN), s) =  Sml.lib()
+      val ins = TextIO.openIn source 
+      fun loop ins = 
+        case TextIO.inputLine ins of 
+            SOME line => line :: loop ins 
+          | NONE      => [] 
+      val codeList = loop ins before TextIO.closeIn ins 
+      val source = String.concat codeList  
+      val ((J, B_BIND), (B_STAT, B_DYN), s) =  Sml.lib()
       val parseArgs = (J, B_BIND)
       val (J', program) = Sml.parse1 parseArgs (NONE, source)
       val B_STAT' = Program.elabProgram true (B_STAT, program)
