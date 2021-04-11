@@ -9,7 +9,7 @@ A tool that translates SML code to Coq
 
 ### Clone the project:
 ```
- $ git clone https://github.com/meta-logic/sml-to-coq.git
+ $ git clone --recurse-submodules https://github.com/meta-logic/sml-to-coq.git
 ```
 ### Building the coqLibraries
 Since most SML programs will make use of some part of `SML's basis library`, we have implemented Coq equivalents to them.
