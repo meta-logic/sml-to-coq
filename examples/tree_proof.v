@@ -81,3 +81,17 @@ Proof.
     * rewrite normalize_equation_2 in E. discriminate E.
     * rewrite normal_equation_3. rewrite <- E. eapply (non_empty_normal _ p ""). left; auto.
 Qed.
+
+Theorem normalize_correctness2 : forall T T', 
+ (normalize T = T') /\  (inorder T = inorder T') -> (normal T' = true).
+Proof.
+  intros.
+  destruct H. 
+  destruct T'.
+  + auto.
+  + auto.
+  + destruct T eqn:E.
+    * auto. discriminate H. 
+    * auto. discriminate H.
+    * rewrite normal_equation_3. rewrite <- H. apply (non_empty_normal _ p ""). left; auto.
+Qed.
