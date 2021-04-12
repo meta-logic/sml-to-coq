@@ -42,6 +42,10 @@ val recordTracker = ref (ConvertorUtil.LT.empty) : (G.ident ConvertorUtil.LT.dic
 (* Local tyvar context, doc: section 3.3 *)
 val tyvarCtx = ref (ConvertorUtil.TT.empty)
 
+(* functions' names that use obligations *)
+val funH = ref [] : (string list) ref
+val exFNum = ref 0  : int ref
+val inThm = ref false : bool ref
 
 structure AE = AnnotationExtractor(val recordContext = recordContext; val recordTracker = recordTracker)
 open AE
@@ -311,8 +315,22 @@ and atexp2term (SCONAtExp(scon)@@_ : AtExp) : G.term = scon2term (~scon)
  * KEYWORD: term
  *)
 and exp2term (ATExp atexp : Exp') : G.term = atexp2term (atexp)
-  | exp2term (APPExp (exp, atexp)) = 
-    G.ApplyTerm(exp2term (~exp), atexp2args (atexp))
+  | exp2term (APPExp (exp, atexp)) =  (* Changed, (might need to be changed in the future) *)
+    let
+      val result = 
+        case exp of
+          ATExp(IDAtExp(opr, lvid)@@_)@@_ => 
+            (case List.find (fn x => x = (lvid2id (~lvid))) (!funH) of
+              SOME x => 
+               (if (!inThm) 
+                then G.ExplicitTerm(x, (atexp2term atexp)::[G.IdentTerm("H")]) before (exFNum := 1 + !exFNum)
+                else G.ApplyTerm(exp2term (~exp), atexp2args (atexp)))
+            | NONE => G.ApplyTerm(exp2term (~exp), atexp2args (atexp)))
+        | _ => G.ApplyTerm(exp2term (~exp), atexp2args (atexp))
+
+    in
+      result (*G.ApplyTerm(exp2term (~exp), atexp2args (atexp))*)
+    end      
   | exp2term (COLONExp (exp, ty)) = 
     let val typ = ty2term (~ty)
         val exp = exp2term (~exp)
@@ -731,7 +749,7 @@ and binders2ebinders(G.SingleBinder {name = name, typ = SOME typ, inferred = inf
 and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms = 
     let
         (* val tyvars = tyvarseq2binder (List.map ~ ($(~tyvars))) *) (* probably not needed *)
-        fun match2econtext(match@@Am : Match, arity : int) : G.econtext =
+        fun match2econtext(match@@Am : Match, arity : int, id) : G.econtext =
             let
                 val Match(FmruleX(pat@@A, ty_opt, _)@@_, _) = match
                 val typ' = patannot2inputtyps tyvarCtx (arity, tl A)
@@ -739,7 +757,7 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                                                       | SOME l => l
                 val ebinders = mkEbinders(1, typs)
                 val precondsBinders = if isExhaustive Am then []
-                                      else [PF.findPreconds(match@@Am)]
+                                      else [PF.findPreconds(match@@Am)] before (funH := id::(!funH))   (* used id to Add funName to the H record *)
             in
                 G.EContext (ebinders @ precondsBinders)
             end
@@ -756,7 +774,6 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
             in
                 fmrule2eclause(~fmrule) :: (? (match2eclauses arity) match2)
             end
-
         fun fvalbind2eprogram(FValBindX(vid, match, arity, valbind2)@@_ : ValBind) : G.eprogram list =
             let
                 val id = vid2id (~vid)
@@ -764,7 +781,7 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                 val ret = case ty_opt of
                               SOME ty => ty2term (~ty)
                             | NONE => matchannot2outputtyp tyvarCtx (tl A)
-                val (G.EContext(binders)) = match2econtext(match, arity)
+                val (G.EContext(binders)) = match2econtext(match, arity, id)
                 val typBinders = T.clearTyvars false tyvarCtx
                 val eclauses = match2eclauses arity match
                 val typBinders = (T.clearTyvars true tyvarCtx) @ typBinders
@@ -785,6 +802,65 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
         end
     end
 
+and bool2Prop(t: G.term): G.term = G.InfixTerm(G.IdentTerm("="), [G.Arg(G.TupleTerm([G.TupleTerm([t]), G.IdentTerm("true")]))])
+
+and conts2proofObligation(def: ValBind list, cont: Exp list): G.proofObligation = 
+  let
+
+    fun atPat(atpat)    = ATPat(atpat)@@at(atpat)
+    fun idAtPat(vid@@A) = IDAtPat(NONE, LongVId.fromId(vid)@@A)@@at(vid@@A)
+    fun idPat(vid)      = atPat(idAtPat(vid))
+
+    (* Extract information *)
+    val [FValBindX(vid, match, arity, valbind2)@@_] = def
+    val Match(FmruleX(pat, ty_opt, _)@@A, _)@@Am = match
+
+    (* pL: list that has the patterns and the last element is the result *)
+    val ATPat(TUPLEAtPatX(pL)@@TA)@@PA = pat
+
+    (* function name *)
+    val id = (vid2id (~vid))
+
+    (* requires and ensures expressions *)
+    val req@@RA = List.hd cont
+    val ens@@EA = List.hd (List.tl cont)
+
+    (* vars represents variables in the def. res represents the result in the def*)
+    val vars = List.take(pL, (List.length pL) - 1)    
+    val [res] = List.drop(pL, (List.length pL) - 1) 
+    
+    (* We need to convert these bool exps to props *)
+    val cHCheck = !exFNum
+    val _ = (inThm := true) 
+    val reqT = bool2Prop (exp2term req) 
+    val ensT = bool2Prop (exp2term ens)
+    val _ = (inThm := false)
+
+    (* Check whether the function is exhaustive or not and add Hs to the req and ens*)
+    val fHCheck = case List.find (fn x => x = id) (!funH) of SOME x => true | NONE   => false
+    val cHCheck = if !exFNum - cHCheck > 0 then true else false
+
+    (* Add H to the variables if there exist an exhaustive function call in the theorem *)
+    val H = idPat((VId.fromString "H")@@nowhere())
+    val funBinders = case fHCheck orelse cHCheck of
+                      true  => (pat2binders (ATPat(TUPLEAtPatX(pL)@@TA)@@PA))@(pat2binders H)
+                    | false => pat2binders (ATPat(TUPLEAtPatX(pL)@@TA)@@PA)
+
+    (* vars binders and res binder *)
+    val varBinders = List.map pat2pattern vars
+    val resBinder  = pat2pattern res
+
+    (* defintion of the function, (id varBinders = resBinder) is (funName vars = res)*)
+    val defTerm = G.DefTerm( id, varBinders, if fHCheck then SOME "H" else NONE, resBinder)
+
+    (* Construct the theorem term *)
+    val sentTerm = G.ArrowTerm(G.ConjunctTerm(defTerm, reqT) , ensT)
+    val sent = G.ForallTerm(funBinders, sentTerm)
+  in
+    G.Theorem(id ^ "_THM", sent)
+  end
+
+
 (* FROM: SyntaxCoreFn.sml: 104 -> 114
  * TO:   Gallina.sml : 100 -> 108
  * FROM SECTION: Appendix C.1 page 104
@@ -800,12 +876,13 @@ and dec2sent ((TYPEDec(typbind)@@ _) : Dec): G.sentence = typbind2sent typbind
         G.DefinitionDef{localbool = false, id = tycon2id(~tycon), binders = [], typ = NONE,
                         body = G.IdentTypTerm(ltycon2id(~ltycon))})
   | dec2sent (VALDec(tyvars, valbind)@@_) = (tyvarCtx := updateTyvarCtx (tyvars) (!tyvarCtx); valbind2sent valbind)
-  | dec2sent (FUNDecX(tyvars, fvalbind)@@_) = let
+  | dec2sent (FUNDecX((def, conts), tyvars, fvalbind)@@_) = let
       val sent = G.EquationSentence (fundec2eprograms(tyvars, fvalbind))
       val recordC = !recordContext
       val _ = recordContext := []
+      val proofObl = case conts of nil => nil | _ => [G.ProofObligationSentence (conts2proofObligation(def, conts))]
     in
-        if recordC = [] then sent else G.SeqSentences (recordC @ [sent])
+        if recordC = [] then G.SeqSentences (sent::proofObl) else G.SeqSentences (recordC @ (sent::proofObl))
     end
   | dec2sent (SEQDec(dec1, dec2)@@_) = G.SeqSentences [dec2sent dec1, dec2sent dec2]
   | dec2sent _ = raise Fail "Fail: unsupported"

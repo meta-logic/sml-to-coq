@@ -98,8 +98,8 @@ struct
     | G.HasTypeTerm(v1,v2)  => "(" ^ termG(v1) ^ " : " ^ termG(v2) ^ ")"
     | G.ArrowTerm(v1,v2)    => "(" ^ termG(v1) ^ " -> " ^ termG(v2) ^ ")"
     | G.ApplyTerm(v1,aL)    => "(" ^ termG(v1) ^" "^(concatListWith (" ", argG, aL)) ^ ")"
-    | G.ExplicitTerm(v1,tL) => "(" ^ "@ " ^ v1 ^" "^(concatListWith (" ", termG, tL)) ^ ")"
-    | G.InScopeTerm(v1,v2)  => termG(v1) ^ " % " ^ v2 
+    | G.ExplicitTerm(v1,tL) => "(" ^ "@" ^ v1 ^" "^(concatListWith (" ", termG, tL)) ^ ")"
+    | G.InScopeTerm(v1,v2)  => termG(v1) ^ "%" ^ v2 
     | G.MatchTerm{matchItems=mL, body=eL} => 
       
       "\n  match " ^ (concatListWith (", ", matchItemG, mL)) ^ " with" ^ "\n" ^
@@ -137,8 +137,8 @@ struct
     | G.TupleTerm(tL)       => "(" ^ (concatListWith (", ", termG, tL)) ^ ")"
     | G.ProductTerm (tL)    => "(" ^ (concatListWith (" * ", termG, tL)) ^ ")"
     | G.ListTerm(tL)        => "[" ^ (concatListWith ("; ", termG, tL)) ^ "]" 
-    | G.OrTerm(v1, v2)      => termG(v1) ^ " || "  ^ termG(v2) 
-    | G.AndTerm(v1, v2)     => termG(v1) ^ " && "  ^ termG(v2) 
+    | G.OrTerm(v1, v2)      => "(" ^ termG(v1) ^ " || "  ^ termG(v2) ^ ")" (* changed*)
+    | G.AndTerm(v1, v2)     => "(" ^ termG(v1) ^ " && "  ^ termG(v2) ^ ")" (* changed*)
     | G.Axiom(a)            => "patternFailure"
     | G.MatchNotationTerm{matchItem=mI, body=e, exhaustive=b} => 
       
@@ -150,14 +150,18 @@ struct
                                   val G.Arg(t') = List.hd aL
                                   val G.TupleTerm(tL) = t'
                                 in
-                                  concatListWith (" " ^ termG(t) ^ " ", termG, tL) 
+                                  "(" ^ concatListWith (" " ^ termG(t) ^ " ", termG, tL) ^ ")" (* changed*)
                                 end
     (* Adding proposition terms for preconditions *)
     | G.DisjunctTerm(t1, t2) => "(" ^ termG(t1) ^ " \\/ " ^ termG(t2) ^ ")"
     | G.ConjunctTerm(t1, t2) => "(" ^ termG(t1) ^ " /\\ " ^ termG(t2) ^ ")"
-    | G.ForallTerm(bL, t) => "(" ^  "forall "^(concatListWith (" ", binderG, bL))^" , " ^ termG(t) ^ ")"
-    | G.ExistsTerm(bL, t) => "(" ^ "exists "^(concatListWith (" ", binderG, bL))^" , " ^termG(t) ^ ")" 
-    | G.EqualTerm(t1, t2) => "eq (" ^ termG(t1) ^ ") (" ^ termG(t2) ^ ")"
+    | G.ForallTerm(bL, t)    => "forall "^(concatListWith (" ", binderG, bL))^ ", " ^ termG(t)
+    | G.ExistsTerm(bL, t)    => "(" ^ "exists "^(concatListWith (" ", binderG, bL))^" , " ^termG(t) ^ ")" 
+    | G.EqualTerm(t1, t2)    => "eq (" ^ termG(t1) ^ ") (" ^ termG(t2) ^ ")"
+    | G.DefTerm(id, bL, iO, b)   => 
+      case iO of
+        SOME h => "(" ^ "@" ^ id ^ " " ^ concatListWith(" ", patternG, bL) ^ " " ^ h ^ " = " ^ patternG(b) ^ ")"
+      | NONE   => "(" ^ id ^ " " ^ concatListWith(" ", patternG, bL) ^ " = " ^ patternG(b) ^ ")"  
 
 
   and argG (G.Arg(t))        = termG(t)
@@ -273,17 +277,18 @@ struct
     case sentence of 
       nil    => nil
     | x::ast => case x of
-                  G.DefinitionSentence(d)    => definitionG(d)::sentenceG(ast) 
-                | G.InductiveSentence(i)     => inductiveG(i)::sentenceG(ast)
-                | G.FixpointSentence(f)      => fixpointG(f)::sentenceG(ast) 
-                | G.AssumptionSentence(a)    => assumptionG(a)::sentenceG(ast)
-                | G.RecordSentence(r)        => recordG(r)::sentenceG(ast)
-                | G.ModuleSentence(m)        => moduleG(m)::sentenceG(ast)
-                | G.SignatureSentence(g)     => gsignatureG(g)::sentenceG(ast)
-                | G.DeclareModuleSentence(d) => declarationG(d)::sentenceG(ast)
-                | G.IncludeSentence(i)       => inclusionG(i)::sentenceG(ast)
-                | G.SeqSentences(n)          => sentenceG(n)@sentenceG(ast)
-                | G.EquationSentence(e)      => eprogramsG(e)::sentenceG(ast)
+                  G.DefinitionSentence(d)      => definitionG(d)::sentenceG(ast) 
+                | G.InductiveSentence(i)       => inductiveG(i)::sentenceG(ast)
+                | G.FixpointSentence(f)        => fixpointG(f)::sentenceG(ast) 
+                | G.AssumptionSentence(a)      => assumptionG(a)::sentenceG(ast)
+                | G.RecordSentence(r)          => recordG(r)::sentenceG(ast)
+                | G.ModuleSentence(m)          => moduleG(m)::sentenceG(ast)
+                | G.SignatureSentence(g)       => gsignatureG(g)::sentenceG(ast)
+                | G.DeclareModuleSentence(d)   => declarationG(d)::sentenceG(ast)
+                | G.IncludeSentence(i)         => inclusionG(i)::sentenceG(ast)
+                | G.SeqSentences(n)            => sentenceG(n)@sentenceG(ast)
+                | G.EquationSentence(e)        => eprogramsG(e)::sentenceG(ast)
+                | G.ProofObligationSentence(p) => proofObligationG(p)::sentenceG(ast)
 
 
   and recordG (rL) = "\nRecord " ^ concatListWith("with ", recBodyG, rL)
@@ -515,7 +520,11 @@ struct
 
 
   and eclauseG (G.EClause{ pats = pL, body = t}): string = 
-     concatListWith(" ", patternG, pL) ^ " := " ^ termG(t) ^ ";"   
+     concatListWith(" ", patternG, pL) ^ " := " ^ termG(t) ^ ";"
+
+
+  and proofObligationG (G.Theorem(id, t)): string =
+    "\nTheorem " ^ id ^ ": "  ^ termG(t) ^ "." ^ "\nAdmitted."    
 
 
   (* convertChar(t): string -> string
