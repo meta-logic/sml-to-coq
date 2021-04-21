@@ -78,6 +78,16 @@ and getTyvars' (S.TyVar tyvar) = [G.Name (checkLegal (#name tyvar))]
   | getTyvars' (S.FunType(typ1, typ2)) = (getTyvars' (!typ1)) @ (getTyvars' (!typ2))
   | getTyvars' (S.RowType(typs, _)) = List.foldl op@ [] (List.map getTyvars' (List.map ! (LabMap.listItems typs)))
 
+fun hasTyvars (typ : S.Type) : bool = hasTyvars' (!typ)
+
+and hasTyvars' (S.TyVar tyvar)         = true
+  | hasTyvars' (S.ConsType ([], _))    = false
+  | hasTyvars' (S.ConsType(tyvars, _)) = List.exists hasTyvars tyvars
+  | hasTyvars' (S.Undetermined _)      = false
+  | hasTyvars' (S.Overloaded _)        = false
+  | hasTyvars' (S.Determined typ)      = hasTyvars typ
+  | hasTyvars' (S.FunType(typ1, typ2)) = (hasTyvars typ1) orelse (hasTyvars typ2)
+  | hasTyvars' (S.RowType(labmap, _))  = List.exists hasTyvars (LabMap.listItems labmap)
 
 fun isInvented id = String.sub(id, 0) = #"_"
 
