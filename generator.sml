@@ -256,7 +256,7 @@ struct
     | G.HexPat(s)        => "\"" ^ "0x"^ S.map Char.toLower s ^ "\"" 
       (* extra *)  
     | G.TuplePat(pL)     => "(" ^ concatListWith (", ", patternG, pL) ^ ")"
-    | G.ListPat(pL)      => "[" ^ concatListWith (", ", patternG, pL) ^ "]" 
+    | G.ListPat(pL)      => "[" ^ concatListWith ("; ", patternG, pL) ^ "]" 
     | G.ParPat(p)        => patternG(p)
     | G.UnitPat          => "tt"
     | G.InfixPat(i, pL)  => let
