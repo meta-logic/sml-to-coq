@@ -42,7 +42,8 @@ struct
                         "Require Import listPairSml.",
                         "Require Import notationsSml.", 
                         "From Equations Require Import Equations."]
-      val codeList = imports @ codeList      
+      val settings = ["\nGeneralizable All Variables."]
+      val codeList = imports @ settings @ codeList 
     in
       writeFile output ((S.concatWith ("\n") codeList)^ "\n") 
     end
@@ -470,6 +471,7 @@ struct
     | G.ELetBinder{names = nL, typ = t, body = b} => 
         "(" ^ concatListWith(" ", nameG, nL) ^ ":= " ^ 
         termG(b) ^ ": " ^ termG(t) ^ ")"
+    | G.EPatternBinder{name = n, typ = t} => "`(" ^ nameG(n) ^ ": " ^ termG(t) ^ ")"
 
 
   and econtextG (G.EContext(bL)): string = concatListWith(" ", ebinderG, bL)
