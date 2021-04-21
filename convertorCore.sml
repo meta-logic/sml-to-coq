@@ -748,16 +748,40 @@ and binders2ebinders(G.SingleBinder {name = name, typ = SOME typ, inferred = inf
 
 and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms = 
     let
+
         (* val tyvars = tyvarseq2binder (List.map ~ ($(~tyvars))) *) (* probably not needed *)
-        fun match2econtext(match@@Am : Match, arity : int, id) : G.econtext =
+        fun match2econtext(m : Match, arity : int, id) : G.econtext =
             let
-                val Match(FmruleX(pat@@A, ty_opt, _)@@_, _) = match
-                val typ' = patannot2inputtyps tyvarCtx (arity, tl A)
-                val typs = case getTyps ty2term(pat) of NONE => typ'
-                                                      | SOME l => l
-                val ebinders = mkEbinders(1, typs)
-                val precondsBinders = if isExhaustive Am then []
-                                      else [PF.findPreconds(match@@Am)] before (funH := id::(!funH))   (* used id to Add funName to the H record *)
+                val Match(FmruleX(pat, ty_opt, _)@@_, _)@@annot_m = m
+                val _@@annot_pat = pat
+                
+                (* Type inferred by elaboration *)
+                val SOME (_, inferTyp) = !(hd (tl annot_pat))
+                val inferTyp = unwrapType (inferTyp, arity)
+                
+                (* All matched patterns *)
+                val pats = matchedPats m
+ 
+                (* Inferred types using type aliases from all patterns *)
+                val typs_alias : S.Type list = List.foldl (fn (p, t) => 
+                    let
+                        val pats = unwrapPat p
+                        val n_pats = List.length pats
+                    in
+                        if n_pats = arity then List.map mkTypeAliased (ListPair.zip (pats, t))
+                        else raise Fail "[ERROR] Function pattern with wrong arity."
+                    end
+                ) inferTyp pats
+
+                (* Bool indicates presence of type variables *)
+                val gtypterms : (G.term * bool) list = 
+                    List.map (fn t => (typ2typ tyvarCtx t, T.hasTyvars t)) typs_alias
+
+                (* Binders are generically named x1, x2, ... *)
+                val ebinders = mkEbinders gtypterms
+
+                val precondsBinders = if isExhaustive annot_m then []
+                                      else [PF.findPreconds m] before (funH := id::(!funH))   (* used id to Add funName to the H record *)
             in
                 G.EContext (ebinders @ precondsBinders)
             end
@@ -781,11 +805,14 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                 val ret = case ty_opt of
                               SOME ty => ty2term (~ty)
                             | NONE => matchannot2outputtyp tyvarCtx (tl A)
-                val (G.EContext(binders)) = match2econtext(match, arity, id)
-                val typBinders = T.clearTyvars false tyvarCtx
+                
+                val context = match2econtext(match, arity, id)
                 val eclauses = match2eclauses arity match
-                val typBinders = (T.clearTyvars true tyvarCtx) @ typBinders
-                val context = G.EContext(binders2ebinders(typBinders) @ binders)
+                (* FIXME: The functions above have the side effect of filling in the type variables context.
+                   Since this context is no longer used, it is cleared here, but the side-effect remains
+                   implemented for other situations where keeping track of type variables is needed. *)
+                val _ = T.clear tyvarCtx
+                
                 val wildCardClause = if isExhaustive Am
                                      then []
                                      else [G.EClause {pats = List.tabulate(arity, fn _ => G.WildcardPat), body = G.WildcardTerm}]

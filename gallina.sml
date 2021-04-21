@@ -235,6 +235,8 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
   and ebinder = 
         ESingleBinder of {name : name, typ : term, inferred : bool}   
       | ELetBinder of {names : name list, typ : term, body : term}
+      (* Simplified pattern binder for generalizable variables *)
+      | EPatternBinder of { name : name, typ : term }
 
   and econtext = EContext of ebinder list
 

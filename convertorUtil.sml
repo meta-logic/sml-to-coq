@@ -6,6 +6,8 @@ struct
     structure LT = SplayDict (structure Key = Key) (* LabelsTracker *)
     structure TT = FinSetFn(type ord_key = string; val compare = String.compare)
 (* (structure Elem = StringOrdered) (* Tyvar tracker *) *)
+    structure S = StaticObjectsCore
+    structure D = DerivedFormsCore
     open Annotation;
 
     local
@@ -85,8 +87,23 @@ struct
                 List.map term2binder terms
             end
 
-        fun mkEbinders (_ :  int, [] : G.term list) : G.ebinder list = []
-          | mkEbinders (n, typ::typs) = G.ESingleBinder { name = mkName("x"^(Int.toString n)), typ = typ, inferred = false} :: mkEbinders(n+1, typs)
+        fun mkEbinders (gtyps : (G.term * bool) list) : G.ebinder list = 
+            let
+                fun mkEbindersN ([] : (G.term * bool) list, n : int) : G.ebinder list = []
+                  | mkEbindersN ((gtyp, hasvars)::rest, n) =
+                    let
+                        val name = mkName ("x" ^ Int.toString n)
+                        val binds = mkEbindersN (rest, n+1)
+                    in
+                        if hasvars then
+                            (* Using pattern binder so that type variables can be generalized *)
+                            (G.EPatternBinder { name = name, typ = gtyp}) :: binds
+                        else
+                            (G.ESingleBinder { name = name, typ = gtyp, inferred = false}) :: binds
+                    end
+            in
+                mkEbindersN (gtyps, 1)
+            end
 
 
         fun extractTyp (G.SingleBinder {name = G.Name id, ...} : G.binder) : G.term = G.IdentTypTerm id
@@ -143,31 +160,226 @@ struct
         fun isolate [] = []
           | isolate (x::xs) = x::isolate(List.filter (fn y => y <> x) xs)
 
-        fun getTyps' ty2term (TUPLEAtPatX(ts)) =
-            let
-                val typs = %(getTyps'' ty2term) ts
-            in
-                if List.all isSome typs then SOME (G.ProductTerm (List.map valOf typs))
-                else NONE
-            end
-          | getTyps' ty2term (PARAtPat pat) = getTyps'' ty2term (~pat)
-          | getTyps' _ _ = NONE
-
-        and getTyps'' ty2term (ATPat atpat) = getTyps' ty2term (~atpat)
-          | getTyps'' _ (CONPat(_)) = NONE
-          | getTyps'' ty2term (COLONPat(_, ty)) =  SOME (ty2term (~ty))
-          | getTyps'' ty2term (ASPat(_, _, SOME ty, _)) = SOME (ty2term(~ty))
-          | getTyps'' ty2term (ASPat(_, _, _, pat)) = getTyps'' ty2term (~pat)
-          | getTyps'' _ _ = NONE
-
-        fun getTyps ty2term (ATPat(TUPLEAtPatX(pats)@@A) : Pat') =
-            let
-                val typs = %(getTyps'' ty2term) pats
-            in
-                if List.all isSome typs then SOME (List.map valOf typs) else NONE
-            end
-          | getTyps _ _ = NONE
         (*fun idFromFixbody (Fixbody (fixbody) : G.fixbody) : G.ident = #id fixbody*)
+
+        (* Every pattern starts with ATPat(TUPLEAtPatX(...)) *)
+        fun unwrapPat (ATPat(TUPLEAtPatX(pats)@@_)@@_ : Pat) : Pat list = pats
+
+        (* Removes leading RowType when arity is greater than 1 *)
+        fun unwrapType (ref (S.Determined t) : S.Type, arity : int) : S.Type list = unwrapType (t, arity)
+          | unwrapType (t as ref (S.RowType (labmap, tyvars)), arity) =
+              if arity = 1 then [t]
+              else List.tabulate (arity, fn i =>
+                  case LabMap.find (labmap, Lab.fromInt (i+1)) 
+                    of SOME t => t
+                     | NONE => raise Fail "[ERROR] Inferred type has incorrect arity." 
+                  )
+          | unwrapType (t, _) = [t]
+
+       (* ty2type t1 ==> t2
+        * Converts from Ty (hamlet/syntax) to Type (hamlet/elab) 
+        *)
+        fun ty2type (t1 : Ty) : S.Type = ref (ty2type' (~t1) )
+
+        and ty2type' (VARTy tyvar) = S.TyVar (~tyvar)
+          | ty2type' (RECORDTy tyrow_opt) = S.RowType (tyRow2type tyrow_opt)
+          | ty2type' (CONTy (tyseq, longTyCon)) = 
+              let
+                  val Seq(tys) = ~tyseq
+                  val types = List.map ty2type tys
+                  val name = LongTyCon.toString (~longTyCon)
+                  val arity = List.length types
+                  (* FIXME: Cannot find out span at this point, using 0 *)
+                  val tyname = TyName.tyname(name, arity, true, 0)
+              in
+                  S.ConsType(types, tyname)
+              end
+          | ty2type' (ARROWTy(t1, t2)) = S.FunType (ty2type t1, ty2type t2)
+          | ty2type' (PARTy ty) = ty2type' (~ty)
+          | ty2type' (TUPLETyX tys) = ty2type' (D.TUPLETy' tys)
+
+        and tyRow2type NONE = (LabMap.empty, NONE)
+          | tyRow2type (SOME tyrow) =
+              let
+                  val TyRow(lab, ty, tyrow_opt) = ~tyrow
+                  val t = ty2type ty
+                  val r = tyRow2type tyrow_opt
+              in
+                  Type.insertRow (r, ~lab, t)
+              end
+
+
+        (* mergeTypes (t1, t2) ==> t
+         * REQUIRES: 
+         * - t1 is the type written by the programmer (possibly using type aliases)
+         * - t2 is the type inferred during elaboration
+         * ENSURES:
+         * - t is the type inferred during elaboration with type aliases
+         *)
+        fun mergeTypes (t1 : Ty, t2 : S.Type) : S.Type = ref (mergeTypes' (~t1, !t2))
+
+        and mergeTypes' (VARTy _ : Ty', t as S.TyVar _ : S.Type') : S.Type' = t
+          | mergeTypes' (RECORDTy tyrow_opt, S.RowType row) = mergeRowType (tyrow_opt, row)
+          | mergeTypes' (ARROWTy (t1, t2), S.FunType(s1, s2)) = S.FunType (mergeTypes (t1, s1), mergeTypes (t2, s2))
+          | mergeTypes' (PARTy t, s) = mergeTypes' (~t, s)
+          | mergeTypes' (TUPLETyX tys, S.RowType row) = 
+              let
+                  val RECORDTy tyrow_opt = D.TUPLETy' tys
+              in
+                  mergeRowType (tyrow_opt, row)
+              end
+          (* If this is a unary tuple, the inferred type might not be RowType *)
+          | mergeTypes' (TUPLETyX [ty], t) = mergeTypes' (~ty, t)
+          | mergeTypes' (CONTy (ty_seq, longtycon), t) = (case t
+              (* Inferred type is ConsType, CONTy could be a type alias or not, check name *)
+              of S.ConsType (tyvarseq, tyname) => 
+                  let
+                      val name_syn   = LongTyCon.toString (~longtycon)
+                      val name_annot = TyName.toString tyname
+                      val new_tyname = TyName.tyname (name_syn, 
+                                                      TyName.arity tyname, 
+                                                      TyName.admitsEquality tyname, 
+                                                      TyName.span tyname)
+                  in
+                      if (name_syn = name_annot) then t
+                      else S.ConsType (tyvarseq, new_tyname)
+                  end
+               (* Inferred type is not ConsType, this is definitely a type alias *)
+               | _ => let
+                      val name = LongTyCon.toString (~longtycon)
+                      (* FIXME: the fields arity, admitsEquality, and span are a guess at best *)
+                      val Seq l    = ~ty_seq
+                      val arity    = List.length l
+                      val admitsEq = false
+                      val span     = 0
+                      val tyname   = TyName.tyname (name, arity, admitsEq, span)
+
+                      val ty_list = List.map ty2type l
+                  in
+                    S.ConsType (ty_list, tyname)
+                  end
+              )
+          | mergeTypes' (t1, t2) = raise Fail "[ERROR] Explicit and inferred types do not match."
+
+        and mergeRowType (tyrow_opt : TyRow option, (labmap, tyvars)) = 
+            let
+                fun collectPairs NONE = []
+                  | collectPairs (SOME ((TyRow (lab, ty, opt))@@_)) = (~lab, ty) :: collectPairs opt
+
+                fun mergeRowTypes' ([], labmap) = labmap
+                  | mergeRowTypes' ((lab, ty)::tl, labmap) = 
+                      let
+                          val ty_annot = case LabMap.find (labmap, lab)
+                                           of NONE => raise Fail "[ERROR] Explict and inferred types have different labels." 
+                                            | SOME t => t
+                          val merged_ty = mergeTypes (ty, ty_annot)
+                          val updated_map = LabMap.insert(labmap, lab, merged_ty)
+                      in
+                          mergeRowTypes' (tl, updated_map)
+                      end
+
+                val row_syn = collectPairs tyrow_opt
+                val n1 = LabMap.numItems labmap
+                val n2 = List.length row_syn
+              in
+                  if (n1 = n2) then S.RowType (mergeRowTypes' (row_syn, labmap), tyvars)
+                  else raise Fail "[ERROR] Explicit and inferred types have different arity."
+              end
+         
+        (* Reconstructs type based on what was written explicitly in a pattern *)
+        fun mkTypeAliased (p: Pat, t : S.Type) : S.Type = ref (mkTypeAliased' (~p, !t))
+
+        and mkTypeAliased' (ATPat atPat, t) : S.Type' = mkTypeAliased'' (~atPat, t)
+          | mkTypeAliased' (COLONPat(_, ty1), ty2) = ! (mergeTypes (ty1, ref ty2))
+          | mkTypeAliased' (ASPat(_, _, SOME ty1, _), ty2) = ! (mergeTypes (ty1, ref ty2))
+          | mkTypeAliased' (ASPat(_, _, NONE, pat), t) = mkTypeAliased' (~pat, t)
+          (* The types of CONPat and INFIXPatX are a type constructor. 
+             Type aliases used inside these constructors are not replaced.
+             E.g.:
+             datatype t = T of int * bool 
+             fun f (T (x : int, y)) = 0
+             ==> The explicit type on x will be lost as it is not supported in Coq.
+          *)
+          | mkTypeAliased' (CONPat(_, _, atPat), t as S.ConsType _) = t
+          | mkTypeAliased' (INFIXPatX(_, _, atPat), t as S.ConsType _) = t
+          | mkTypeAliased' _ = raise Fail "[ERROR] Cannot combine pattern with type."
+
+        and mkTypeAliased'' (PARAtPat pat, t) : S.Type' = mkTypeAliased' (~pat, t)
+          | mkTypeAliased'' (RECORDAtPat patrow_opt, S.RowType (labmap, tyvars)) =
+              let
+                  fun collectPats NONE = []
+                    | collectPats (SOME (DOTSPatRow@@_)) = []
+                    | collectPats (SOME ((FIELDPatRow (lab, pat, patrow_opt)@@_))) = (~lab, pat) :: collectPats patrow_opt
+
+                  val pats = collectPats patrow_opt
+                  val updated_map = List.foldl (fn ((lab, pat), lm) =>
+                      let
+                          val ty = case LabMap.find (lm, lab)
+                                     of NONE => raise Fail "[ERROR] Record pattern and type have different labels." 
+                                      | SOME t => t
+                          val new_ty = mkTypeAliased' (~pat, !ty)
+                      in
+                          LabMap.insert (lm, lab, ref new_ty)
+                      end
+                  ) labmap pats
+              in
+                S.RowType (updated_map, tyvars)
+              end
+          | mkTypeAliased'' (TUPLEAtPatX patList, S.RowType(labmap, tyvars)) = 
+              let
+                  val n_pat = List.length patList
+                  val n_tys = LabMap.numItems labmap
+
+                  fun update_map ([], _) = labmap 
+                    | update_map (p :: ps, i) = 
+                        let
+                            val l = Lab.fromInt i
+                            val ty = case LabMap.find (labmap, l)
+                                       of NONE => raise Fail "[ERROR] Incorrect numbered labels for tuple pattern."
+                                        | SOME t => t
+                            val new_ty = mkTypeAliased' (~p, !ty)
+                            val new_map = update_map (ps, i+1)
+                        in
+                            LabMap.insert (new_map, l, ref new_ty)
+                        end
+              in
+                  case n_pat = n_tys
+                    of false => raise Fail "[ERROR] Number of patterns in tuple and types do not match."
+                     | true  => S.RowType (update_map (patList, 1), tyvars)
+              end
+          | mkTypeAliased'' (LISTAtPatX patList, S.RowType(labmap, tyvars)) = 
+              let
+                  val n_pat = List.length patList
+                  val n_tys = LabMap.numItems labmap
+
+                  fun update_map ([], _) = labmap 
+                    | update_map (p :: ps, i) = 
+                        let
+                            val l = Lab.fromInt i
+                            val ty = case LabMap.find (labmap, l)
+                                       of NONE => raise Fail "[ERROR] Incorrect numbered labels for tuple pattern."
+                                        | SOME t => t
+                            val new_ty = mkTypeAliased' (~p, !ty)
+                            val new_map = update_map (ps, i+1)
+                        in
+                            LabMap.insert (new_map, l, ref new_ty)
+                        end
+              in
+                  case n_pat = n_tys
+                    of false => raise Fail "[ERROR] Number of patterns in list and types do not match."
+                     | true  => S.RowType (update_map (patList, 1), tyvars)
+              end
+          (* The other cases do not have types inside them *)
+          | mkTypeAliased'' (_, t) = t
+
+
+        (* Collects the patterns (with annotations) used in every case of a match *)
+        fun matchedPats (Match(fmrule, rest)@@_ : Match) :  Pat list = 
+            let
+                val FmruleX(pat, _, _) = ~fmrule
+            in
+                pat :: (? matchedPats rest)
+            end
 
     end    	
 end

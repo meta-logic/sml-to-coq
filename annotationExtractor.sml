@@ -53,20 +53,6 @@ and typ2typ (ctx : TT.set ref) (typ : S.Type) : G.term =
       | S.Determined typ => typ2typ ctx typ
       | S.Overloaded typ => G.IdentTypTerm(checkLegal (TN.toString (O.default typ)))
 
-fun patannot2inputtyps (ctx : TT.set ref) (arity : int, A : Pat_attr) : G.term list =
-    let
-        val SOME (_, typ) = !(hd A)
-    in
-        if arity = 1 then [typ2typ ctx typ]
-        else
-            let
-                val (S.RowType(typs , _)) = !typ
-                val typs = LabMap.listItems typs
-            in
-                List.map (typ2typ ctx) typs
-            end
-    end
-
 fun matchannot2outputtyp (ctx : TT.set ref) (A : Mrule_attr) : G.term =
     let
         val SOME typ = !(hd A)
@@ -74,7 +60,5 @@ fun matchannot2outputtyp (ctx : TT.set ref) (A : Mrule_attr) : G.term =
     in
         typ2typ ctx out
     end
-
-
 
 end
