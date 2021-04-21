@@ -259,7 +259,7 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
   and eclause = EClause of { pats : pattern list, body : term }
               (* generator needs to take care of adding vid to initial clause *)
 
-  (* Proof Obligations grammer *)
+  (* Proof Obligations grammar *)
   (* the term is always going to be (ForallTerm of binder list * term) *)
   and proofObligation = Theorem of ident * term   
 
