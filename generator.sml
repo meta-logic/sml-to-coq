@@ -50,17 +50,18 @@ struct
 
 
   and genAllExamples () = List.map (
-    fn name => generate("examples/" ^ name ^ ".sml", "examples/" ^ name ^ ".v")
+    fn name => generate("examples/" ^ name ^ ".sml", "examples2/" ^ name ^ ".v")
     ) ["decl_pat",
        "filter",
-       "functor",
+       (*"functor",*) (* Don't compile for some reason*)
        "id",
        "mutual_rec",
        "non_terminating",
        "partial",
-       "records",
+       (*"records",*) (* Don't compile for some reason*)
        "terminating",
-       "trees"
+       "trees",
+       "theorem_generation"
       ]
 
 
@@ -96,10 +97,10 @@ struct
     | G.IfTerm{test=tes, thenTerm=the,  elseTerm=els} => 
       "if "^termG(tes)^" then "^termG(the)^" else "^termG(els)
     
-    | G.HasTypeTerm(v1,v2)  => "(" ^ termG(v1) ^ " : " ^ termG(v2) ^ ")"
-    | G.ArrowTerm(v1,v2)    => "(" ^ termG(v1) ^ " -> " ^ termG(v2) ^ ")"
-    | G.ApplyTerm(v1,aL)    => "(" ^ termG(v1) ^" "^(concatListWith (" ", argG, aL)) ^ ")"
-    | G.ExplicitTerm(v1,tL) => "(" ^ "@" ^ v1 ^" "^(concatListWith (" ", termG, tL)) ^ ")"
+    | G.HasTypeTerm(v1,v2)  => "(" ^ termG(v1) ^ " : " ^ termG(v2) ^ ")"  (*Could be added to Gallina's AST without being in SML's AST*)
+    | G.ArrowTerm(v1,v2)    => termG(v1) ^ " -> " ^ termG(v2)
+    | G.ApplyTerm(v1,aL)    => termG(v1) ^" "^(concatListWith (" ", argG, aL))
+    | G.ExplicitTerm(v1,tL) => "@" ^ v1 ^" "^(concatListWith (" ", termG, tL))
     | G.InScopeTerm(v1,v2)  => termG(v1) ^ "%" ^ v2 
     | G.MatchTerm{matchItems=mL, body=eL} => 
       
@@ -113,14 +114,8 @@ struct
                                 then "(-"^S.substring(v, 1, S.size(v)-1)^ ")" 
                                 else v)
     
-    | G.WildcardTerm        => "_"
-      
-      (* All infext terms come inside an uneeded parens term,
-         this is why it needs to be removed *)
-    | G.ParensTerm(v)       => 
-
-      (case v of G.InfixTerm(_, _) => termG(v) | _ => "(" ^ termG(v) ^ ")" )
-
+    | G.WildcardTerm        => "_"      
+    | G.ParensTerm(v)       =>  "(" ^ termG(v) ^ ")"
     | G.RecordTerm(fL)      => "\n{|\n  "^concatListWith(";\n  ", fieldDefG, fL)^"\n|}"
     
     (*Additional terms to match sml built-in types. (!) *)  
@@ -138,8 +133,8 @@ struct
     | G.TupleTerm(tL)       => "(" ^ (concatListWith (", ", termG, tL)) ^ ")"
     | G.ProductTerm (tL)    => "(" ^ (concatListWith (" * ", termG, tL)) ^ ")"
     | G.ListTerm(tL)        => "[" ^ (concatListWith ("; ", termG, tL)) ^ "]" 
-    | G.OrTerm(v1, v2)      => "(" ^ termG(v1) ^ " || "  ^ termG(v2) ^ ")" (* changed*)
-    | G.AndTerm(v1, v2)     => "(" ^ termG(v1) ^ " && "  ^ termG(v2) ^ ")" (* changed*)
+    | G.OrTerm(v1, v2)      => termG(v1) ^ " || "  ^ termG(v2) 
+    | G.AndTerm(v1, v2)     => termG(v1) ^ " && "  ^ termG(v2)
     | G.Axiom(a)            => "patternFailure"
     | G.MatchNotationTerm{matchItem=mI, body=e, exhaustive=b} => 
       
@@ -151,21 +146,21 @@ struct
                                   val G.Arg(t') = List.hd aL
                                   val G.TupleTerm(tL) = t'
                                 in
-                                  "(" ^ concatListWith (" " ^ termG(t) ^ " ", termG, tL) ^ ")" (* changed*)
+                                  concatListWith (" " ^ termG(t) ^ " ", termG, tL) 
                                 end
     (* Adding proposition terms for preconditions *)
-    | G.DisjunctTerm(t1, t2) => "(" ^ termG(t1) ^ " \\/ " ^ termG(t2) ^ ")"
-    | G.ConjunctTerm(t1, t2) => "(" ^ termG(t1) ^ " /\\ " ^ termG(t2) ^ ")"
+    | G.DisjunctTerm(t1, t2) => termG(t1) ^ " \\/ " ^ termG(t2)
+    | G.ConjunctTerm(t1, t2) => termG(t1) ^ " /\\ " ^ termG(t2)
     | G.ForallTerm(bL, t)    => "forall "^(concatListWith (" ", binderG, bL))^ ", " ^ termG(t)
-    | G.ExistsTerm(bL, t)    => "(" ^ "exists "^(concatListWith (" ", binderG, bL))^" , " ^termG(t) ^ ")" 
+    | G.ExistsTerm(bL, t)    => "exists "^(concatListWith (" ", binderG, bL))^" , " ^termG(t) 
     | G.EqualTerm(t1, t2)    => "eq (" ^ termG(t1) ^ ") (" ^ termG(t2) ^ ")"
     | G.DefTerm(id, bL, iO, b)   => 
       case iO of
-        SOME h => "(" ^ "@" ^ id ^ " " ^ concatListWith(" ", patternG, bL) ^ " " ^ h ^ " = " ^ patternG(b) ^ ")"
-      | NONE   => "(" ^ id ^ " " ^ concatListWith(" ", patternG, bL) ^ " = " ^ patternG(b) ^ ")"  
+        SOME h => "@" ^ id ^ " " ^ concatListWith(" ", patternG, bL) ^ " " ^ h ^ " = " ^ patternG(b)
+      | NONE   => id ^ " " ^ concatListWith(" ", patternG, bL) ^ " = " ^ patternG(b)
 
 
-  and argG (G.Arg(t))        = termG(t)
+  and argG (G.Arg(t))        = "(" ^ termG(t) ^ ")"
     | argG (G.NamedArg(v,t)) = "(" ^ v ^ " := " ^ termG(t) ^ ")"
 
 
@@ -243,8 +238,7 @@ struct
     | G.ScopePat(p, i)   => patternG(p) ^ " % " ^ i 
     | G.QualidPat(i)     => convertIdent(i)
     | G.WildcardPat      => "_"
-    | G.NumPat(s)        => (if (S.isPrefix "~" s) then 
-                            "(-"^S.substring(s, 1, S.size(s)-1)^ ")" else s)
+    | G.NumPat(s)        => (if (S.isPrefix "~" s) then "-"^S.substring(s, 1, S.size(s)-1) else s)
     | G.RecPat(fL)       => "\n{|\n  "^concatListWith(";\n  ", fieldPatG, fL)^"\n|}"
     | G.WordPat(s, b)    => (case b of 
                                G.Dec => patternG(G.NumPat(s))
