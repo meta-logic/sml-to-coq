@@ -867,11 +867,19 @@ and conts2proofObligation(def: ValBind list, cont: Exp list): G.proofObligation 
     val fHCheck = case List.find (fn x => x = id) (!funH) of SOME x => true | NONE   => false
     val cHCheck = if !exFNum - cHCheck > 0 then true else false
 
+    (* Extract all variables from uncurried terms*)
+    fun extractVars pL = 
+      case pL of
+        (ATPat(TUPLEAtPatX(p2)@@TA)@@PA)::pL' => p2@extractVars(pL')
+      | p::pL' => p::extractVars(pL')
+      | nil => nil
+    val pL = extractVars pL
+
     (* Add H to the variables if there exist an exhaustive function call in the theorem *)
     val H = idPat((VId.fromString "H")@@nowhere())
     val funBinders = case fHCheck orelse cHCheck of
-                      true  => (pat2binders (ATPat(TUPLEAtPatX(pL)@@TA)@@PA))@(pat2binders H)
-                    | false => pat2binders (ATPat(TUPLEAtPatX(pL)@@TA)@@PA)
+                      true  => List.map (fn p => List.hd (pat2binders p)) (pL@[H])
+                    | false => List.map (fn p => List.hd (pat2binders p)) pL
 
     (* vars binders and res binder *)
     val varBinders = List.map pat2pattern vars
