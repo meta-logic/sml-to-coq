@@ -165,8 +165,10 @@ struct
 
 
   and binderG (G.SingleBinder{name=n, typ=tO, inferred=inf}) = 
-      (case inf of false => 
-      " " ^ nameG(n) ^ (case tO of NONE => "" | SOME x =>" : "^termG(x))
+      (case inf of false =>
+        (case tO of
+          NONE   => nameG(n)  
+        | SOME x => "(" ^ nameG(n) ^ ":" ^ termG(x) ^ ")")
       | true => 
       " {" ^ nameG(n) ^(case tO of NONE => "" | SOME x =>" : "^termG(x))^ "}")  
     
@@ -180,7 +182,7 @@ struct
       "(" ^ (concatListWith (" ", nameG, nL)) ^ 
       (case tO of NONE => "" | SOME x =>" : "^termG(x))^" := " ^ termG(bT) ^ ")"
     
-    | binderG (G.PatternBinder(p)) ="' " ^ patternG(p)         
+    | binderG (G.PatternBinder(p)) ="'" ^ patternG(p)         
 
 
   and nameG (G.Name(n))      = n 
