@@ -222,14 +222,14 @@ struct
           | mergeTypes' (RECORDTy tyrow_opt, S.RowType row) = mergeRowType (tyrow_opt, row)
           | mergeTypes' (ARROWTy (t1, t2), S.FunType(s1, s2)) = S.FunType (mergeTypes (t1, s1), mergeTypes (t2, s2))
           | mergeTypes' (PARTy t, s) = mergeTypes' (~t, s)
+          (* If this is a unary tuple, the inferred type might not be RowType *)
+          | mergeTypes' (TUPLETyX [ty], t) = mergeTypes' (~ty, t)
           | mergeTypes' (TUPLETyX tys, S.RowType row) = 
               let
                   val RECORDTy tyrow_opt = D.TUPLETy' tys
               in
                   mergeRowType (tyrow_opt, row)
               end
-          (* If this is a unary tuple, the inferred type might not be RowType *)
-          | mergeTypes' (TUPLETyX [ty], t) = mergeTypes' (~ty, t)
           | mergeTypes' (CONTy (ty_seq, longtycon), t) = (case t
               (* Inferred type is ConsType, CONTy could be a type alias or not, check name *)
               of S.ConsType (tyvarseq, tyname) => 
