@@ -49,16 +49,16 @@ struct
     end
 
 
-  and genAllExamples () = List.map (
+  and genAllExamples () = List.app (
     fn name => generate("examples/" ^ name ^ ".sml", "examples2/" ^ name ^ ".v")
     ) ["decl_pat",
        "filter",
-       (*"functor",*) (* Don't compile for some reason*)
+       "functor",
        "id",
        "mutual_rec",
        "non_terminating",
        "partial",
-       (*"records",*) (* Don't compile for some reason*)
+       "records",
        "terminating",
        "trees",
        "theorem_generation"
