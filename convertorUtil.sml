@@ -2,7 +2,8 @@ structure ConvertorUtil =
 struct
 
     structure G = Gallina
-    structure Sort = Quicksort structure Key = ListOrdered(StringOrdered)
+    structure Sort = Quicksort 
+    structure Key = ListOrdered(StringOrdered)
     structure LT = SplayDict (structure Key = Key) (* LabelsTracker *)
     structure TT = FinSetFn(type ord_key = string; val compare = String.compare)
 (* (structure Elem = StringOrdered) (* Tyvar tracker *) *)
