@@ -269,10 +269,12 @@ and sentterm2letTerm ((G.DefinitionSentence (G.DefinitionDef sent)) : G.sentence
  * KEYWORD: term
  *)
 and atexp2term (SCONAtExp(scon)@@_ : AtExp) : G.term = scon2term (~scon)
-  | atexp2term (IDAtExp(opVal, longvid)@@A) = 
+  | atexp2term (IDAtExp(opVal, longvid)@@A) = G.IdentTerm (opetize opVal (lvid2id (~longvid)))
+    (* 
     (case T.resolveTyvars tyvarCtx (!(elab A)) of
          NONE => G.IdentTerm (opetize opVal (lvid2id (~longvid)))
        | SOME typ => G.HasTypeTerm(G.IdentTerm (opetize opVal (lvid2id (~longvid))), typ))
+    *)
   | atexp2term (RECORDAtExp(recBody)@@_) = let
       val body = ?exprow2body recBody
       val labs = orderLabs (#1 (ListPair.unzip body))
@@ -299,12 +301,14 @@ and atexp2term (SCONAtExp(scon)@@_ : AtExp) : G.term = scon2term (~scon)
   | atexp2term (UNITAtExpX@@ _) = G.UnitTerm 
   (* in scope term because the operator "*" is overloaded *)
   | atexp2term (TUPLEAtExpX(exps)@@_) = G.TupleTerm(% exp2term exps)
-  | atexp2term (LISTAtExpX(exps)@@A) =
+  | atexp2term (LISTAtExpX(exps)@@A) = G.ListTerm(% exp2term exps)
+    (*
     if length exps > 0 then G.ListTerm(% exp2term exps)
     else (* For empty lists with undetermined types, we need to add an explicit type in Gallina *)
         case T.resolveTyvars tyvarCtx (!(elab A)) of
             NONE => G.ListTerm(% exp2term exps)
           | SOME typ => G.HasTypeTerm(G.ListTerm(% exp2term exps), typ)
+    *)
 
 
 (* FROM: SyntaxCoreFn.sml: 84 -> 94
