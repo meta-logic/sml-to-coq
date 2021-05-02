@@ -275,7 +275,11 @@ struct
   and fieldPatG(G.FieldPat{id=i, binders=bL, pat=p}) =
     convertIdent(i)^" " ^ concatListWith(" ", binderG, bL) ^" := " ^ patternG(p)
 
-  and infixBodyG(G.Infix(s, id, mL))=   (* * scope option *)
+  and notationG(G.Notation(s, t, mL)) =  (* * scope option *)
+    "Notation " ^ "\"" ^ s ^ "\"" ^  " := " ^ "(" ^ termG(t) ^ ")" ^
+    " (" ^ concatListWith (", ", modifierG, mL) ^ ")."
+
+  and infixBodyG(G.Infix(s, id, mL)) =   (* * scope option *)
     "Infix " ^ "\"" ^ s ^ "\"" ^ " := " ^  convertIdent(id) ^
     " (" ^ concatListWith (", ", modifierG, mL) ^ ")."
 
@@ -295,6 +299,7 @@ struct
                 | G.FixpointSentence(f)        => fixpointG(f)::sentenceG(ast) 
                 | G.AssumptionSentence(a)      => assumptionG(a)::sentenceG(ast)
                 | G.InfixSentence(i)           => infixBodyG(i)::sentenceG(ast)
+                | G.NotationSentence(n)        => notationG(n)::sentenceG(ast)
                 | G.RecordSentence(r)          => recordG(r)::sentenceG(ast)
                 | G.ModuleSentence(m)          => moduleG(m)::sentenceG(ast)
                 | G.SignatureSentence(g)       => gsignatureG(g)::sentenceG(ast)
