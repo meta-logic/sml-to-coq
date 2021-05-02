@@ -158,8 +158,10 @@ struct
 
         fun mkInfix (s : G.ident, modifiers : G.modifier list) : G.sentence list =
             let
-                val s1 = G.InfixSentence (G.Infix(s, s, modifiers))
-                val s2 = G.DefinitionSentence (G.DefinitionDef {localbool = false, id = opetize true s, binders = [], typ = NONE, body = G.IdentTerm s})
+                val s' = "x '" ^ s ^ "' y"
+                val body = G.ApplyTerm (G.IdentTerm(s), [G.Arg(G.TupleTerm [G.IdentTerm("x"), G.IdentTerm("y")])])
+                val s1 = G.DefinitionSentence (G.DefinitionDef {localbool = false, id = opetize true s, binders = [], typ = NONE, body = G.IdentTerm s})
+                val s2 = G.NotationSentence (G.Notation(s', body, modifiers))
             in
                 [s1, s2]
             end
