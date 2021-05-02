@@ -74,7 +74,8 @@ struct
 and arg = Arg of term | NamedArg of ident * term
 
 and binder = 
-    SingleBinder of {name : name, typ : term option, inferred : bool}   
+    SingleBinder of {name : name, typ : term option, inferred : bool}  
+  | GenericBinder of {name : name, typ : term option, inferred : bool}
   | MultipleBinders of {names : name list, typ : term, inferred : bool }
   | LetBinder of {names : name list, typ : term option, body : term}
   | PatternBinder of pattern

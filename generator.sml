@@ -159,7 +159,7 @@ struct
         SOME h => "@" ^ id ^ " " ^ concatListWith(" ", patternG, bL) ^ " " ^ h ^ " = " ^ patternG(b)
       | NONE   => id ^ " " ^ concatListWith(" ", patternG, bL) ^ " = " ^ patternG(b)
 
-
+  (* remove parens *)
   and argG (G.Arg(t))        = "(" ^ termG(t) ^ ")"
     | argG (G.NamedArg(v,t)) = "(" ^ v ^ " := " ^ termG(t) ^ ")"
 
@@ -171,7 +171,13 @@ struct
         | SOME x => "(" ^ nameG(n) ^ ":" ^ termG(x) ^ ")")
       | true => 
       " {" ^ nameG(n) ^(case tO of NONE => "" | SOME x =>" : "^termG(x))^ "}")  
-    
+    | binderG (G.GenericBinder{name=n, typ=tO, inferred=inf}) = 
+      (case inf of false =>
+        (case tO of
+          NONE   => nameG(n)  
+        | SOME x => "`(" ^ nameG(n) ^ ":" ^ termG(x) ^ ")")
+      | true => 
+      " {" ^ nameG(n) ^(case tO of NONE => "" | SOME x =>" : "^termG(x))^ "}")
     | binderG (G.MultipleBinders{names=nL, typ=t, inferred=inf}) = 
       (case inf of false => 
       " (" ^ (concatListWith (" ", nameG, nL)) ^ " : " ^ termG(t) ^ ")"
