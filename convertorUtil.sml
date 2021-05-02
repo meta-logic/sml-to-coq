@@ -120,7 +120,7 @@ struct
             List.tabulate (n, mkSingleBinder)
         end
 
-        fun opetize (SOME Op : Op option) (id : G.ident) : G.ident = "op" ^ id
+        fun opetize (true : bool) (id : G.ident) : G.ident = "op" ^ id
           | opetize _ id = id
 
         fun updateSigBody (G.SigBody(sents)) (id, binders, ty) : G.signatureBody =
@@ -155,6 +155,14 @@ struct
         fun mkRecord (labs : G.ident list, ident : G.ident, typs : G.binder list) : G.sentence =
             G.RecordSentence [G.RecordBody { id = ident, binders = typs, typ = NONE,
                                              consName = NONE, body = [labs2field (augmentLabs ident labs) typs]}]
+
+        fun mkInfix (s : G.ident, modifiers : G.modifier list) : G.sentence list =
+            let
+                val s1 = G.InfixSentence (G.Infix(s, s, modifiers))
+                val s2 = G.DefinitionSentence (G.DefinitionDef {localbool = false, id = opetize true s, binders = [], typ = NONE, body = G.IdentTerm s})
+            in
+                [s1, s2]
+            end
 
         fun tupleLabs (labs: LabMap.Key.ord_key list) : bool = labs = (List.tabulate (length labs, fn i => (Int.toString (i+1))))
 
