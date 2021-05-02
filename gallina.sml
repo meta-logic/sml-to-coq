@@ -137,6 +137,8 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
   and orPattern = OrPattern of pattern list
 
   and fieldPat = FieldPat of {id : ident, binders : binder list, pat : pattern}
+  
+  and notation = Notation of string * term * modifier list (* * scope option *)
 
   and infixBody = Infix of string * ident * modifier list (* * scope option *)
 
@@ -151,6 +153,7 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
                | FixpointSentence of fixpoint
                | AssumptionSentence of assumption
                | InfixSentence of infixBody
+               | NotationSentence of notation
                (* Gallina syntax extension *)
                | RecordSentence of recBody list
                | ModuleSentence of module

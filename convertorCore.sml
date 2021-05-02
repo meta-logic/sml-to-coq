@@ -89,8 +89,10 @@ and tyrow2body (TyRow(lab, ty, tyrow') @@ _ : TyRow) : (G.ident * Ty') list = (~
 
 and tybody2labs (body : (G.ident * Ty') list) = Sort.sort String.compare (#1(ListPair.unzip body))
 
-and status2modifiers ((Infix.LEFT, level) : Infix.InfStatus) : G.modifier list = [G.LeftAssoc, G.Level level]
-  | status2modifiers ((Infix.RIGHT, level)) = [G.RightAssoc, G.Level level]
+and status2modifiers ((Infix.LEFT, level) : Infix.InfStatus) : G.modifier list =
+    [G.LeftAssoc, if level <= 71 then G.Level (level + 29) else G.Level level]
+  | status2modifiers ((Infix.RIGHT, level)) =
+    [G.RightAssoc, if level <= 72 then G.Level (level + 28) else G.Level level]
 
 
 and exprow2body (ExpRow(lab, exp, exprow') @@ _) = (~lab, ~exp) :: ?exprow2body exprow'
