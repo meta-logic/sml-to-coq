@@ -131,7 +131,9 @@ struct
     | G.HexTerm(v)          => "\"" ^ "0x"^ S.map Char.toLower v ^ "\""
     (* extra : denotes tuple types e.g. int * int. (!) *)
     | G.TupleTerm(tL)       => "(" ^ (concatListWith (", ", termG, tL)) ^ ")"
-    | G.ProductTerm (tL)    => "(" ^ (concatListWith (" * ", termG, tL)) ^ ")"
+    | G.ProductTerm (tL)    => (case tL
+                                  of [] => "unit" (* The empty product type is unit *)
+                                   | _  => "(" ^ (concatListWith (" * ", termG, tL)) ^ ")" )
     | G.ListTerm(tL)        => "[" ^ (concatListWith ("; ", termG, tL)) ^ "]" 
     | G.OrTerm(v1, v2)      => termG(v1) ^ " || "  ^ termG(v2) 
     | G.AndTerm(v1, v2)     => termG(v1) ^ " && "  ^ termG(v2)
