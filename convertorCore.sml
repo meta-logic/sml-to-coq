@@ -41,6 +41,7 @@ val recordContext = ref [] : (G.sentence list) ref
 val recordTracker = ref (ConvertorUtil.LT.empty) : (G.ident ConvertorUtil.LT.dict) ref
 (* Local tyvar context, doc: section 3.3 *)
 val tyvarCtx = ref (ConvertorUtil.TT.empty)
+val infixCtx = ref (ConvertorUtil.TT.empty)
 
 (* functions' names that use obligations *)
 val funH = ref [] : (string list) ref
@@ -184,13 +185,16 @@ and ty2term ((VARTy tyvar) : Ty') : G.term =
   | ty2term (RECORDTy recBody) = let
       val body = ?tyrow2body recBody
       val labs = tybody2labs body
+      val names = case recBody of NONE => []
+                                | SOME(_@@A) => (case !(elab A) of NONE => []
+                                                                 | SOME rowtyp => T.getTyvars' (T.S.RowType(rowtyp)))
   in
       case LT.find (!recordTracker) labs of
           SOME ident => G.IdentTypTerm (ident)
         | _ => let
             val id = genIdent ()
             val _ = recordTracker := LT.insert (!recordTracker) labs id
-            val _ = recordContext := tyrow2sent (body, id) :: !recordContext
+            val _ = recordContext := tyrow2sent (names, body, id) :: !recordContext
         in
             G.IdentTypTerm (id)
         end
@@ -582,6 +586,9 @@ and tyvarseq2binder (tyvars: TyVar.TyVar list) : G.binder list =
         List.map tyvar2binder tyvars
     end
 
+and names2binder (names : G.name list) : G.binder list =
+    [G.MultipleBinders {names = names, typ = mkSortTerm 1, inferred = true}]
+
 (* EXAMPLE: datatype cards = Hearts | Spades | Clubs | Diamonds (rhs is conbind)
  * FROM: SyntaxCoreFn.sml: 130
  * TO:   Gallina.sml : 147
@@ -606,8 +613,8 @@ and conbind2clauses(cons @@ _ : ConBind) : G.clause list =
         clause :: ?conbind2clauses conbind2
     end
 
-and tyrow2sent (body : (G.ident * Ty') list, ident : G.ident) : G.sentence =
-    G.RecordSentence [G.RecordBody {id = ident, binders = [], typ = NONE,
+and tyrow2sent (names : G.name list, body : (G.ident * Ty') list, ident : G.ident) : G.sentence =
+    G.RecordSentence [G.RecordBody {id = ident, binders = names2binder names, typ = NONE,
                                     consName = NONE, body = [tyrow2field ident body] }]
 
 and tyrow2field ident (body : (G.ident * Ty') list) : G.field =
