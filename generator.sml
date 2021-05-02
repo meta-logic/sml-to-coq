@@ -275,6 +275,16 @@ struct
   and fieldPatG(G.FieldPat{id=i, binders=bL, pat=p}) =
     convertIdent(i)^" " ^ concatListWith(" ", binderG, bL) ^" := " ^ patternG(p)
 
+  and infixBodyG(G.Infix(s, id, mL))=   (* * scope option *)
+    "Infix " ^ "\"" ^ s ^ "\"" ^ " := " ^  convertIdent(id) ^
+    " (" ^ concatListWith (", ", modifierG, mL) ^ ")."
+
+  and modifierG (m: G.modifier): string = 
+   case m of 
+     G.Level(i)   => "at level " ^ (Int.toString i)
+   | G.LeftAssoc  => "left associativity"
+   | G.RightAssoc => "right associativity"
+   | G.NoAssoc    => "no associativity"
 
   and sentenceG (sentence: G.sentence list): string list =
     case sentence of 
@@ -284,6 +294,7 @@ struct
                 | G.InductiveSentence(i)       => inductiveG(i)::sentenceG(ast)
                 | G.FixpointSentence(f)        => fixpointG(f)::sentenceG(ast) 
                 | G.AssumptionSentence(a)      => assumptionG(a)::sentenceG(ast)
+                | G.InfixSentence(i)           => infixBodyG(i)::sentenceG(ast)
                 | G.RecordSentence(r)          => recordG(r)::sentenceG(ast)
                 | G.ModuleSentence(m)          => moduleG(m)::sentenceG(ast)
                 | G.SignatureSentence(g)       => gsignatureG(g)::sentenceG(ast)
