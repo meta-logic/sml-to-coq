@@ -138,11 +138,19 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
 
   and fieldPat = FieldPat of {id : ident, binders : binder list, pat : pattern}
 
+  and infixBody = Infix of string * ident * modifier list (* * scope option *)
+
+  and modifier = Level of int
+               | LeftAssoc
+               | RightAssoc
+               | NoAssoc
+
 (* The vernacular - the language of commands of Gallina *)		 
   and sentence = DefinitionSentence of definition
                | InductiveSentence of inductive
                | FixpointSentence of fixpoint
                | AssumptionSentence of assumption
+               | InfixSentence of infixBody
                (* Gallina syntax extension *)
                | RecordSentence of recBody list
                | ModuleSentence of module

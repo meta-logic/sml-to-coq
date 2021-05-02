@@ -14,6 +14,7 @@ struct
       val B_STAT' = Program.elabProgram true (B_STAT, program)
       val s'      = ref s      
       val B_DYN'  = Program.evalProgram true ((s', B_DYN), program)      
+      val infixEnv = VIdMap.difference(J', J);
 (*      val p @@ _ = program;
       val Program p = p;
       val (p, _) = p;
@@ -25,7 +26,7 @@ struct
       val p @@ a = p;
       *)
     in
-      program2sents program 
+      program2sents (program, infixEnv)
     end
 
   fun convert(source: string): G.sentence list =

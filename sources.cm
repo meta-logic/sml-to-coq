@@ -17,7 +17,6 @@ Group
  structure Program
  structure StaticObjectsCore
  structure DynamicObjectsCore 
- structure VIdMap
  structure IdStatus
  structure PPStaticEnv
  structure PrettyPrint
@@ -31,10 +30,12 @@ Group
  structure TyVar
  structure IdsCore
  structure VIdMap 
+ structure VIdSet 
  structure LabMap
  structure TyConMap
  structure VId
  structure TyCon
+ structure Infix
 
  structure Quicksort
  structure StringOrdered

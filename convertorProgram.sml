@@ -23,12 +23,13 @@ in
    * TO SECTION: Section 4.1.4 Page 120
    * KEYWORD: sentence
    *)     
-  fun program2sents prog : G.sentence list = 
+  fun program2sents (prog, infixEnv) : G.sentence list = 
     let 
       fun program2sents' (Program(prog, prog2) @@ _ : Program) =
         (topDec2sents prog) @ (? (program2sents') prog2)
+      val infixEnv = VIdMap.map (fn x => (x, false))  infixEnv
     in 
-      recordTracker := LT.empty; program2sents' prog
+        recordTracker := LT.empty; infixTracker := infixEnv; program2sents' prog
     end
 
 end

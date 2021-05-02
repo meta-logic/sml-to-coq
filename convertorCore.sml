@@ -37,11 +37,12 @@ exception WildCard
 
 (* Local record context, doc: section 3.2 *)
 val recordContext = ref [] : (G.sentence list) ref
+val infixContext = ref [] : (G.sentence list) ref
 (* Global record context, doc: section 3.2 *)
 val recordTracker = ref (ConvertorUtil.LT.empty) : (G.ident ConvertorUtil.LT.dict) ref
+val infixTracker = ref (VIdMap.empty) : ((Infix.InfStatus * bool) VIdMap.map) ref
 (* Local tyvar context, doc: section 3.3 *)
 val tyvarCtx = ref (ConvertorUtil.TT.empty)
-val infixCtx = ref (ConvertorUtil.TT.empty)
 
 (* functions' names that use obligations *)
 val funH = ref [] : (string list) ref
@@ -87,6 +88,10 @@ fun scon2pattern (SCon.STRING s : SCon.SCon) : G.pattern = G.StringPat s
 and tyrow2body (TyRow(lab, ty, tyrow') @@ _ : TyRow) : (G.ident * Ty') list = (~lab, ~ty) :: ?tyrow2body tyrow'
 
 and tybody2labs (body : (G.ident * Ty') list) = Sort.sort String.compare (#1(ListPair.unzip body))
+
+and status2modifiers ((Infix.LEFT, level) : Infix.InfStatus) : G.modifier list = [G.LeftAssoc, G.Level level]
+  | status2modifiers ((Infix.RIGHT, level)) = [G.RightAssoc, G.Level level]
+
 
 and exprow2body (ExpRow(lab, exp, exprow') @@ _) = (~lab, ~exp) :: ?exprow2body exprow'
 
@@ -273,10 +278,23 @@ and sentterm2letTerm ((G.DefinitionSentence (G.DefinitionDef sent)) : G.sentence
  * KEYWORD: term
  *)
 and atexp2term (SCONAtExp(scon)@@_ : AtExp) : G.term = scon2term (~scon)
-  | atexp2term (IDAtExp(opVal, longvid)@@A) = (*G.IdentTerm (opetize opVal (lvid2id (~longvid)))*)
-    (case T.resolveTyvars tyvarCtx (!(elab A)) of
-         NONE => G.IdentTerm (opetize opVal (lvid2id (~longvid)))
-       | SOME typ => G.HasTypeTerm(G.IdentTerm (opetize opVal (lvid2id (~longvid))), typ))
+  | atexp2term (IDAtExp(opVal, longvid)@@A) = 
+    let
+        val vid = lvid2id (~longvid)
+        val opVal = case opVal of
+                        NONE => false
+                      | SOME _ => (case VIdMap.find (!infixTracker, VId.fromString vid) of
+                                       NONE => false
+                                     | SOME (_, true) => true
+                                     | SOME (status, false) =>
+                                       (infixContext := (mkInfix(vid, status2modifiers status) @ !infixContext);
+                                        infixTracker := VIdMap.insert(!infixTracker, VId.fromString vid, (status, true));
+                                        true))
+    in
+        (case T.resolveTyvars tyvarCtx (!(elab A)) of
+             NONE => G.IdentTerm (opetize opVal vid)
+           | SOME typ => G.HasTypeTerm(G.IdentTerm (opetize opVal (vid)), typ))
+    end
   | atexp2term (RECORDAtExp(recBody)@@_) = let
       val body = ?exprow2body recBody
       val labs = orderLabs (#1 (ListPair.unzip body))
@@ -495,7 +513,7 @@ and atpat2pattern (WILDCARDAtPat@@_ : AtPat) : G.pattern = G.WildcardPat
  * KEYWORD: pattern
  *)
 and pat2pattern (ATPat(atpat)@@_ : Pat) : G.pattern = atpat2pattern atpat
-  | pat2pattern (CONPat (opVal, longvid, atpat)@@_) = G.ArgsPat (opetize opVal (lvid2id (~longvid)), [atpat2pattern (atpat)])
+  | pat2pattern (CONPat (opVal, longvid, atpat)@@_) = G.ArgsPat (opetize false (lvid2id (~longvid)), [atpat2pattern (atpat)])
   | pat2pattern (COLONPat (pat, ty)@@_) = 
     let val _ = print "Coq doesn't support type casting in patterns!\n" 
     in pat2pattern(pat) end
@@ -724,7 +742,7 @@ and valbind2sent(valbind: ValBind): G.sentence =
                 val sents = patBody2sents (pat, body) exhaustive
                 val sents' = ?valbind2sents valbind2
             in
-                !recordContext @ sents @ sents'
+                !recordContext @ !infixContext @ sents @ sents'
             end
           | valbind2sents (RECValBind(PLAINValBind(
                                            ATPat(IDAtPat(_, longvid)@@_)@@_,
@@ -746,10 +764,10 @@ and valbind2sent(valbind: ValBind): G.sentence =
                                                           {id = ident, localbool = false, binders = binders, 
                                                            typ = typ, body = body})
             in
-                !recordContext @ [sent]
+                !recordContext @ !infixContext @ [sent]
             end
         val sent = G.SeqSentences(valbind2sents valbind)
-    in (recordContext := []; sent) end
+    in (recordContext := []; infixContext := []; sent) end
 
 and binders2ebinders(G.SingleBinder {name = name, typ = SOME typ, inferred = inferred} :: l) =
     G.ESingleBinder {name = name, typ = typ, inferred = inferred } :: (binders2ebinders l)
@@ -931,11 +949,14 @@ and dec2sent ((TYPEDec(typbind)@@ _) : Dec): G.sentence = typbind2sent typbind
       val sent = G.EquationSentence (fundec2eprograms(tyvars, fvalbind))
       val recordC = !recordContext
       val _ = recordContext := []
+      val infixC = !infixContext
+      val _ = infixContext := []
       val proofObl = case conts of nil => nil | _ => [G.ProofObligationSentence (conts2proofObligation(def, conts))]
     in
-        if recordC = [] then G.SeqSentences (sent::proofObl) else G.SeqSentences (recordC @ (sent::proofObl))
+        G.SeqSentences (recordC @ infixC @ sent::proofObl)
     end
   | dec2sent (SEQDec(dec1, dec2)@@_) = G.SeqSentences [dec2sent dec1, dec2sent dec2]
+  | dec2sent (EMPTYDec@@_) = G.SeqSentences []
   | dec2sent _ = raise Fail "Fail: unsupported"
   (* For debuggin purposes *)
   (*| dec2sent d = (PPCore.ppDec (TextIO.stdOut, 0, d)  ; raise Fail "dec2sent" ) *)
