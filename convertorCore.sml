@@ -339,11 +339,11 @@ and exp2term (ATExp atexp : Exp') : G.term = atexp2term (atexp)
     let
         val expand = isExhaustive A 
         val ty = extractTypFromPat (~pat)
-        val binders = pat2binders (pat)
+        val binders = pat2binders (pat) false
     in
         (case (expand, ty) of
              (false, NONE) =>
-             let val binders = pat2binders (pat)
+             let val binders = pat2binders (pat) false
                  val body = exp2term (~exp)
              in G.FunTerm (binders, body) end
            | (false , SOME typ) =>
@@ -433,19 +433,24 @@ and extractTypFromPat (ATPat atpat) = extractTypFromAtPat (~atpat)
   | extractTypFromPat (INFIXPatX(_, _, atpat)) = extractTypFromAtPat (~atpat)
 
 
-and atpat2binders (WILDCARDAtPat@@_ : AtPat) : G.binder list =
+and atpat2binders (WILDCARDAtPat@@_ : AtPat)  withTy : G.binder list =
     [G.SingleBinder {name = G.WildcardName, typ = NONE, inferred = false}]
-  | atpat2binders ((SCONAtPat scon)@@_) = raise Fail "Invalid Pattern!\n"
-  | atpat2binders (IDAtPat(_, longvid)@@_) =
+  | atpat2binders ((SCONAtPat scon)@@_) withTy = raise Fail "Invalid Pattern!\n"
+  | atpat2binders (IDAtPat(_, longvid)@@_) withTy =
     [G.SingleBinder {name = mkName (lvid2id (~longvid)), typ = NONE, inferred = false}]
-  | atpat2binders (PARAtPat(pat)@@_) = pat2binders (pat)
-  | atpat2binders p = [G.PatternBinder (atpat2pattern p)]
+  | atpat2binders (PARAtPat(pat)@@_) withTy = pat2binders (pat) withTy
+  | atpat2binders p withTy = [G.PatternBinder (atpat2pattern p)]
 
 
-and pat2binders (ATPat(atpat)@@_ : Pat) : G.binder list =
-    atpat2binders (atpat)
-  | pat2binders (COLONPat(pat, ty)@@_) = pat2binders(pat)
-  | pat2binders (p) = [G.PatternBinder (pat2pattern p)]
+and pat2binders (ATPat(atpat)@@_ : Pat) (withTy) : G.binder list =
+    atpat2binders (atpat) withTy
+  | pat2binders (COLONPat(pat, ty)@@_) (true) = 
+    (case pat of
+        (ATPat(IDAtPat(_, longvid)@@_)@@_) =>
+      [G.GenericBinder {name = mkName (lvid2id (~longvid)), typ = SOME (typ2typ tyvarCtx (ty2type ty)), inferred = false}]
+    | _ => pat2binders (pat) true)
+  | pat2binders (COLONPat(pat, ty)@@_) (withTy) = pat2binders (pat) withTy
+  | pat2binders (p) (_) = [G.PatternBinder (pat2pattern p)]
 
 (* FROM: SyntaxCoreFn.sml: 144 -> 152
  * TO:   Gallina.sml : 96 -> 114
@@ -829,7 +834,11 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
         end
     end
 
+
+
+
 and bool2Prop(t: G.term): G.term = G.InfixTerm(G.IdentTerm("="), [G.Arg(G.TupleTerm([G.TupleTerm([t]), G.IdentTerm("true")]))])
+
 
 and conts2proofObligation(def: ValBind list, cont: Exp list): G.proofObligation = 
   let
@@ -854,8 +863,8 @@ and conts2proofObligation(def: ValBind list, cont: Exp list): G.proofObligation 
 
     (* vars represents variables in the def. res represents the result in the def*)
     val vars = List.take(pL, (List.length pL) - 1)    
-    val [res] = List.drop(pL, (List.length pL) - 1) 
-    
+    val [res] = List.drop(pL, (List.length pL) - 1)
+
     (* We need to convert these bool exps to props *)
     val cHCheck = !exFNum
     val _ = (inThm := true) 
@@ -878,8 +887,8 @@ and conts2proofObligation(def: ValBind list, cont: Exp list): G.proofObligation 
     (* Add H to the variables if there exist an exhaustive function call in the theorem *)
     val H = idPat((VId.fromString "H")@@nowhere())
     val funBinders = case fHCheck orelse cHCheck of
-                      true  => List.map (fn p => List.hd (pat2binders p)) (pL@[H])
-                    | false => List.map (fn p => List.hd (pat2binders p)) pL
+                      true  => List.map (fn p => List.hd (pat2binders p true)) (pL@[H])
+                    | false => List.map (fn p => List.hd (pat2binders p true)) pL
 
     (* vars binders and res binder *)
     val varBinders = List.map pat2pattern vars
