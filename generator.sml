@@ -160,7 +160,7 @@ struct
       | NONE   => id ^ " " ^ concatListWith(" ", patternG, bL) ^ " = " ^ patternG(b)
 
   (* remove parens *)
-  and argG (G.Arg(t))        = "(" ^ termG(t) ^ ")"
+  and argG (G.Arg(t))        = termG(t)
     | argG (G.NamedArg(v,t)) = "(" ^ v ^ " := " ^ termG(t) ^ ")"
 
 
