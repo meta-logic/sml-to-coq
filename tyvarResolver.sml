@@ -94,6 +94,7 @@ fun isInvented id = String.sub(id, 0) = #"_"
 fun union' (ctx' : TT.set, ctx : TT.set) : TT.set =
     TT.union (ctx', TT.filter isInvented ctx)
 
+(* Should this be a real clear? (assign to TT.empty) *)
 fun clear (ctx : TT.set ref) : unit = ctx := TT.filter isInvented (!ctx)
 
 fun clearTyvars (discard : bool) (tyvarCtx : TT.set ref) : G.binder list =
