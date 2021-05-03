@@ -836,12 +836,13 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                               SOME ty => ty2term (~ty)
                             | NONE => matchannot2outputtyp tyvarCtx (tl A)
                 
+                (* FIXME: The functions match2econtext and match2eclauses use the tyvarCtx. We do not
+                   need their information to make binders anymore, so we are ignoring it with _.
+                   However, we still need whatever side effect happens in clearTyvars. *)
                 val (context, exhaustive) = match2econtext(match, arity, id)
-                val eclauses = match2eclauses arity match
-                (* FIXME: The functions above have the side effect of filling in the type variables context.
-                   Since this context is no longer used, it is cleared here, but the side-effect remains
-                   implemented for other situations where keeping track of type variables is needed. *)
                 val _ = T.clearTyvars false tyvarCtx
+                val eclauses = match2eclauses arity match
+                val _ = T.clearTyvars true tyvarCtx
                 
                 val wildCardClause = if isExhaustive Am
                                      then []
