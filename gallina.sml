@@ -264,7 +264,7 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
 
   and enot = Enot of string * term
 
-  and eprogram = EProgram of { id : ident, context : econtext, ret : term, body : eclauses }
+  and eprogram = EProgram of { id : ident, context : econtext, ret : term, body : eclauses, exhaustive : bool }
 
   and eclauses = EClauses of eclause list
 

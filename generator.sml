@@ -499,13 +499,18 @@ struct
 
 
   and eprogramsG (G.EPrograms(e, eL)): string = 
-    eprogramG(e)  ^ concatListWith("\n", emutualG, eL) ^ "."
+    let
+      val (program, exhaustive) = eprogramG(e)
+    in
+      program ^ concatListWith("\n", emutualG, eL) ^ (if exhaustive then ".\nAdmit Obligations." else ".")
+    end
+
 
 
   and emutualG (e: G.emutual): string = 
     case e of
       G.EWith(p)  => ( let
-        val fbody = (eprogramG p)
+        val fbody = #1(eprogramG p)
         val newFbody = if S.substring(fbody, 0, 11) = "\nEquations " 
                       then S.substring(fbody, 11, S.size(fbody) - 11)
                       else fbody
@@ -517,16 +522,16 @@ struct
 
   and ewhereG (e: G.ewhere): string =
     case e of
-      G.Ewherep(p) => "where " ^ (eprogramG p)
+      G.Ewherep(p) => "where " ^ #1(eprogramG p)
     | G.Ewheren(p) => "where " ^ (enotG p) 
 
 
   and enotG (G.Enot(s, t)) =  "\"" ^ s ^ "\" " ^ ":= " ^ termG(t) 
 
 
-  and eprogramG (G.EProgram{ id = i, context = econt, ret = t, body = ecls}) =
-    "\nEquations "^ convertIdent(i) ^ " " ^ econtextG(econt) ^ ": " ^ termG(t) ^
-     " :=\n" ^ eclausesG(ecls, i)
+  and eprogramG (G.EProgram{ id = i, context = econt, ret = t, body = ecls, exhaustive = e}) =
+    ("\nEquations "^ convertIdent(i) ^ " " ^ econtextG(econt) ^ ": " ^ termG(t) ^
+     " :=\n" ^ eclausesG(ecls, i), e)
 
 
   and eclausesG (G.EClauses(cl), id): string = 
