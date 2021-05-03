@@ -9,31 +9,33 @@ Require Import listPairSml.
 Require Import notationsSml.
 From Equations Require Import Equations.
 
+Generalizable All Variables.
+
 Inductive treeS  : Type := 
   | emptyS  
-  | leafS : (string -> (@ treeS ))  
-  | nodeS : ((treeS * treeS) % type -> (@ treeS )).
+  | leafS : string -> @treeS   
+  | nodeS : (treeS * treeS)%type -> @treeS .
 
-Equations inorder (x1: treeS): (@ list string) :=
+Equations inorder (x1: treeS): @list string :=
   inorder emptyS := nil;
   inorder (leafS x) := [x];
-  inorder (nodeS (tL, tR)) := (((inorder tL))) @ (((inorder tR))).
+  inorder (nodeS (tL, tR)) := (((inorder tL)) @ ((inorder tR))).
 
 Equations normal' (x1: treeS): bool :=
   normal' emptyS := false;
   normal' (leafS _) := true;
-  normal' (nodeS (tL, tR)) := ((normal' tL)) && ((normal' tR)).
+  normal' (nodeS (tL, tR)) := (normal' tL) && (normal' tR).
 
 Equations normal (x1: treeS): bool :=
   normal emptyS := true;
-  normal t := ((normal' t)).
+  normal t := (normal' t).
 
 Equations normalize (x1: treeS): treeS :=
   normalize emptyS := emptyS;
-  normalize (leafS x) := ((leafS x));
+  normalize (leafS x) := (leafS x);
   normalize (nodeS (tL, tR)) := (
-  match (((normalize tL)), ((normalize tR))) with
+  match ((normalize tL), (normalize tR)) with
   | (emptyS, tR') => tR'  
   | (tL', emptyS) => tL'  
-  | (tL', tR') => ((nodeS (tL', tR')))
+  | (tL', tR') => (nodeS (tL', tR'))
   end).

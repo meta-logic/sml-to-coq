@@ -9,12 +9,16 @@ Require Import listPairSml.
 Require Import notationsSml.
 From Equations Require Import Equations.
 
-Equations p_head {_'13769: Type} (x1: (@ list _'13769)) {H: (exists  y1  y2 , eq (x1) (y1 :: y2))}: _'13769 :=
+Generalizable All Variables.
+
+Equations p_head `(x1: @list _'13800) {H: exists y1 y2 , eq (x1) (y1 :: y2)}: _'13800 :=
   p_head (x :: _) := x;
   p_head _ := _.
+Admit Obligations.
 
-Equations hd_sum (x1: (@ list (Z * Z) % type)) (x2: (@ list (Z * Z) % type)) {H: ((((exists  y1  y2 , eq (x1) (y1 :: y2)) /\ (exists  y1  y2 , eq (x2) (y1 :: y2))) \/ (exists  y1  y2 , eq (x1) (y1 :: y2))) \/ (exists  y1  y2 , eq (x2) (y1 :: y2)))}: Z :=
-  hd_sum ((a, b) :: l) ((a', b') :: l') := a + b + a' + b';
-  hd_sum ((a, b) :: l) l' := a + b;
-  hd_sum l ((a', b') :: l') := a' + b';
+Equations hd_sum (x1: @list (Z * Z)%type) (x2: @list (Z * Z)%type) {H: exists y1 y2 , eq (x1) (y1 :: y2) /\ exists y1 y2 , eq (x2) (y1 :: y2) \/ exists y1 y2 , eq (x1) (y1 :: y2) \/ exists y1 y2 , eq (x2) (y1 :: y2)}: Z :=
+  hd_sum ((a, b) :: l) ((a', b') :: l') := (((a + b) + a') + b');
+  hd_sum ((a, b) :: l) l' := (a + b);
+  hd_sum l ((a', b') :: l') := (a' + b');
   hd_sum _ _ := _.
+Admit Obligations.

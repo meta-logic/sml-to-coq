@@ -9,5 +9,7 @@ Require Import listPairSml.
 Require Import notationsSml.
 From Equations Require Import Equations.
 
-Equations id {_'13587: Type} (x1: _'13587): _'13587 :=
+Generalizable All Variables.
+
+Equations id `(x1: _'13617): _'13617 :=
   id x := x.
