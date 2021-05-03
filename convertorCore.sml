@@ -841,7 +841,7 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                 (* FIXME: The functions above have the side effect of filling in the type variables context.
                    Since this context is no longer used, it is cleared here, but the side-effect remains
                    implemented for other situations where keeping track of type variables is needed. *)
-                val _ = T.clear tyvarCtx
+                val _ = T.clearTyvars false tyvarCtx
                 
                 val wildCardClause = if isExhaustive Am
                                      then []
