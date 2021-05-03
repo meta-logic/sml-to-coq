@@ -345,16 +345,14 @@ and exp2term (ATExp atexp : Exp') : G.term = atexp2term (atexp)
         case exp of
           ATExp(IDAtExp(opr, lvid)@@_)@@_ => 
             (case List.find (fn x => x = (lvid2id (~lvid))) (!funH) of
-              SOME x => 
-               (if (!inThm) 
-                then G.ExplicitTerm(x, (atexp2term atexp)::[G.IdentTerm("H")]) before (exFNum := 1 + !exFNum)
-                else G.ApplyTerm(exp2term (~exp), atexp2args (atexp)))
+              SOME x => G.ExplicitTerm(x, if (!inThm) then (atexp2term atexp)::[G.IdentTerm("H")]
+                       else (atexp2term atexp)::[G.IdentTerm("_")]) before (exFNum := 1 + !exFNum)
             | NONE => G.ApplyTerm(exp2term (~exp), atexp2args (atexp)))
         | _ => G.ApplyTerm(exp2term (~exp), atexp2args (atexp))
 
     in
       result (*G.ApplyTerm(exp2term (~exp), atexp2args (atexp))*)
-    end      
+    end     
   | exp2term (COLONExp (exp, ty)) = 
     let val typ = ty2term (~ty)
         val exp = exp2term (~exp)
@@ -782,7 +780,7 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
     let
 
         (* val tyvars = tyvarseq2binder (List.map ~ ($(~tyvars))) *) (* probably not needed *)
-        fun match2econtext(m : Match, arity : int, id) : G.econtext =
+        fun match2econtext(m : Match, arity : int, id) : G.econtext * bool =
             let
                 val Match(FmruleX(pat, ty_opt, _)@@_, _)@@annot_m = m
                 val _@@annot_pat = pat
@@ -812,10 +810,10 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                 (* Binders are generically named x1, x2, ... *)
                 val ebinders = mkEbinders gtypterms
 
-                val precondsBinders = if isExhaustive annot_m then []
-                                      else [PF.findPreconds m] before (funH := id::(!funH))   (* used id to Add funName to the H record *)
+                val (precondsBinders, exhaustive) = if isExhaustive annot_m then ([], false)
+                                      else ([PF.findPreconds m], true) before (funH := id::(!funH))   (* used id to Add funName to the H record *)
             in
-                G.EContext (ebinders @ precondsBinders)
+                (G.EContext (ebinders @ precondsBinders), exhaustive)
             end
         fun match2eclauses(arity: int) (Match(fmrule, match2)@@A : Match) : G.eclause list =
             let
@@ -838,7 +836,7 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                               SOME ty => ty2term (~ty)
                             | NONE => matchannot2outputtyp tyvarCtx (tl A)
                 
-                val context = match2econtext(match, arity, id)
+                val (context, exhaustive) = match2econtext(match, arity, id)
                 val eclauses = match2eclauses arity match
                 (* FIXME: The functions above have the side effect of filling in the type variables context.
                    Since this context is no longer used, it is cleared here, but the side-effect remains
@@ -850,7 +848,7 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
                                      else [G.EClause {pats = List.tabulate(arity, fn _ => G.WildcardPat), body = G.WildcardTerm}]
                 val body = G.EClauses (eclauses @ wildCardClause)
             in
-                G.EProgram { id = id, context = context, ret = ret, body = body } ::
+                G.EProgram { id = id, context = context, ret = ret, body = body, exhaustive=exhaustive } ::
                 (? fvalbind2eprogram valbind2)
             end
     in
