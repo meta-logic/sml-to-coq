@@ -606,8 +606,8 @@ and tyvarseq2binder (tyvars: TyVar.TyVar list) : G.binder list =
         List.map tyvar2binder tyvars
     end
 
-and names2binder (names : G.name list) : G.binder list =
-    [G.MultipleBinders {names = names, typ = mkSortTerm 1, inferred = true}]
+and names2binder ([] : G.name list) : G.binder list = []
+  | names2binder names = [G.MultipleBinders {names = names, typ = mkSortTerm 1, inferred = true}]
 
 (* EXAMPLE: datatype cards = Hearts | Spades | Clubs | Diamonds (rhs is conbind)
  * FROM: SyntaxCoreFn.sml: 130
