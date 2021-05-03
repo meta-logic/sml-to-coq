@@ -9,6 +9,12 @@ Require Import listPairSml.
 Require Import notationsSml.
 From Equations Require Import Equations.
 
+Generalizable All Variables.
+
+Definition e {_'13405 : Type} := ([] : @list _'13405).
+
+Definition opt {_'13408 : Type} := (None : @option _'13408).
+
 Definition z := 5.
 
 Definition L := ["hello"].
@@ -47,11 +53,11 @@ Definition l' :=
   | _ => patternFailure
   end.
 
-Equations six {_'13441: Type} (x1: _'13441): Z :=
+Equations six `(x1: _'13449): Z :=
   six x := 
   let x := 6 in x.
 
-Equations head {_'13452: Type} (x1: (@ list _'13452)): _'13452 :=
+Equations head `(x1: @list _'13460): _'13460 :=
   head x := 
   let h := 
   match x with
@@ -63,3 +69,7 @@ Equations head {_'13452: Type} (x1: (@ list _'13452)): _'13452 :=
   (h :: t) => t
   | _ => patternFailure
   end in h.
+
+Equations singleton `(x1: _'13474): @list _'13474 :=
+  singleton x := 
+  let e {_'13469 : Type} := ([] : @list _'13469) in (x :: e).

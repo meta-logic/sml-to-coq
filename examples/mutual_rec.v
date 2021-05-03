@@ -9,26 +9,28 @@ Require Import listPairSml.
 Require Import notationsSml.
 From Equations Require Import Equations.
 
+Generalizable All Variables.
+
 Inductive evenList  {_a : Type} : Type := 
   | ENil  
-  | ECons : ((_a * (@ oddList _a)) % type -> (@ evenList _a))
+  | ECons : (_a * @oddList _a)%type -> @evenList _a
 with oddList  {_a : Type} : Type := 
-  | OCons : ((_a * (@ evenList _a)) % type -> (@ oddList _a)).
+  | OCons : (_a * @evenList _a)%type -> @oddList _a.
 
-Equations lengthE {_a: Type} (x1: (@ evenList _a)): Z :=
+Equations lengthE `(x1: @evenList _a): Z :=
   lengthE ENil := 0;
-  lengthE (ECons (_, l)) := ((lengthO l))
-with lengthO {_a: Type} (x1: (@ oddList _a)): Z :=
-  lengthO (OCons (_, l)) := ((lengthE l)).
+  lengthE (ECons (_, l)) := (lengthO l)
+with lengthO `(x1: @oddList _a): Z :=
+  lengthO (OCons (_, l)) := (lengthE l).
 
-Equations even {_'13648: Type} (x1: (@ list _'13648)): bool :=
+Equations even `(x1: @list _'13678): bool :=
   even [] := true;
-  even (x :: l) := ((odd l))
-with odd {_'13648: Type} (x1: (@ list _'13648)): bool :=
+  even (x :: l) := (odd l)
+with odd `(x1: @list _'13678): bool :=
   odd [] := false;
-  odd (x :: l) := ((even l)).
+  odd (x :: l) := (even l).
 
 Equations f (x1: Z): Z :=
-  f x := (((g x))) + 10
+  f x := (((g x)) + 10)
 with g (x1: Z): Z :=
-  g x := x * 10.
+  g x := (x * 10).

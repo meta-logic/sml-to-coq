@@ -9,6 +9,8 @@ Require Import listPairSml.
 Require Import notationsSml.
 From Equations Require Import Equations.
 
+Generalizable All Variables.
+
 Record rid_1  := 
 {
   rid_1_name : string;
