@@ -50,7 +50,7 @@ struct
 
 
   and genAllExamples () = List.app (
-    fn name => generate("examples/" ^ name ^ ".sml", "examples2/" ^ name ^ ".v")
+    fn name => generate("examples/" ^ name ^ ".sml", "examples/" ^ name ^ ".v")
     ) ["decl_pat",
        "filter",
        "functor",
@@ -61,7 +61,8 @@ struct
        "records",
        "terminating",
        "trees",
-       "theorem_generation"
+       "theorem_generation",
+       "misc"
       ]
 
 

@@ -2,8 +2,9 @@
 
 export COQPATH="coqLibraries/libs"
 # Directory where genAllExamples places the .v files
-DIR=examples2
+DIR=examples
 
+coqc ${DIR}/misc
 coqc ${DIR}/decl_pat  
 coqc ${DIR}/filter 
 coqc ${DIR}/mutual_rec
