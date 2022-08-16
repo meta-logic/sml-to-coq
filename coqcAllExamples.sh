@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export COQPATH="coqLibraries/libs"
+export COQPATH="coqBasisLib/libs"
 # Directory where genAllExamples places the .v files
 DIR=examples
 

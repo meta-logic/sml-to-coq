@@ -11,12 +11,12 @@ A tool that translates SML code to Coq
 ```
  $ git clone --recurse-submodules https://github.com/meta-logic/sml-to-coq.git
 ```
-### Building the coqLibraries
+### Building the Coq Basis Library
 Since most SML programs will make use of some part of `SML's basis library`, we have implemented Coq equivalents to them.
-- [coqLibraries Documantation](https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/coqLibraries/doc)
+- [coqBasisLib Documantation](https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/coqBasisLib/doc)
 
-To compile the coqLibraries:
-1. From the top level directory, go to `coqLibraries/libs` 
+To compile the Coq Basis Library:
+1. From the top level directory, go to `coqBasisLib/libs` 
 2. Then run: ``` $ make ```
 
 # Using the tool
@@ -39,7 +39,7 @@ Generator.generate("smlCode.sml", "gallinaCode.v");
 Generates the file `galllinaCode.v` from the file `smlCode.sml` . The file  `galllinaCode.v` will be located at the top level directory.
 
 To run `gallinaCode.v` using [coqide](https://coq.inria.fr/download):
-1. From the top level go to `coqLibraries/libs`
+1. From the top level go to `coqBasisLib/libs`
 2. Then run: ``` $ coqide ```
 3. From coqide's GUI open `gallinaCode.v`
 4. Run the file
@@ -61,5 +61,5 @@ Returns Gallina's AST of the sml code in `smlCode.sml`, and also it prints it.
 # Important Directories
 - [examples](https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/examples) : Examples of the translation
 - [doc](https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/doc) : The documentation of the translation
-- [coqLibraries](https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/coqLibraries)
+- [coqBasisLib](https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/coqBasisLib)
 - [hamlet](https://github.com/meta-logic/hamlet/tree/836f39ac50121640720be4f642fe2adcfbdac686)
