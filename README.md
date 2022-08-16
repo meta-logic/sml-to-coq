@@ -13,7 +13,7 @@ A tool that translates SML code to Coq
 ```
 ### Building the Coq Basis Library
 Since most SML programs will make use of some part of `SML's basis library`, we have implemented Coq equivalents to them.
-- [coqBasisLib Documantation](https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/coqBasisLib/doc)
+- [coqBasisLib Documantation](https://github.com/meta-logic/sml-to-coq/tree/master/coqBasisLib/doc)
 
 To compile the Coq Basis Library:
 1. From the top level directory, go to `coqBasisLib/libs` 
@@ -59,7 +59,7 @@ Returns Gallina's AST of the sml code in `smlCode.sml`, and also it prints it.
 
 
 # Important Directories
-- [examples](https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/examples) : Examples of the translation
-- [doc](https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/doc) : The documentation of the translation
-- [coqBasisLib](https://github.com/meta-logic/sml-to-coq/tree/sml-to-coq-with-hamlet/coqBasisLib)
+- [examples](https://github.com/meta-logic/sml-to-coq/tree/master/examples) : Examples of the translation
+- [doc](https://github.com/meta-logic/sml-to-coq/tree/master/doc) : The documentation of the translation
+- [coqBasisLib](https://github.com/meta-logic/sml-to-coq/tree/master/coqBasisLib)
 - [hamlet](https://github.com/meta-logic/hamlet/tree/836f39ac50121640720be4f642fe2adcfbdac686)
