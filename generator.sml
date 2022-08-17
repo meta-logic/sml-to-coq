@@ -603,7 +603,8 @@ struct
     | "SOME" => "Some" 
     | "NONE" => "None" 
     | "List.exists" => "List.existsb" 
-    | "ListPair.exists" => "ListPair.existsb" 
+    | "ListPair.exists" => "ListPair.existsb"
+    | "~" => "-"
     | _ => i
 
 end
