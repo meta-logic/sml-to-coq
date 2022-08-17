@@ -100,14 +100,14 @@ Module Real.
     Coq: float * float -> float
   *)
   Definition min '((r1,r2):float*float):float :=
-    if r1 < r2 then r1 else r2.
+    if r1 <? r2 then r1 else r2.
 
   (*
     Sml: real * real -> real
     Coq: float * float -> float
   *)
   Definition max '((r1,r2):float*float):float :=
-    if r1 < r2 then r2 else r1.
+    if r1 <? r2 then r2 else r1.
 
   (*
     Sml: real -> int
@@ -218,7 +218,7 @@ Module Real.
     Sml: real * real -> bool
     Coq: float * float -> bool
   *)
-  Local Definition opne' x y:bool := (x == nan) || (y == nan) ||
+  Local Definition opne' x y:bool := (x =? nan) || (y =? nan) ||
                                Bool.eqb false (eqb y x). 
 (*   Infix "?=" := opne' (at level 70) : float_scope. *)
 
@@ -287,7 +287,7 @@ Module Real.
   Local Definition whole' (x:float):float := 
     match (x > 0.0) with
     | true  => x-0.5+maxInt-maxInt
-    | false => match (x < 0.0) with
+    | false => match (x <? 0.0) with
                | true  => x+0.5-maxInt+maxInt
                | false => x end
     end.
@@ -299,8 +299,8 @@ Module Real.
     | true  => match (x > 0.5) with
                | true  => x-0.5+maxInt-maxInt
                | false => whole'(x+1.0)-1.0 end
-    | false => match (x < 0.0) with
-               | true  => match (x < -0.5) with
+    | false => match (x <? 0.0) with
+               | true  => match (x <? -0.5) with
                          | true  => x+0.5-maxInt+maxInt
                          | false => whole'(x-1.0)+1.0 end
                | false => x end
@@ -314,7 +314,7 @@ Module Real.
   *)
   Definition split (x:float): Real.nmbr := 
     let w := exWhole' x in let f := x-w in
-    match (abs f) == 1.0 with
+    match (abs f) =? 1.0 with
     | true  => (mknmbr (w+f) (0.0))
     | false => (mknmbr (w) (f))
     end.
@@ -325,20 +325,20 @@ Module Real.
   *)
   Definition realMod (x:float):float :=
     let f := x - exWhole' x in 
-    match (abs f) == 1.0 with
+    match (abs f) =? 1.0 with
     | true  => 0.0
     | false => f
     end.
 
-  Local Definition exWhole (x:float) := if (realMod x) == 0 then x else exWhole' x.
+  Local Definition exWhole (x:float) := if (realMod x) =? 0 then x else exWhole' x.
 
   (*
     Sml: real * real -> real
     Coq: float * float -> float
   *)
   Definition rem '((x, y):float*float):float :=
-    if (x == posInf) || (y == zero) then nan else
-    if (y == posInf) then x else
+    if (x =? posInf) || (y =? zero) then nan else
+    if (y =? posInf) then x else
     let n := (x/y) - realMod(x/y) in x - (n * y).
 
   (*
@@ -348,9 +348,9 @@ Module Real.
   Definition nextAfter '((r, t):float*float):float := 
     match ((isNan r) || (isNan t)) with
     | true  => nan
-    | false => match ((r == posInf) || (r == negInf)) with
+    | false => match ((r =? posInf) || (r =? negInf)) with
                | true  => r
-               | flase => match (r < t) with
+               | flase => match (r <? t) with
                           | true  => next_up r
                           | false => next_down r
                           end
@@ -373,7 +373,7 @@ Module Real.
     Coq: float -> float
   *)
   Definition realFloor (r:float):float := 
-    if (r < 0) then (if (realMod r) == 0 then r else (r - (realMod r)) -1) else
+    if (r <? 0) then (if (realMod r) =? 0 then r else (r - (realMod r)) -1) else
     (r - (realMod r)).
 
   (*
@@ -381,8 +381,8 @@ Module Real.
     Coq: float -> float
   *)
   Definition realCeil (r:float):float :=
-    if (r < 0) then (r - (realMod r)) else 
-    if (realMod r) == 0 then r else (r - (realMod r)) + 1.
+    if (r <? 0) then (r - (realMod r)) else 
+    if (realMod r) =? 0 then r else (r - (realMod r)) + 1.
 
   (*
     Sml: real -> real
@@ -395,22 +395,22 @@ Module Real.
     Coq: float -> float
   *)
   Definition realRound (r:float):float := 
-    match (r < 0) with
+    match (r <? 0) with
     | true  => if (((exWhole r) - r) >= 0.5) then realFloor r else realCeil r
     | flase => if (r - ((exWhole r)) >= 0.5) then realCeil r else realFloor r
     end.
 
   Local Definition f2zDigit (f:float):Z :=
-    if (f == zero) then 0%Z else
-    if (f == one) then 1%Z else
-    if (f == two) then 2%Z else
-    if (f == 3) then 3%Z else 
-    if (f == 4) then 4%Z else
-    if (f == 5) then 5%Z else
-    if (f == 6) then 6%Z else
-    if (f == 7) then 7%Z else
-    if (f == 8) then 8 else
-    if (f == 9) then 9 else 0%Z.
+    if (f =? zero) then 0%Z else
+    if (f =? one) then 1%Z else
+    if (f =? two) then 2%Z else
+    if (f =? 3) then 3%Z else 
+    if (f =? 4) then 4%Z else
+    if (f =? 5) then 5%Z else
+    if (f =? 6) then 6%Z else
+    if (f =? 7) then 7%Z else
+    if (f =? 8) then 8 else
+    if (f =? 9) then 9 else 0%Z.
 
   Local Fixpoint toInt' (f:float) (time:nat) (acc:float) :float :=
     match time with
@@ -452,16 +452,16 @@ Module Real.
       OverflowException, and DivException
     *)
   Definition toInt (m: IEEEReal.rounding_mode) (f:float) (nd:nat):Z :=
-    if (f == infinity) then OverflowException else
+    if (f =? infinity) then OverflowException else
     if (isNan f) then DivException else
     match m with 
-    | IEEEReal.TO_NEAREST => if (f < 0) then -1 * (toInt'' (toInt' (abs(realRound f)) nd 0) nd 0)
+    | IEEEReal.TO_NEAREST => if (f <? 0) then -1 * (toInt'' (toInt' (abs(realRound f)) nd 0) nd 0)
                     else toInt'' (toInt' (realRound f) nd 0) nd 0
-    | IEEEReal.TO_NEGINF  => if (f < 0) then -1 * (toInt'' (toInt' (abs(realFloor f)) nd 0) nd 0)
+    | IEEEReal.TO_NEGINF  => if (f <? 0) then -1 * (toInt'' (toInt' (abs(realFloor f)) nd 0) nd 0)
                     else toInt'' (toInt' (realFloor f) nd 0) nd 0
-    | IEEEReal.TO_POSINF  => if (f < 0) then -1 * (toInt'' (toInt' (abs(realCeil f)) nd 0) nd 0)
+    | IEEEReal.TO_POSINF  => if (f <? 0) then -1 * (toInt'' (toInt' (abs(realCeil f)) nd 0) nd 0)
                     else toInt'' (toInt' (realCeil f) nd 0) nd 0
-    | IEEEReal.TO_ZERO    => if (f < 0) then -1 * (toInt'' (toInt' (abs(realCeil f)) nd 0) nd 0)
+    | IEEEReal.TO_ZERO    => if (f <? 0) then -1 * (toInt'' (toInt' (abs(realCeil f)) nd 0) nd 0)
                     else toInt'' (toInt' (realFloor f) nd 0) nd 0
      end.
 
