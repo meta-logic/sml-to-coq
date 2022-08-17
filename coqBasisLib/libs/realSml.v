@@ -524,13 +524,13 @@ Module Real.
     Sml: int -> real
     Coq: Z -> float
   *)
-  Definition fromInt (i:Z):float := of_int63 (Int63.of_Z(i)).
+  Definition fromInt (i:Z):float := of_uint63 (Uint63.of_Z(i)).
 
   (*
     Sml: LargeInt.int -> real
     Coq: Z -> float
   *)
-  Definition fromLargeInt (i:Z):float := of_int63 (Int63.of_Z(i)).
+  Definition fromLargeInt (i:Z):float := of_int63 (Uint63.of_Z(i)).
 
   (*
     Sml: real -> LargeReal.real
