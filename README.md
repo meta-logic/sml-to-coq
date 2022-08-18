@@ -3,7 +3,7 @@ A tool that translates SML code to Coq
 
 # Installation
 ### Sml-to-coq uses:
-- [coq 8.12.0](https://coq.inria.fr/download)
+- [coq 8.15.2](https://coq.inria.fr/download)
 - [SML/NJ](https://www.smlnj.org/)
 - [Equations](https://github.com/mattam82/Coq-Equations)
 
