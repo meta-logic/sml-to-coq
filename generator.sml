@@ -40,7 +40,8 @@ struct
                         "Require Import boolSml.",
                         "Require Import optionSml.",
                         "Require Import listPairSml.",
-                        "Require Import notationsSml.", 
+                        "Require Import notationsSml.",
+                        "Require Import Lia.",
                         "From Equations Require Import Equations."]
       val settings = ["\nGeneralizable All Variables."]
       val codeList = imports @ settings @ codeList 
@@ -154,8 +155,8 @@ struct
     (* Adding proposition terms for preconditions *)
     | G.DisjunctTerm(t1, t2) => termG(t1) ^ " \\/ " ^ termG(t2)
     | G.ConjunctTerm(t1, t2) => termG(t1) ^ " /\\ " ^ termG(t2)
-    | G.ForallTerm(bL, t)    => "forall "^(concatListWith (" ", binderG, bL))^ ", " ^ termG(t)
-    | G.ExistsTerm(bL, t)    => "exists "^(concatListWith (" ", binderG, bL))^" , " ^termG(t) 
+    | G.ForallTerm(bL, t)    => "(forall "^(concatListWith (" ", binderG, bL))^ ", " ^ termG(t) ^ ")"
+    | G.ExistsTerm(bL, t)    => "(exists "^(concatListWith (" ", binderG, bL))^" , " ^termG(t) ^ ")"
     | G.EqualTerm(t1, t2)    => "eq (" ^ termG(t1) ^ ") (" ^ termG(t2) ^ ")"
     | G.DefTerm(id, bL, iO, b)   => 
       case iO of
