@@ -604,6 +604,17 @@ and tyvarseq2binder (tyvars: TyVar.TyVar list) : G.binder list =
         List.map tyvar2binder tyvars
     end
 
+  
+(* 
+  This conversion function handles the translation of the
+  type variables of a datatype into the corresponding variables
+  in the induction principle
+*)
+and tyvarseq2binder2 (tyvars: TyVar.TyVar list) : G.binder = 
+
+  G.MultipleBinders{names = List.map (fn x => mkName (TyVar.toString x)) tyvars, typ =  (mkSortTerm 1),
+  inferred = false}
+
 and names2binder ([] : G.name list) : G.binder list = []
   | names2binder names = [G.MultipleBinders {names = names, typ = mkSortTerm 1, inferred = true}]
 
@@ -722,6 +733,81 @@ and datbind2sent(datbind : DatBind) : G.sentence =
     in
         if recordC = [] then sent else G.SeqSentences (recordC @ [sent])
     end
+
+and datbind2indprinciple(datbind : DatBind) : G.sentence =
+    let 
+
+      fun generateArgVars (ty, r) =
+        case ty of
+          VARTy tyvar => (r := !r + 1; [(G.IdentTerm("p"^Int.toString (!r)), TyVar.toString (~tyvar), [])])
+         | PARTy typvar => generateArgVars(~typvar, r)
+         | CONTy (tyseq, tycon) => let 
+              val terms = % (fn VARTy tyvar => checkLegal (TyVar.toString (~tyvar))) ($(~tyseq))
+              val tycon = ltycon2id (~tycon)
+            in
+              (r := !r + 1; [(G.IdentTerm("p"^Int.toString (!r)), tycon, terms)])
+            end
+          | TUPLETyX tlistt => List.concat (List.map (fn x => generateArgVars(~x,r)) tlistt)
+
+      fun cons2cases (cons @@ _ : ConBind) : G.term =
+        let
+          val ConBind(_, tycon, ty, conbind2) = cons
+          val idVal = vid2id (~tycon)
+          val binderVal = []
+          val hasparams = (case ty of SOME _ => true | _ => false)
+          val typVal = (case ty of
+                            SOME ty' => SOME (ty2term (~ty'))
+                          | _ => NONE)
+          val argCount = ref 0
+
+          val argVars = case ty of SOME ty' => generateArgVars(~ty', argCount) | _ => []
+        in
+          case hasparams of 
+            false => G.ApplyTerm(G.IdentTerm("P"), [G.Arg(G.IdentTerm(idVal))])
+          | _ => G.ApplyTerm(G.IdentTerm("P"), [G.Arg(G.IdentTerm(idVal))])
+        end
+    
+    
+    
+    
+    
+      fun datbind2forall (datbind @@ _ : DatBind) : G.theorem = 
+          let
+            val DatBind(tyvars, tycon, cons, datbind2) = datbind
+            val idVal = tycon2id (~tycon) (* Name of type *)
+
+            val filterTyvars = List.map ~ ($(~tyvars))
+
+            (* binder for abstract types *)
+            val typVars1 =  tyvarseq2binder2 (filterTyvars)
+
+            val explicit = filterTyvars <> []
+
+
+            val lhsProp = if explicit then G.ExplicitTerm(idVal,
+              List.map (fn x => G.IdentTypTerm(checkLegal(TyVar.toString x))) filterTyvars)
+                else G.IdentTerm(idVal)
+            
+            val propBinder = G.SingleBinder {name = G.Name("P"), 
+              typ = SOME(G.ArrowTerm(lhsProp , G.SortTerm(G.Prop))), inferred = false}
+            
+            (* verify binder list *)
+            val binderList = if explicit then [typVars1, propBinder] else [propBinder]
+
+            val lastsent = G.ForallTerm([G.SingleBinder{name = G.Name(idVal ^ "_obj"), typ = NONE, inferred = false}],
+             G.ApplyTerm(G.IdentTerm("P"), [G.Arg (G.IdentTerm(idVal ^ "_obj"))]))
+
+            (* Playing with start and end of principle *)
+            val sent = G.ForallTerm(binderList,lastsent)
+            
+          in
+            G.Theorem(idVal ^ "_ind_princip", sent)
+          end
+
+    in
+      G.TheoremSentence(datbind2forall(datbind))
+    end
+
 
 (* EXAMPLE: 1.  val x = 5
  *          2.  val (x, y) = (1, 2)
@@ -865,8 +951,7 @@ and fundec2eprograms(tyvars : TyVar seq, fvalbind : ValBind) : G.eprograms =
 
 and bool2Prop(t: G.term): G.term = G.InfixTerm(G.IdentTerm("="), [G.Arg(G.TupleTerm([G.TupleTerm([t]), G.IdentTerm("true")]))])
 
-
-and conts2proofObligation(def: ValBind list, cont: Exp list): G.proofObligation = 
+and conts2proofObligation(def: ValBind list, cont: Exp list): G.theorem = 
   let
 
     fun atPat(atpat)    = ATPat(atpat)@@at(atpat)
@@ -940,7 +1025,7 @@ and conts2proofObligation(def: ValBind list, cont: Exp list): G.proofObligation 
  * NOTES:
  *)
 and dec2sent ((TYPEDec(typbind)@@ _) : Dec): G.sentence = typbind2sent typbind
-  | dec2sent (DATATYPEDec(datbind)@@_) = datbind2sent datbind
+  | dec2sent (DATATYPEDec(datbind)@@_) = G.SeqSentences([datbind2sent datbind, datbind2indprinciple datbind])
   | dec2sent (DATATYPE2Dec(tycon, ltycon)@@_) =
     G.DefinitionSentence(
         G.DefinitionDef{localbool = false, id = tycon2id(~tycon), binders = [], typ = NONE,
@@ -952,7 +1037,7 @@ and dec2sent ((TYPEDec(typbind)@@ _) : Dec): G.sentence = typbind2sent typbind
       val _ = recordContext := []
       val infixC = !infixContext
       val _ = infixContext := []
-      val proofObl = case conts of nil => nil | _ => [G.ProofObligationSentence (conts2proofObligation(def, conts))]
+      val proofObl = case conts of nil => nil | _ => [G.TheoremSentence (conts2proofObligation(def, conts))]
     in
         G.SeqSentences (recordC @ infixC @ sent::proofObl)
     end

@@ -311,7 +311,7 @@ struct
                 | G.IncludeSentence(i)         => inclusionG(i)::sentenceG(ast)
                 | G.SeqSentences(n)            => sentenceG(n)@sentenceG(ast)
                 | G.EquationSentence(e)        => eprogramsG(e)::sentenceG(ast)
-                | G.ProofObligationSentence(p) => proofObligationG(p)::sentenceG(ast)
+                | G.TheoremSentence(p) => theorem(p)::sentenceG(ast)
 
 
   and recordG (rL) = "\nRecord " ^ concatListWith("with ", recBodyG, rL)
@@ -552,7 +552,7 @@ struct
      concatListWith(" ", patternG, pL) ^ " := " ^ termG(t) ^ ";"
 
 
-  and proofObligationG (G.Theorem(id, t)): string =
+  and theorem (G.Theorem(id, t)): string =
     "\nTheorem " ^ id ^ ": "  ^ termG(t) ^ "." ^ "\nAdmitted."    
 
 
