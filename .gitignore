@@ -17,6 +17,8 @@
 **/*.fls
 **/*.out.make
 **/cmlib/*
+**/.DS_Store
+**/*.cache
 
 # Coq's compilation files
 *.vo

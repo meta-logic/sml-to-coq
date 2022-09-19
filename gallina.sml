@@ -165,7 +165,7 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
                (* equations *)
                | EquationSentence of eprograms
                (* Theorems *)
-               | ProofObligationSentence of proofObligation
+               | TheoremSentence of theorem
 
   (* Gallina syntax extension *)             
   and recBody = RecordBody of 
@@ -198,7 +198,7 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
       binder list will always be empty, and term option will have
       the type since a binder list needs a name for the identities
       e.g. datatype intList = Nil | Cons of int * intList
-      the term option would be nat * intlist -> intlist *)
+      the term option would be int * intlist -> intlist *)
   and clause = Clause of ident * binder list * term option
 
   and fixpoint = Fixpoint of fixbody list | CoFixpoint of cofixbody list
@@ -273,6 +273,6 @@ and pattern =   ArgsPat of ident * pattern list (* true for explicit*)
 
   (* Proof Obligations grammar *)
   (* the term is always going to be (ForallTerm of binder list * term) *)
-  and proofObligation = Theorem of ident * term   
+  and theorem = Theorem of ident * term   
 
 end
