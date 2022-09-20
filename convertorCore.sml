@@ -128,9 +128,7 @@ and patrow2body (labels : Lab.Lab list) (patrow) =
           end
 
     end
-
-
-
+  
 and patbody2fields ident body = let
     fun patbody2field (lab, pat) = G.FieldPat {id = ident ^ "_" ^ checkLegal lab, binders = [], pat = pat}
 in List.map patbody2field body end
@@ -157,6 +155,8 @@ and tyseq2args (Seq tys : Ty seq') : G.arg list = % ty2arg tys
  *)
 and ty2arg (ty : Ty') : G.arg = G.Arg (ty2term ty)
 
+(* Helper function to extract the list of names of abstract variables
+  in a type (check datbind2indprinciple) *)
 and ty2list (VARTy tyvar) = 
   [checkLegal(TyVar.toString (~tyvar))]
   | ty2list (TUPLETyX tys) = 
@@ -614,7 +614,7 @@ and tyvarseq2binder (tyvars: TyVar.TyVar list) : G.binder list =
   
 (* 
   This conversion function handles the translation of the
-  type variables of a datatype into the corresponding variables
+  abstract type variables in a datatype into the corresponding variables
   in the induction principle
 *)
 and tyvarseq2binder2 (tyvars: TyVar.TyVar list) : G.binder = 
@@ -741,34 +741,43 @@ and datbind2sent(datbind : DatBind) : G.sentence =
         if recordC = [] then sent else G.SeqSentences (recordC @ [sent])
     end
 
+(* This function automatically generates an induction principle for
+ * a given datatype declaration taking into account that
+ * the arguments to a constructor are in the form of tuples which 
+ * Gallina cannot account for.
+ *
+ * EXAMPLE SML INPUT: datatype 'a tree = Leaf of 'a | Node of 'a tree * 'a tree
+ * CORRESPONDING GALLINA OUTPUT: 
+ *    Theorem tree_ind_princip : forall (a : Type) (P : @tree a), (forall p1, P (Leaf p1))
+ *        -> (forall p1 p2, P p1 -> P p2 -> P (Node (p1,p2))) -> (forall tree_obj, P (tree_obj))
+ *)
 and datbind2indprinciple(datbind : DatBind) : G.sentence =
     let 
-
       fun generateArgVars (ty, r) =
         case ty of
-          VARTy tyvar => (r := !r + 1; [(G.IdentTerm("p"^Int.toString (!r)), checkLegal(TyVar.toString (~tyvar)), [])])
+          VARTy tyvar => (r := !r + 1; [(G.IdentTerm("p"^Int.toString (!r)), 
+            checkLegal(TyVar.toString (~tyvar)), [])])
          | PARTy typvar => generateArgVars(~typvar, r)
          | CONTy (tyseq, tycon) => let 
-              val terms = % (fn VARTy tyvar => checkLegal (TyVar.toString (~tyvar))) ($(~tyseq))
+              val terms = List.concat (% (ty2list) ($(~tyseq)))
               val tycon = ltycon2id (~tycon)
             in
               (r := !r + 1; [(G.IdentTerm("p"^Int.toString (!r)), tycon, terms)])
             end
           | TUPLETyX tlistt => List.concat (List.map (fn x => generateArgVars(~x,r)) tlistt)
 
-
       fun createarrowtype (argVars, typname, typparams, consName) : G.term =
         let
-          val test = List.concat (List.map (fn (id, typ, vals) => if vals = typparams andalso typ = typname then 
+          val test = List.concat (List.map (fn (id, typ, vals) => if vals = typparams andalso typ = typname then
           [G.ApplyTerm(G.IdentTerm("P"), [G.Arg(id)]) ] else []) argVars)
 
           val lastterm = G.ApplyTerm(G.IdentTerm("P"),
-            [G.Arg(G.TupleTerm( [G.ApplyTerm(G.IdentTerm(consName), [G.Arg(G.TupleTerm(List.map (fn x => #1 x) argVars))])]))])
+            [G.Arg(G.TupleTerm( [G.ApplyTerm(G.IdentTerm(consName), 
+                  [G.Arg(G.TupleTerm(List.map (fn x => #1 x) argVars))])]))])
         in
           List.foldr (fn (x,y) => G.ArrowTerm(x,y)) lastterm (test)
-        end 
-
-      (***   Check inverted type parameters   **)
+        end
+      
       fun cons2cases (cons @@ _ : ConBind, parentID, parenTY) : G.term list =
         let
           val ConBind(_, tycon, ty, conbind2) = cons
@@ -783,10 +792,13 @@ and datbind2indprinciple(datbind : DatBind) : G.sentence =
           val argVars = case ty of SOME ty' => generateArgVars(~ty', argCount) | _ => []
         in
           case hasparams of 
-            false => G.ApplyTerm(G.IdentTerm("P"), [G.Arg(G.IdentTerm(idVal))]) :: ? (fn x => cons2cases (x,parentID,parenTY)) conbind2
+            false => G.ApplyTerm(G.IdentTerm("P"), 
+              [G.Arg(G.IdentTerm(idVal))]) :: ? (fn x => cons2cases (x,parentID,parenTY)) conbind2
           | _ =>
                 let
-                  val fralltm = G.ForallTerm(List.map (fn (G.IdentTerm(v),_,_) => G.SingleBinder{name = mkName v, typ = NONE, inferred = false}) argVars,
+                  val fralltm = G.ForallTerm(List.map 
+                      (fn (G.IdentTerm(v),_,_) => G.SingleBinder{name = mkName v,
+                             typ = NONE, inferred = false}) argVars,
                   createarrowtype(argVars, parentID, parenTY, idVal ))
                 in
                   fralltm :: ?(fn x => cons2cases (x,parentID,parenTY)) conbind2
@@ -796,16 +808,11 @@ and datbind2indprinciple(datbind : DatBind) : G.sentence =
       fun datbind2forall (datbind @@ _ : DatBind) : G.theorem = 
           let
             val DatBind(tyvars, tycon, cons, datbind2) = datbind
-            val idVal = tycon2id (~tycon) (* Name of type *)
-
+            val idVal = tycon2id (~tycon) 
             val filterTyvars = List.map ~ ($(~tyvars))
-
             val varNames = List.map (fn v => checkLegal(TyVar.toString v)) filterTyvars
-            (* binder for abstract types *)
             val typVars1 =  tyvarseq2binder2 (filterTyvars)
-
             val explicit = filterTyvars <> []
-
 
             val lhsProp = if explicit then G.ExplicitTerm(idVal,
               List.map (fn x => G.IdentTypTerm(checkLegal(TyVar.toString x))) filterTyvars)
@@ -814,20 +821,18 @@ and datbind2indprinciple(datbind : DatBind) : G.sentence =
             val propBinder = G.SingleBinder {name = G.Name("P"), 
               typ = SOME(G.ArrowTerm(lhsProp , G.SortTerm(G.Prop))), inferred = false}
             
-            (* verify binder list *)
             val binderList = if explicit then [typVars1, propBinder] else [propBinder]
 
-            val lastsent = G.ForallTerm([G.SingleBinder{name = G.Name(idVal ^ "_obj"), typ = NONE, inferred = false}],
+            val lastsent = G.ForallTerm([G.SingleBinder{name = G.Name(idVal ^ "_obj"),
+                        typ = NONE, inferred = false}],
              G.ApplyTerm(G.IdentTerm("P"), [G.Arg (G.IdentTerm(idVal ^ "_obj"))]))
 
-            val sent2 = List.foldr (fn (x,y) => G.ArrowTerm(x,y)) lastsent (cons2cases (cons, idVal, varNames))
-            (* Playing with start and end of principle *)
-            val sent = G.ForallTerm(binderList,sent2)
-            
+            val sent2 = List.foldr (fn (x,y) => G.ArrowTerm(x,y)) 
+                                        lastsent (cons2cases (cons, idVal, varNames))
+            val sent = G.ForallTerm(binderList,sent2)  
           in
             G.Theorem(idVal ^ "_ind_princip", sent)
           end
-
     in
       G.TheoremSentence(datbind2forall(datbind))
     end
