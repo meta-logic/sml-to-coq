@@ -741,6 +741,142 @@ and datbind2sent(datbind : DatBind) : G.sentence =
         if recordC = [] then sent else G.SeqSentences (recordC @ [sent])
     end
 
+
+(* This function automatically takes in a datatype declaration
+ * generates a proof object for its corresponding induction principle 
+ * taking into account that the arguments to a datatype 
+ * constructor are in the form of tuples which Gallina cannot account for.
+ *
+ *)
+and datbind2indproofobj (datbind : DatBind) : G.sentence = 
+  let
+
+    fun generateArgVars (ty, r) =
+      case ty of
+        VARTy tyvar => (r := !r + 1; [(G.IdentTerm("p"^Int.toString (!r)), 
+          checkLegal(TyVar.toString (~tyvar)), [])])
+        | PARTy typvar => generateArgVars(~typvar, r)
+        | CONTy (tyseq, tycon) => let 
+            val terms = List.concat (% (ty2list) ($(~tyseq)))
+            val tycon = ltycon2id (~tycon)
+          in
+            (r := !r + 1; [(G.IdentTerm("p"^Int.toString (!r)), tycon, terms)])
+          end
+        | TUPLETyX tlistt => List.concat (List.map (fn x => generateArgVars(~x,r)) tlistt)
+
+    fun createarrowtype (argVars, typname, typparams, consName) : G.term =
+      let
+        val test = List.concat (List.map (fn (id, typ, vals) => if vals = typparams andalso typ = typname then
+        [G.ApplyTerm(G.IdentTerm("P"), [G.Arg(id)]) ] else []) argVars)
+
+        val lastterm = G.ApplyTerm(G.IdentTerm("P"),
+          [G.Arg(G.TupleTerm( [G.ApplyTerm(G.IdentTerm(consName), 
+                [G.Arg(G.TupleTerm(List.map (fn x => #1 x) argVars))])]))])
+      in
+        List.foldr (fn (x,y) => G.ArrowTerm(x,y)) lastterm (test)
+      end
+    
+    fun returnRecursiveArgs (argVars, typname, typparams, consName) : G.term list =
+      let
+        val test = List.concat (List.map (fn (id, typ, vals) => if vals = typparams andalso typ = typname then
+        [id] else []) argVars)
+      in
+        test
+      end
+    
+    fun cons2cases (cons @@ _ : ConBind, parentID, parenTY, recCall) : (Gallina.binder * Gallina.equation) list =
+      let
+        val ConBind(_, tycon, ty, conbind2) = cons
+        val idVal = vid2id (~tycon)
+        val binderVal = []
+        val hasparams = (case ty of SOME _ => true | _ => false)
+        val typVal = (case ty of
+                          SOME ty' => SOME (ty2term (~ty'))
+                        | _ => NONE)
+        val argCount = ref 0
+
+        val argVars = case ty of SOME ty' => generateArgVars(~ty', argCount) | _ => []
+        val argNames = List.map (fn (G.IdentTerm(x),_,_) => x) argVars
+        
+        (* remember to add recursive calls as tuple args *)
+        val argList = if hasparams then List.map (fn (x,_,_) => G.Arg(x)) argVars else []
+        val recArgs = returnRecursiveArgs (argVars, parentID, parenTY, idVal)
+
+        val indprincipname = if recCall <> [] then List.hd recCall else ""
+        val remainingArgs = if recCall <> [] then List.drop(recCall, 1) else []
+
+        val appTerm = List.map (fn x =>  G.Arg(G.TupleTerm([G.ApplyTerm(G.IdentTerm(indprincipname),
+            (List.map (fn y => G.Arg(G.IdentTerm(y))) remainingArgs) @ [G.Arg(x)])])) ) recArgs 
+
+        val argList = argList @ appTerm
+        val caseEq = if hasparams then G.Equation(G.ArgsPat(idVal, 
+            [G.TuplePat (List.map (fn x => G.QualidPat (x)) argNames)]),
+            G.ApplyTerm (G.IdentTerm("Hyp_" ^ idVal), argList)) else 
+                        G.Equation(G.QualidPat(idVal) , G.IdentTerm("Hyp_" ^ idVal))
+      in
+        case hasparams of 
+          false => (G.SingleBinder {name = G.Name("Hyp_" ^ idVal) ,typ = SOME (G.ApplyTerm(G.IdentTerm("P"), 
+            [G.Arg(G.IdentTerm(idVal))])), inferred = false }, caseEq) :: 
+                ? (fn x => cons2cases (x,parentID,parenTY, recCall)) conbind2
+        | _ =>
+              let
+                val fralltm = G.SingleBinder {name = G.Name ("Hyp_" ^ idVal), inferred = false,
+                typ = SOME (G.ForallTerm(List.map 
+                    (fn (G.IdentTerm(v),_,_) => G.SingleBinder{name = mkName v,
+                            typ = NONE, inferred = false}) argVars,
+                createarrowtype(argVars, parentID, parenTY, idVal ))) }
+              in
+                (fralltm, caseEq) :: ?(fn x => cons2cases (x,parentID,parenTY, recCall)) conbind2
+              end 
+      end
+
+    fun datbind2fixpoint (datbind @@ _ : DatBind) : G.fixpoint = 
+          let
+            val DatBind(tyvars, tycon, cons, datbind2) = datbind
+
+            (* type name *)
+            val idVal = tycon2id (~tycon) 
+
+            (* abstract type vars*)
+            val filterTyvars = List.map ~ ($(~tyvars)) 
+            val varNames = List.map (fn v => checkLegal(TyVar.toString v)) 
+                        filterTyvars
+            
+            val typVars1 =  tyvarseq2binder2 (filterTyvars)
+            val explicit = filterTyvars <> []
+
+            val lhsProp = if explicit then G.ExplicitTerm(idVal,
+              List.map (fn x => G.IdentTypTerm(checkLegal(TyVar.toString x))) filterTyvars)
+                else G.IdentTerm(idVal)
+            
+            val propBinder = G.SingleBinder {name = G.Name("P"), 
+              typ = SOME(G.ArrowTerm(lhsProp , G.SortTerm(G.Prop))), inferred = false}
+            
+
+            val consRes =  cons2cases (cons, idVal, varNames, [])
+            val binderList = if explicit then [typVars1, propBinder] else [propBinder]
+            val binderList = binderList @ (List.map (fn (x,_) => x) consRes)
+              @ [G.SingleBinder {name = G.Name(idVal ^ "_obj"), typ = SOME(lhsProp), inferred = false}]
+            
+            val binderNames = (idVal ^ "_ind_princip_proof") :: 
+                List.concat (List.map (fn G.SingleBinder{name = G.Name(x), ...} => [x] | 
+                                G.MultipleBinders{names = ls, ...} => List.map (fn G.Name(x) => x) ls)  binderList)
+            val binderNames = List.take(binderNames, (List.length binderNames) - 1)
+
+            val consRes = cons2cases (cons, idVal, varNames, binderNames)
+            val funbody = G.MatchTerm {matchItems = [G.MatchItem (G.IdentTerm(idVal ^ "_obj"))], 
+            body = List.map (fn (_,x) => x) consRes}
+
+          in
+            G.Fixpoint([G.Fixbody {id = idVal ^ "_ind_princip_proof" , binders = binderList, 
+                decArg = NONE, typ = SOME(G.ApplyTerm(G.IdentTerm("P"),
+                [G.Arg (G.IdentTerm(idVal ^ "_obj"))])), body = funbody}])
+          end
+  in
+    G.FixpointSentence(datbind2fixpoint(datbind))
+  end
+
+
 (* This function automatically generates an induction principle for
  * a given datatype declaration taking into account that
  * the arguments to a constructor are in the form of tuples which 
@@ -1054,7 +1190,7 @@ and conts2proofObligation(def: ValBind list, cont: Exp list): G.theorem =
  * NOTES:
  *)
 and dec2sent ((TYPEDec(typbind)@@ _) : Dec): G.sentence = typbind2sent typbind
-  | dec2sent (DATATYPEDec(datbind)@@_) = G.SeqSentences([datbind2sent datbind, datbind2indprinciple datbind])
+  | dec2sent (DATATYPEDec(datbind)@@_) = G.SeqSentences([datbind2sent datbind, datbind2indproofobj datbind])
   | dec2sent (DATATYPE2Dec(tycon, ltycon)@@_) =
     G.DefinitionSentence(
         G.DefinitionDef{localbool = false, id = tycon2id(~tycon), binders = [], typ = NONE,
