@@ -1458,49 +1458,84 @@ being empty.
 \subsubsection{Functor Bindings}
 
 \subsubsection{Top-Level Declarations}
-\vspace{25pt}
+
+\newpage
 \section{Generation of induction principle for datatypes}
 
-    In SML, datatype constructors that take in more than one argument take those arguments in uncurried form. Thus such constructors take a tuple of their arguments and this property is preserved by the translation to Gallina. \\ \\
-    As an example we take the following datatype declaration in SML: 
-    \begin{sml}
-    datatype 'a tree = Empty
-            | Leaf of 'a
-            | Node of 'a tree * 'a * 'a tree 
-    \end{sml}
-\\
-\vspace{10pt}
-This datatype defines a tree that is parameterized by an abstract datatype $'a$. The corresponding translation to Gallina is: \\
+In SML, datatype constructors that take in more than one argument take
+those arguments in uncurried form. Thus such constructors take a tuple
+of their arguments and this property is preserved by the translation
+to Gallina.
+    
+As an example we take the following datatype declaration in SML: 
 
-    \begin{coq}
-        Inductive tree  {_a : Type}  : Type := 
-          | Empty 
-          | Leaf : _a -> @tree _a
-          | Node : (@tree _a * _a * @tree _a)%type -> @tree _a.
-    \end{coq} 
+\begin{sml}
+datatype 'a tree = Empty
+        | Leaf of 'a
+        | Node of 'a tree * 'a * 'a tree 
+\end{sml}
 
-\vspace{10pt}
-Here, we note that the Node constructor's input is a tuple type. Upon defining this datatype, Coq automatically generates an induction principle where the clause for the Node case is
-    \begin{coq}
-        (forall p, P (Node (p)))
-    \end{coq}
-\\ \vspace{5pt}
-where $P$ is the proposition to be proved by induction. We note here that this clause does not provide us with any induction hypotheses that pertain to the two structurally smaller trees that are contained within the tuple $p$. \\ \\
-Therefore, our translation to Gallina also defines a stronger induction principle for each datatype declaration that unwraps the terms within the tuple type, providing the user with the appropriate induction hypotheses to allow them to use induction to prove theorems about these datatypes. \\ \\
-In the example above, the appropriate induction principle that be associated with the given type should be: \\ 
+This datatype defines a tree that is parameterized by an abstract
+datatype $'a$. The corresponding translation to Gallina is:
 
 \begin{coq}
-    Theorem treeIndPrincip: forall  (_a : Type) (P:@tree _a -> Prop), P Empty -> (forall p1, P (Leaf (p1))) -> (forall p1 p2 p3, P p1 -> P p3 -> P (Node (p1, p2, p3))) -> forall tree_obj, P tree_obj.
+    Inductive tree  {_a : Type}  : Type := 
+      | Empty 
+      | Leaf : _a -> @tree _a
+      | Node : (@tree _a * _a * @tree _a)%type -> @tree _a.
+\end{coq} 
+
+Here, we note that the Node constructor's input is a tuple type. Upon
+defining this datatype, Coq automatically generates an induction
+principle where the clause for the Node case is
+
+\begin{coq}
+    (forall p, P (Node (p)))
 \end{coq}
-\vspace{10pt}
-where the clause corresponding to the Node constructor provides us with the additional assumptions P (p1) and P (p3) which are the induction hypotheses for the two subtrees. 
-\vspace{5pt}
 
-    In order for the SML-to-Coq translation to provide the stronger induction principle as well as prove its correctness, we generate a proof object whose type is that of the stronger induction principle. For the given example, the corresponding proof object would be as follows: \\ 
+\noindent
+where $P$ is the proposition to be proved by induction. We note here
+that this clause does not provide us with any induction hypotheses
+that pertain to the two structurally smaller trees that are contained
+within the tuple $p$.
+
+Therefore, our translation to Gallina also defines a stronger
+induction principle for each datatype declaration that unwraps the
+terms within the tuple type, providing the user with the appropriate
+induction hypotheses to allow them to use induction to prove theorems
+about these datatypes.
+
+In the example above, the appropriate induction principle that be
+associated with the given type should be:
 
 \begin{coq}
-Fixpoint tree_ind_princip_proof  (_a : Type) (P:@tree _a -> Prop) (Hyp_Empty:P Empty)
-    (Hyp_Leaf:(forall p1, P (Leaf (p1)))) (Hyp_Node:(forall p1 p2 p3, P p1 -> P p3 -> P (Node (p1, p2, p3)))) (tree_obj:@tree _a)  : P tree_obj := 
+    Theorem treeIndPrincip: forall  (_a : Type) (P:@tree _a -> Prop), 
+      P Empty -> 
+      (forall p1, P (Leaf (p1))) -> 
+      (forall p1 p2 p3, P p1 -> P p3 -> P (Node (p1, p2, p3))) -> 
+      forall tree_obj, P tree_obj.
+\end{coq}
+
+\noindent
+where the clause corresponding to the Node constructor provides us
+with the additional assumptions P (p1) and P (p3) which are the
+induction hypotheses for the two subtrees.
+
+In order for the SML-to-Coq translation to provide the stronger
+induction principle as well as prove its correctness, we generate a
+proof object whose type is that of the stronger induction principle.
+For the given example, the corresponding proof object would be as
+follows:
+
+\begin{coq}
+Fixpoint tree_ind_princip_proof  
+  (_a : Type) 
+  (P: @tree _a -> Prop) 
+  (Hyp_Empty: P Empty)
+  (Hyp_Leaf: (forall p1, P (Leaf (p1)))) 
+  (Hyp_Node:(forall p1 p2 p3, P p1 -> P p3 -> P (Node (p1, p2, p3)))) 
+  (tree_obj:@tree _a)  : P tree_obj := 
+  
   match tree_obj with
   | Empty => Hyp_Empty  
   | (Leaf (p1)) => Hyp_Leaf p1  
@@ -1510,8 +1545,8 @@ Fixpoint tree_ind_princip_proof  (_a : Type) (P:@tree _a -> Prop) (Hyp_Empty:P E
   end.
 \end{coq}
 
-\vspace{10pt}
-The proof object can then be used in place of the default induction principle to prove theorems concerning the datatype.
+The proof object can then be used in place of the default induction
+principle to prove theorems concerning the datatype.
 
 %  \section{Simulation}
 %  
