@@ -21,7 +21,7 @@ Module Bool.
     Sml: bool -> string
     Coq: bool -> string
   *)
-  Definition toString (b:bool):string :=
+  Definition toString1 (b:bool):string :=
     match b with
     | true  => "true"
     | false => "false"

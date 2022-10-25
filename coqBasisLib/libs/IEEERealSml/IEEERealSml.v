@@ -1,9 +1,9 @@
-Require Import boolSml.
-Require Import stringSml.
-Require Import intSml.
-Require Import charSml.
-Require Import listSml.
-Require Import stringCvtSml.
+From boolSml Require Import boolSml.
+From stringSml Require Import stringSml.
+From intSml Require Import intSml.
+From charSml Require Import charSml.
+From listSml Require Import listSml.
+From stringCvtSml Require Import stringCvtSml.
 
 Module IEEEReal.
 
@@ -41,7 +41,7 @@ Module IEEEReal.
       exp : Z
     }.
 
-  Definition toString (d: decimal_approx): string :=
+  Definition toString1 (d: decimal_approx): string :=
     match d with
     | {|class := fc; sign := b; digits := lz; exp := z|} => 
       match fc with
@@ -53,18 +53,18 @@ Module IEEEReal.
         | true  => 
           match z with 
           | 0%Z => "-" ++ (List.foldr (fun '(a, b) => 
-                   String.append (Int.toString a) b) (""%string) lz)
+                   String.append (Int.toString1 a) b) (""%string) lz)
           | _   => "-" ++ (List.foldr (fun '(a, b) => 
-                   String.append (Int.toString a) b) (""%string) lz)
-                       ++ "E" ++ (Int.toString z)
+                   String.append (Int.toString1 a) b) (""%string) lz)
+                       ++ "E" ++ (Int.toString1 z)
           end
         | false => 
           match z with 
           | 0%Z => (List.foldr (fun '(a, b) => 
-                   String.append (Int.toString a) b) (""%string) lz)
+                   String.append (Int.toString1 a) b) (""%string) lz)
           | _   => (List.foldr (fun '(a, b) => 
-                   String.append (Int.toString a) b) (""%string) lz)
-                       ++ "E" ++ (Int.toString z)
+                   String.append (Int.toString1 a) b) (""%string) lz)
+                       ++ "E" ++ (Int.toString1 z)
           end
         end
       end

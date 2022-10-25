@@ -2,7 +2,7 @@ Require Import Bool.
 Require Import String.
 Require Import List.
 Require Import ZArith.
-Require Import stringCvtSml.
+From stringCvtSml Require Import stringCvtSml.
 Require Export Ascii.
 Notation "# x" := (x%char) (at level 0).
 
@@ -283,7 +283,7 @@ Module Char.
     Sml: char -> string
     Coq: ascii -> string
   *)
-  Definition toString (c:ascii):string := 
+  Definition toString1 (c:ascii):string := 
     match c with 
     | #"092" => "\\\\"
     | #"034" => """"

@@ -36,6 +36,7 @@ Group
  structure VId
  structure TyCon
  structure Infix
+ structure Main
 
  structure Quicksort
  structure StringOrdered
@@ -64,6 +65,7 @@ Group
   functionChecker.sml
   tyvarResolver.sml 
   precondsFinder.sml
+  main.sml
 
   cmlib/quicksort.sml
   cmlib/ordered.sml
