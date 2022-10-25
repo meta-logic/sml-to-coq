@@ -1,7 +1,7 @@
-Require Import stringSml.
-Require Import listSml.
+From stringSml Require Import stringSml.
+From listSml Require Import listSml.
 Require Import Ascii.
-Require Import optionSml.
+From optionSml Require Import optionSml.
 Require Import ZArith.
 Require Import Bool.
 

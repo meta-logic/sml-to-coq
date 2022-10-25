@@ -1,11 +1,11 @@
 Require Import Bool.
-Require Import intSml.
+From intSml Require Import intSml.
 Require Import Ascii.
-Require Import stringSml.
+From stringSml Require Import stringSml.
 Require Export Floats.
-Require Import listSml.
-Require Import stringCvtSml.
-Require Import IEEERealSml.
+From listSml Require Import listSml.
+From stringCvtSml Require Import stringCvtSml.
+From IEEERealSml Require Import IEEERealSml.
 
 Module Real.
 
@@ -529,8 +529,8 @@ Module Real.
   (*
     Sml: LargeInt.int -> real
     Coq: Z -> float
-  *)
-  Definition fromLargeInt (i:Z):float := of_int63 (Uint63.of_Z(i)).
+    Definition fromLargeInt (i:Z):float := of_int63 (Uint63.of_Z(i)).
+    *)
 
   (*
     Sml: real -> LargeReal.real
@@ -581,7 +581,7 @@ Module Real.
     Coq: float -> nat -> string
     - For now The user should give me how many digits, until we fix numdigits.
   *)
-  Definition toString (r: float) (nd: nat): string:= 
+  Definition toString1 (r: float) (nd: nat): string:= 
     let r' := split r in 
     match r' with 
     | {| whole := w; frac := f|} => 
@@ -600,7 +600,7 @@ Module Real.
     Coq: float -> nat -> IEEEReal.decimal_approx
   *)
   Definition toDecimal (f: float) (nd: nat): IEEEReal.decimal_approx :=
-    match IEEEReal.fromString (toString f nd) with
+    match IEEEReal.fromString (toString1 f nd) with
     | None => {| IEEEReal.class:=IEEEReal.NAN;  IEEEReal.sign:=false;
                  IEEEReal.digits:=[]; IEEEReal.exp:=0%Z|}
     | Some x => x
@@ -717,27 +717,27 @@ Module Real.
       match arg with
       | None   =>
         let s' := 
-        (toString (((compDigits' (match Z.compare dLen' 7%Z with
+        (toString1 (((compDigits' (match Z.compare dLen' 7%Z with
         | Lt => d' ++ (List.tabulate(Z.sub 7%Z dLen', (fun x => 0%Z)))
         | Gt => List.take(d', 7%Z)
         | Eq => d' end) 0 1) + (if (Z.gtb dLen' 7%Z) then
         if (Z.gtb (List.nth(d',7%Z)) 4%Z) then (1/1e6) else 0 else 0))*10) nd) in
-        let lex := String.size (Int.toString e') in
+        let lex := String.size (Int.toString1 e') in
         let j := Z.add 7%Z lex in
         (String.append (String.substring(s', 0%Z, j))
-        (String.append "E"%string  (Int.toString e')))
+        (String.append "E"%string  (Int.toString1 e')))
       | Some x =>
         let s' := 
-        (toString (((compDigits' (match Z.compare dLen' (Z.add 1 x) with
+        (toString1 (((compDigits' (match Z.compare dLen' (Z.add 1 x) with
         | Lt => d' ++ (List.tabulate(Z.sub (Z.add 1 x) dLen', (fun i => 0%Z)))
         | Gt => List.take(d', Z.sub dLen' (Z.add 1 x))
         | Eq => d' end) 0 1) + (if (Z.gtb dLen' (Z.add 1 x)) then
         if (Z.gtb (List.nth(d',(Z.add 1 x))) 4%Z)
         then (1 / fromInt(Z.pow 10%Z x)) else 0 else 0)) * 10) nd) in
-        let lex := String.size (Int.toString e') in
+        let lex := String.size (Int.toString1 e') in
         let j := Z.add (Z.add 1%Z x) lex in
         (String.append (String.substring(s', 0%Z, j))
-        (String.append "E"%string  (Int.toString e')))
+        (String.append "E"%string  (Int.toString1 e')))
       end
     end.
 
@@ -772,7 +772,7 @@ Module Real.
     end.
 
   Local Definition fmtFIX (arg: option Z) (f: float) (nd: nat) :=
-    let s := toString f nd in
+    let s := toString1 f nd in
     let i := getDecPointInd s 0 in
     let numDec := Z.sub (String.size s) (Z.add i 1) in
     match arg with
@@ -788,7 +788,7 @@ Module Real.
         if Z.ltb (digitToZ(String.sub(s,j))) 5 then
         s' else 
         String.substring(
-          toString(valOf(fromString s)+(1/fromInt(Z.pow 10%Z 6%Z))) l, 0%Z, j)
+          toString1(valOf(fromString s)+(1/fromInt(Z.pow 10%Z 6%Z))) l, 0%Z, j)
       | Eq => s
       end
     | Some x =>
@@ -803,7 +803,7 @@ Module Real.
         if Z.ltb (digitToZ(String.sub(s,j))) 5 then
         s' else 
         String.substring(
-          toString(valOf(fromString s)+(1/fromInt(Z.pow 10%Z x))) l, 0%Z, j)
+          toString1(valOf(fromString s)+(1/fromInt(Z.pow 10%Z x))) l, 0%Z, j)
       | Eq => s 
       end
     end.
@@ -844,7 +844,7 @@ Module Real.
         | _  => FIX
         end
       end
-    | StringCvt.EXACT   => toString f nd
+    | StringCvt.EXACT   => toString1 f nd
     end.
 
 End Real.

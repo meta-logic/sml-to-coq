@@ -267,7 +267,7 @@ Module String.
     Sml: string -> String.string
     Coq: string -> string
   *)
-  Definition toString (s:string):string           := s.
+  Definition toString1 (s:string):string           := s.
 
   (*
     Sml: String.string -> string option

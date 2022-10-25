@@ -1,6 +1,6 @@
 Require Import Ascii.
 Require Import String.
-Require Import stringCvtSml.
+From stringCvtSml Require Import stringCvtSml.
 Require Export ZArith.
 Open Scope Z_scope.
 
@@ -327,7 +327,7 @@ Module Int.
     Sml: int -> string
     Coq: Z -> string
   *)
-  Definition toString (n: Z): string := 
+  Definition toString1 (n: Z): string := 
     let n' := Z.abs_nat(n) in 
     match (sameSign(n, (-1)))  with
     | true  => "-" ++ (toString' n')
@@ -349,7 +349,7 @@ Module Int.
   Definition fmt (radix: StringCvt.radix) (i:Z): string := 
     match radix with 
     | StringCvt.BIN => toBinStr i
-    | StringCvt.DEC => toString i
+    | StringCvt.DEC => toString1 i
     | StringCvt.OCT => toOctStr i
     | StringCvt.HEX => toHexStr i
     end.
