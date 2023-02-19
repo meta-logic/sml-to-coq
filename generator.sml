@@ -32,19 +32,19 @@ struct
       
       val ast        = C.convert source
       val codeList   = sentenceG(ast)
-      val imports    = ["From stringSml Require Import stringSml.",
-                    "From IEEERealSml Require Import IEEERealSml.",
-                    "From listPairSml Require Import listPairSml.",
-                    "From stringCvtSml Require Import stringCvtSml.",
-                    "From intSml Require Import intSml.",
-                    "From boolSml Require Import boolSml.",
-                    "From optionSml Require Import optionSml.",
-                    "From listSml Require Import listSml.",
-                    "From charSml Require Import charSml.",
-                    "From notationsSml Require Import notationsSml.",
-                    "From realSml Require Import realSml.",
-                    "From Coq Require Import Lia.",
-                    "From Equations Require Import Equations."]
+
+      val imports    = ["Require Import intSml.",
+                        "Require Import listSml.",
+                        "Require Import realSml.",
+                        "Require Import stringSml.",
+                        "Require Import charSml.",
+                        "Require Import boolSml.",
+                        "Require Import optionSml.",
+                        "Require Import listPairSml.",
+                        "Require Import notationsSml.",
+                        "Require Import Lia.",
+                        "From Equations Require Import Equations.",
+                        "Ltac by_math := try lia; try field; try ring.",
       val settings = ["\nGeneralizable All Variables."]
       val codeList = imports @ settings @ codeList 
     in
