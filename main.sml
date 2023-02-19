@@ -1,3 +1,6 @@
+(* Generates the heap image for sml-to-coq
+for standalone execution *)
+
 structure Main =
 struct
     open Generator
