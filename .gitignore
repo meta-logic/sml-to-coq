@@ -25,3 +25,8 @@
 *.vok
 *.vos
 *.glob
+
+**/*.fdb_latexmk
+doc/main.pdf
+sml2coq.amd64-darwin
+
