@@ -36,8 +36,8 @@ struct
        case TextIO.inputLine ins of 
           SOME line => line :: loop ins 
         | NONE      => [] 
-      val codeList = loop ins before TextIO.closeIn ins 
-      val code = String.concat codeList  
+      val codeList = (loop ins before TextIO.closeIn ins)
+      val code = String.concat codeList ^ ";"
     in 
       convert' code
     end
